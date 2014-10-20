@@ -3,10 +3,15 @@ Attendants: Mikkel, Nikolaj, Mikael
 Summary:
 	- We need a time schedule.
 		- Initially, everyone looks into part1: Planning
+
 	- Wavefront algorithm is used to find shortest path to offloading station.
 		- Find the best Wavefront algorithm we've made.
+		- It should be easy: In init phase, a wavefront is made for the two offloading stations.
+		  Then the robot should always be able to give a (x,y)
+		  and instantly ( in O(1) ) know which pixel to move to next.
+		  
 	- Configuration space: Padding of obstacles (walls) by 4 pixels (only pad freespace!)
 		- The robot starts by creating the configuration space,
-		so it can be reduced to a point robot!
+		  so it can be reduced to a point robot!
 
-	- Look into "Coverage" algorithms in the book.
+	- Look into Coverage algorithms in the book.
