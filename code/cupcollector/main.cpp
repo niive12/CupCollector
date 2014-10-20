@@ -1,7 +1,7 @@
 #include <iostream>
 
-#define yell std::cout <<
+using namespace std;
 int main() {
-    yell "Hello World!" << std::endl;
+    cout << "Hello World!" << endl;
     return 0;
 }
