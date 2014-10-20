@@ -1,7 +1,5 @@
 The Cup Collector
-
-Where is Lucas and Michael?
-This is not swaggy done by them! Not showing up!
-
-==================================
-Made by pros!
+=================
+Awesome contributors
+--------------------
+Lukas, Michael, Nikolaj, Mikkel & Mikael
