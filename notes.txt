@@ -1,0 +1,12 @@
+First meeting:
+Attendants: Mikkel, Nikolaj, Mikael
+Summary:
+	- We need a time schedule.
+		- Initially, everyone looks into part1: Planning
+	- Wavefront algorithm is used to find shortest path to offloading station.
+		- Find the best Wavefront algorithm we've made.
+	- Configuration space: Padding of obstacles (walls) by 4 pixels (only pad freespace!)
+		- The robot starts by creating the configuration space,
+		so it can be reduced to a point robot!
+
+	- Look into "Coverage" algorithms in the book.
