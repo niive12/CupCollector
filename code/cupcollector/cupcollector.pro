@@ -4,4 +4,11 @@ CONFIG -= app_bundle
 CONFIG -= qt
 CONFIG += c++11
 
-SOURCES += main.cpp
+SOURCES += main.cpp \
+    libraries/Image.cpp \
+    libraries/PPMLoader.cpp
+
+HEADERS += \
+    libraries/Image.hpp \
+    libraries/macros.hpp \
+    libraries/PPMLoader.hpp
