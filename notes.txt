@@ -14,4 +14,44 @@ Summary:
 		- The robot starts by creating the configuration space,
 		  so it can be reduced to a point robot!
 
+	- Circle scan.
+
 	- Look into Coverage algorithms in the book.
+
+Second meeting:
+Attendants: Entire group
+Summary:
+	- We must ask Jimmy about part1 and part2 coupling.
+
+	- Time schedule draft: In "schedule.txt".
+	- Weekly meetings tuesday afternoons!
+
+	- Dual wavefront: Make two waves at the same time for offloading stations.
+	- Remember the path to offloading station, so you can go back to where you picked up cup.
+	
+	- We use 8-point connectivity everywhere!
+	
+	- Code indents: Use tabs!
+	- Code style: Object oriented! No global variables/functions!
+		//However, you may use the assignment.h header for assignment DEFINES.
+	- Document your code! JavaDoc is good.
+	- Headers don't hold implementation.
+		- UNLESS you are making a template class. Then you put it in a .hpp file!
+
+	- We need a map class given an image pointer and a wave/brush boolean thingy.
+	- The map class must be the robot's interface to it's static surroundings. Like GPS.
+		- Get pixVal, get brushVal, get waveVal.
+	- The map class must remember the image given in ctor, so it can save modified copies.
+
+	- We code for the TEK map or similiar maps. Door size etc. is in assignment.h, that's ok.
+
+	- One robot class. One map class. One scanner class.
+		- The robot only knows the TEK map through the map class.
+		- Scanner class constructor saves a list of relative coordinates that are within the circle.
+			- Ctor gets scanner radius so it can make the list on construction.
+
+	- Niko continues his work on door detection and brushfire coverage etc.
+	- Mikael makes the map signature header. And some implementation.
+	- Mikkel makes the scanner class.
+	- Michael does some LaTeX work.
+	- Lukas makes the robot signature header.

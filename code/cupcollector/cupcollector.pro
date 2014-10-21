@@ -11,4 +11,5 @@ SOURCES += main.cpp \
 HEADERS += \
     libraries/Image.hpp \
     libraries/macros.hpp \
-    libraries/PPMLoader.hpp
+    libraries/PPMLoader.hpp \
+    assignment.h
