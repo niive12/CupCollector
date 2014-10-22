@@ -22,6 +22,9 @@ public:
     /** @brief posType aliases the integer coordinate type (a pair of uints) */
     using posType = pair< unsigned int, unsigned int >;
 
+    /** @brief The value type for each pixel */
+    using coordValType = long int;
+
     /** @brief mapType denotes the different map types... */
     typedef enum {UNINITIALIZED, WAVEFRONT, BRUSHFIRE, PIXELSHADE} mapType;
 
@@ -41,12 +44,12 @@ public:
     /** @brief getType returns the type of map...*/
     inline mapType getType();
 
+    /** @brief getCoordVal returns the coordinate value... */
+    inline coordValType getCoordVal(const posType &ofThisCoord) const;
+
 protected:
     /** @brief myType is this map's type*/
     mapType myType;
-
-    /** @brief The value type for each pixel */
-    using coordValType = long int;
 
     /** @brief The map (dynamic 2D array) */
     vector<vector<coordValType> > myMap;

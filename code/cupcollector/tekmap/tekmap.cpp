@@ -14,6 +14,10 @@ inline bool tekMap::isInImage(const shared_ptr<Image> img, const int &x, const i
 inline tekMap::mapType tekMap::getType()
 { return myType; }
 
+inline tekMap::coordValType tekMap::getCoordVal(const posType &ofThisCoord) const {
+    return (myMap.at(ofThisCoord.first)).at(ofThisCoord.second);
+}
+
 
 tekMap::tekMap(shared_ptr< Image > img, mapType argMyType, set<posType> coords, const posType *reachableFreeSpace)
     :myType{ argMyType }
