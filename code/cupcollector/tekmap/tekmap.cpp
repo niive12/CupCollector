@@ -1,0 +1,176 @@
+/** @file */
+#include "tekmap.h"
+#include "assignment.h"
+#include <queue>
+#include <set>
+#include <array>
+#include <memory>
+#include <iostream>
+
+inline bool tekMap::isInImage(const shared_ptr<Image> img, const int &x, const int &y) const {
+    return (((int)(img->getWidth()) > x) && ((int)(img->getHeight()) > y));
+}
+
+inline tekMap::mapType tekMap::getType()
+{ return myType; }
+
+
+tekMap::tekMap(shared_ptr< Image > img, mapType argMyType, set<posType> coords, const posType *reachableFreeSpace)
+    :myType{ argMyType }
+{
+    if( !img )
+        cerr << "No image passed to map ctor" << endl;
+    else if( myType != UNINITIALIZED )
+    {
+        if( myType == PIXELSHADE )
+        {
+            myMap.clear();
+            myMap.resize( img->getWidth(), vector<coordValType>( img->getHeight() ));
+            //Just give pixel values to the map and be done with it.
+            for( size_t x = 0; x < img->getWidth(); ++x)
+            {
+                for( size_t y = 0; y < img->getHeight(); ++y)
+                    ( myMap.at(x) ).at(y) = (coordValType)( img->getPixelValuei(x,y,0) );
+                ( myMap.at(x) ).shrink_to_fit();
+            }
+        }
+        else
+        {
+            if( myType == BRUSHFIRE )
+            {
+                //Fill the coords set:
+                if(!reachableFreeSpace)
+                    coords = findObstacleBorders(img); //non-efficient
+                else
+                    coords = findObstacleBorders(img,*reachableFreeSpace); //faster
+            }
+
+            //Do wavefront on the coords set
+            // and fill the map with the resulting values:
+            wave(img,coords);
+        }
+    }
+}
+
+set<tekMap::posType> tekMap::findObstacleBorders(shared_ptr<Image> img)
+{
+    set<posType> resulting_coords;
+    const array<array<int,2>,8> neighbours =
+    {{  {-1,0}, /* W */ {1,0},  /* E */
+        {0,-1}, /* N */ {0,1},  /* S */
+        {-1,-1},/* NW */{1,-1}, /* NE */
+        {1,1},  /* SE */{-1,1}  /* SW */
+     }};
+
+    for( int x = 0; x < (int)(img->getWidth()); ++x) {
+        for( int y = 0; y < (int)(img->getHeight()); ++y) {
+            if( WSPACE_IS_OBSTACLE( img->getPixelValuei(x,y,0) ) ) {
+                for(auto n : neighbours) {
+                    //If neighbour is within image borders:
+                    if( isInImage( img, x+n.at(0), y+n.at(1) ) ) {
+                        //if the neighbour is not an obstacle:
+                        if( !WSPACE_IS_OBSTACLE( img->getPixelValuei(x+n.at(0),y+n.at(1),0) ) ) {
+                            resulting_coords.insert(posType(x,y));
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return resulting_coords;
+}
+
+set<tekMap::posType> tekMap::findObstacleBorders(shared_ptr<Image> img, const posType validFreeSpaceCoord)
+{
+    set<posType> resulting_coords;
+
+    if(!isInImage(img,validFreeSpaceCoord.first,validFreeSpaceCoord.second))
+        cerr << "coord given to findObstacleBorders is not in image." << endl;
+    else {
+        const array<array<int,2>,8> neighbours =
+        {{  {-1,0}, /* W */ {1,0},  /* E */
+            {0,-1}, /* N */ {0,1},  /* S */
+            {-1,-1},/* NW */{1,-1}, /* NE */
+            {1,1},  /* SE */{-1,1}  /* SW */
+         }};
+
+        vector<vector<bool> > visited(img->getWidth(),vector<bool>(img->getHeight(),false));
+        queue<posType> q; //FIFO
+        q.push(validFreeSpaceCoord);
+
+        while(!q.empty())
+        {
+            posType cur = q.front();
+            q.pop();
+            for(auto n : neighbours) {
+                //If neighbour is within image borders:
+                if( isInImage( img, cur.first+n.at(0), cur.second+n.at(1) ) ) {
+                    //if the neighbour is an unvisited non-obstacle:
+                    if( !WSPACE_IS_OBSTACLE( img->getPixelValuei(cur.first+n.at(0),cur.second+n.at(1),0) )
+                            && !( (visited.at(cur.first+n.at(0))).at(cur.second+n.at(1)) ) ) {
+                        //Add it to the wavefront
+                        (visited.at(cur.first+n.at(0))).at(cur.second+n.at(1)) = true;
+                        q.push(posType(cur.first+n.at(0),cur.second+n.at(1)));
+                    }
+                    else {
+                        //If the neighbour WAS an obstacle, it must have been a border.
+                        resulting_coords.insert(cur);
+                    }
+                }
+            }
+        }
+    }
+
+    return resulting_coords;
+}
+
+void tekMap::wave(shared_ptr<Image> img, const set<posType> &goals)
+{
+    const array<array<int,2>,8> neighbours =
+    {{  {-1,0}, /* W */ {1,0},  /* E */
+        {0,-1}, /* N */ {0,1},  /* S */
+        {-1,-1},/* NW */{1,-1}, /* NE */
+        {1,1},  /* SE */{-1,1}  /* SW */
+     }};
+
+    myMap.clear();
+    myMap.resize( img->getWidth(), vector<coordValType>( img->getHeight(),WAVE_VAL_UNV ));
+
+    queue<posType> q; //FIFO
+    for(auto i : goals)
+    {
+        (myMap.at(i.first)).at(i.second) = WAVE_VAL_GOAL;
+        q.push(i);
+    }
+
+    while(!q.empty())
+    {
+        posType cur = q.front();
+        q.pop();
+        for(auto n : neighbours) {
+            //If neighbour is within image borders:
+            if( isInImage( img, cur.first+n.at(0), cur.second+n.at(1) ) ) {
+                //if the neighbour is an unvisited non-obstacle:
+                if( ( !WSPACE_IS_OBSTACLE( img->getPixelValuei(cur.first+n.at(0),cur.second+n.at(1),0) ) )
+                        && (
+                            (  myMap.at(cur.first+n.at(0)).at(cur.second+n.at(1)) == WAVE_VAL_UNV ) //unvisited
+                            || ( ( myMap.at(cur.first+n.at(0)).at(cur.second+n.at(1)) )
+                                 > ( myMap.at(cur.first).at(cur.second) )
+                                 )
+                            )
+                        )
+                {
+                    //increment:
+                    myMap.at(cur.first+n.at(0)).at(cur.second+n.at(1))
+                            = myMap.at(cur.first).at(cur.second) +1;
+                    //Add it to the wavefront
+                    q.push(posType(cur.first+n.at(0),cur.second+n.at(1)));
+                }
+            }
+        }
+    }
+}
+
+
