@@ -42,7 +42,7 @@ public:
         set<posType> coords = set< posType >() , const posType *reachableFreeSpace = nullptr);
 
     /** @brief getType returns the type of map...*/
-    inline mapType getType();
+    inline mapType getType() const;
 
     /** @brief getCoordVal returns the coordinate value... */
     inline coordValType getCoordVal(const posType &ofThisCoord) const;
@@ -93,7 +93,7 @@ protected:
      *
      *    So this is O(N) but performs better than the other findObstacleBorders.
      */
-    set< posType > findObstacleBorders(shared_ptr<Image> img, const posType validFreeSpaceCoord);
+    set< posType > findObstacleBorders(shared_ptr<Image> img, const posType &validFreeSpaceCoord);
 
     /**
      * @brief wave I have no idea if this works. But if it does, it's awesome.

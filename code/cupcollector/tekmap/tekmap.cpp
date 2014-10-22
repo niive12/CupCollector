@@ -11,7 +11,7 @@ inline bool tekMap::isInImage(const shared_ptr<Image> img, const int &x, const i
     return (((int)(img->getWidth()) > x) && ((int)(img->getHeight()) > y));
 }
 
-inline tekMap::mapType tekMap::getType()
+inline tekMap::mapType tekMap::getType() const
 { return myType; }
 
 inline tekMap::coordValType tekMap::getCoordVal(const posType &ofThisCoord) const {
@@ -86,7 +86,7 @@ set<tekMap::posType> tekMap::findObstacleBorders(shared_ptr<Image> img)
     return resulting_coords;
 }
 
-set<tekMap::posType> tekMap::findObstacleBorders(shared_ptr<Image> img, const posType validFreeSpaceCoord)
+set<tekMap::posType> tekMap::findObstacleBorders(shared_ptr<Image> img, const posType &validFreeSpaceCoord)
 {
     set<posType> resulting_coords;
 
