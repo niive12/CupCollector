@@ -38,7 +38,7 @@ public:
      * If reachableFreeSpace is supplied, the border-finding for the Brushfire
      * algorithm will be faster. Thus, it's only useful to supply it for Brushfire maps.
      */
-    tekMap(shared_ptr< Image > img, mapType argMyType = UNINITIALIZED,
+    tekMap(shared_ptr< Image > img, const mapType argMyType = UNINITIALIZED,
         set<posType> coords = set< posType >() , const posType *reachableFreeSpace = nullptr);
 
     /** @brief getType returns the type of map...*/
@@ -76,7 +76,7 @@ protected:
      *
      *    So this is O(N).
      */
-    set< posType > findObstacleBorders(shared_ptr<Image> img);
+    virtual set< posType > findObstacleBorders(shared_ptr<Image> img) const;
 
     /**
      * @brief findObstacleBorders returns all RELEVANT obstacle borders in image.
@@ -93,13 +93,23 @@ protected:
      *
      *    So this is O(N) but performs better than the other findObstacleBorders.
      */
-    set< posType > findObstacleBorders(shared_ptr<Image> img, const posType &validFreeSpaceCoord);
+    virtual inline set< posType > findObstacleBorders(shared_ptr<Image> img, const posType &validFreeSpaceCoord) const;
 
     /**
      * @brief wave I have no idea if this works. But if it does, it's awesome.
      * @param img Image pointer
      * @param goals set of goal coordinates
      */
-    void wave(shared_ptr<Image> img, const set<posType> &goals);
+    virtual void wave(shared_ptr<Image> img, const set<posType> &goals);
+
+    /**
+     * @brief findCoords Finds workspace (freespace) coordinates or relevant borders.
+     * @param img Image pointer
+     * @param withinFreeSpace A coordinate within the freespace, eg. a valid coordinate.
+     * @param borders If true, only coords bordering the freespace are returned,
+     *                if false, only coords within the freespace are returned.
+     * @return Coords bordering or within the freespace, depending on the borders parameter.
+     */
+    virtual set< posType > findCoords(shared_ptr<Image> img, const posType &withinFreeSpace, const bool borders=true) const;
 
 };
