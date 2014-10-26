@@ -4,3 +4,14 @@ code/build-cupcollector-Desktop_Qt_5_3_clang_64bit-Debug/Image.o
 code/build-cupcollector-Desktop_Qt_5_3_clang_64bit-Debug/main.o
 code/build-cupcollector-Desktop_Qt_5_3_clang_64bit-Debug/Makefile
 code/build-cupcollector-Desktop_Qt_5_3_clang_64bit-Debug/PPMLoader.o
+*.log
+*.gz(busy)
+*.aux
+Rapport/master_doc.bbl
+Rapport/master_doc.blg
+Rapport/master_doc.lof
+Rapport/master_doc.lot
+Rapport/master_doc.out
+Rapport/master_doc.tdo
+Rapport/master_doc.synctex.gz
+Rapport/master_doc.pdf
