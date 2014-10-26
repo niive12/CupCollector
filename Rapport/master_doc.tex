@@ -1,0 +1,48 @@
+\input{./content/preamble}
+%lstlistings distance to text
+\lstset{aboveskip=0pt,belowskip=-10pt} %is this too agressive?
+\begin{document}
+
+% Disable indentation
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.7\baselineskip}%
+
+\pagenumbering{gobble}
+\thispagestyle{empty}
+\include{./content/forside}
+%\clearpage
+\fancyfoot{}
+\fancyfoot[CO,CE]{\thepage}
+\pagenumbering{Roman}
+%\include{./content/templates} % Kan bruges til copy paste ind i rapport for forskellige outputs.....
+%\include{./content/ansvarsomraader}
+\input{./content/indholdsfortegnelse}
+
+
+% 
+% \pagestyle{fancy}
+% \fancyfoot{}
+%\fancyfoot[LE,RO]{}
+%\fancyfoot[LO,RE]{}
+%\fancyfoot[LO,RE]{}
+
+
+\pagestyle{fancy}
+\fancyfoot{}
+\pagenumbering{arabic}
+\setcounter{page}{1}
+\fancyfoot[LO,RE]{\thepage}
+
+\include{./content/planning}
+\include{./content/coverage}
+\include{./content/localisation}
+
+
+
+%\bibliography{litteraturliste}
+%%%%%%%%%%%% Appendix %%%%%%%%%%%%
+\include{./content/appen}
+
+
+
+\end{document} 
