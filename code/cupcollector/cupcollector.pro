@@ -7,11 +7,13 @@ CONFIG += c++11
 SOURCES += main.cpp \
     libraries/Image.cpp \
     libraries/PPMLoader.cpp \
-    tekmap/tekmap.cpp
+    tekmap/tekmap.cpp \
+    scanner/scanner.cpp
 
 HEADERS += \
     libraries/Image.hpp \
     libraries/macros.hpp \
     libraries/PPMLoader.hpp \
     assignment.h \
-    tekmap/tekmap.h
+    tekmap/tekmap.h \
+    scanner/scanner.h
