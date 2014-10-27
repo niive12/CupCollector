@@ -23,10 +23,6 @@ using namespace std;
  * @param argv Name of .pgm file to open. Should be complete_map_project.pgm!
  */
 int main(int argc, char** argv) {
-    cout<<"Hello World!"<<endl;
-
-    scanner myscanner(10,10,2);
-
     string filename(argv[1]);
     cout << "Loading image..." << endl;
     shared_ptr<Image> img(PPMLoader::load(filename));
