@@ -14,15 +14,15 @@ inline bool tekMap::isInImage(const shared_ptr<Image> img, const int &x, const i
 inline tekMap::mapType tekMap::getType() const
 { return myType; }
 
-inline tekMap::coordValType &tekMap::cgetCoordVal(const posType &ofThisCoord) const {
+inline tekMap::coordValType &tekMap::cgetCoordVal(const pos_t &ofThisCoord) const {
     return const_cast<coordValType&>(((myMap.at(ofThisCoord.first)).at(ofThisCoord.second)));
 }
-inline tekMap::coordValType &tekMap::getCoordVal(const posType &ofThisCoord) {
+inline tekMap::coordValType &tekMap::getCoordVal(const pos_t &ofThisCoord) {
     return ((myMap.at(ofThisCoord.first)).at(ofThisCoord.second));
 }
 
 
-tekMap::tekMap(shared_ptr< Image > img, const mapType argMyType, set<posType> coords, const posType *reachableFreeSpace)
+tekMap::tekMap(shared_ptr< Image > img, const mapType argMyType, set<pos_t> coords, const pos_t *reachableFreeSpace)
     :myType{ argMyType }
 {
     if( !img )
@@ -59,9 +59,9 @@ tekMap::tekMap(shared_ptr< Image > img, const mapType argMyType, set<posType> co
     }
 }
 
-set<tekMap::posType> tekMap::findObstacleBorders(shared_ptr<Image> img) const
+set<tekMap::pos_t> tekMap::findObstacleBorders(shared_ptr<Image> img) const
 {
-    set<posType> resulting_coords;
+    set<pos_t> resulting_coords;
     const array<array<int,2>,8> neighbours =
     {{  {-1,0}, /* W */ {1,0},  /* E */
         {0,-1}, /* N */ {0,1},  /* S */
@@ -77,7 +77,7 @@ set<tekMap::posType> tekMap::findObstacleBorders(shared_ptr<Image> img) const
                     if( isInImage( img, x+n.at(0), y+n.at(1) ) ) {
                         //if the neighbour is not an obstacle:
                         if( !WSPACE_IS_OBSTACLE( img->getPixelValuei(x+n.at(0),y+n.at(1),0) ) ) {
-                            resulting_coords.insert(posType(x,y));
+                            resulting_coords.insert(pos_t(x,y));
                             break;
                         }
                     }
@@ -89,7 +89,7 @@ set<tekMap::posType> tekMap::findObstacleBorders(shared_ptr<Image> img) const
     return resulting_coords;
 }
 
-void tekMap::wave(shared_ptr<Image> img, const set<posType> &goals)
+void tekMap::wave(shared_ptr<Image> img, const set<pos_t> &goals)
 {
     const array<array<int,2>,8> neighbours =
     {{  {-1,0}, /* W */ {1,0},  /* E */
@@ -101,7 +101,7 @@ void tekMap::wave(shared_ptr<Image> img, const set<posType> &goals)
     myMap.clear();
     myMap.resize( img->getWidth(), vector<coordValType>( img->getHeight(),WAVE_VAL_UNV ));
 
-    queue<posType> q; //FIFO
+    queue<pos_t> q; //FIFO
     for(auto i : goals)
     {
         (myMap.at(i.first)).at(i.second) = WAVE_VAL_GOAL;
@@ -110,7 +110,7 @@ void tekMap::wave(shared_ptr<Image> img, const set<posType> &goals)
 
     while(!q.empty())
     {
-        posType cur = q.front();
+        pos_t cur = q.front();
         q.pop();
         for(auto n : neighbours) {
             //If neighbour is within image borders:
@@ -129,7 +129,7 @@ void tekMap::wave(shared_ptr<Image> img, const set<posType> &goals)
                     myMap.at(cur.first+n.at(0)).at(cur.second+n.at(1))
                             = myMap.at(cur.first).at(cur.second) +1;
                     //Add it to the wavefront
-                    q.push(posType(cur.first+n.at(0),cur.second+n.at(1)));
+                    q.push(pos_t(cur.first+n.at(0),cur.second+n.at(1)));
                 }
             }
         }
@@ -138,9 +138,9 @@ void tekMap::wave(shared_ptr<Image> img, const set<posType> &goals)
 
 
 
-set<tekMap::posType> tekMap::findCoords(shared_ptr<Image> img, const posType &withinFreeSpace, const bool borders) const
+set<tekMap::pos_t> tekMap::findCoords(shared_ptr<Image> img, const pos_t &withinFreeSpace, const bool borders) const
 {
-    set<posType> resulting_coords;
+    set<pos_t> resulting_coords;
 
     if(!isInImage(img,withinFreeSpace.first,withinFreeSpace.second))
         cerr << "coord given to findCoords is not in image." << endl;
@@ -153,12 +153,12 @@ set<tekMap::posType> tekMap::findCoords(shared_ptr<Image> img, const posType &wi
          }};
 
         vector<vector<bool> > visited(img->getWidth(),vector<bool>(img->getHeight(),false));
-        queue<posType> q; //FIFO
+        queue<pos_t> q; //FIFO
         q.push(withinFreeSpace);
 
         while(!q.empty())
         {
-            posType cur = q.front();
+            pos_t cur = q.front();
             q.pop();
 
             if(!borders)
@@ -172,7 +172,7 @@ set<tekMap::posType> tekMap::findCoords(shared_ptr<Image> img, const posType &wi
                             && !( (visited.at(cur.first+n.at(0))).at(cur.second+n.at(1)) ) ) {
                         //Add it to the wavefront
                         (visited.at(cur.first+n.at(0))).at(cur.second+n.at(1)) = true;
-                        q.push(posType(cur.first+n.at(0),cur.second+n.at(1)));
+                        q.push(pos_t(cur.first+n.at(0),cur.second+n.at(1)));
                     }
                     else if(borders){
                         //If the neighbour WAS an obstacle, it must have been a border.
@@ -186,7 +186,7 @@ set<tekMap::posType> tekMap::findCoords(shared_ptr<Image> img, const posType &wi
     return resulting_coords;
 }
 
-inline set<tekMap::posType> tekMap::findObstacleBorders(shared_ptr<Image> img, const posType &validFreeSpaceCoord) const
+inline set<tekMap::pos_t> tekMap::findObstacleBorders(shared_ptr<Image> img, const pos_t &validFreeSpaceCoord) const
 {
     return findCoords(img,validFreeSpaceCoord,true);
 }

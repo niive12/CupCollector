@@ -20,9 +20,10 @@ Rapport/master_doc.synctex.gz
 Rapport/master_doc.pdf
 >>>>>>> a4a04a5fa8a6697c99a56349cd8019c45b721504
 code/build-cupcollector-Desktop_Qt_5_3_clang_64bit-Debug/scanner.o
-<<<<<<< HEAD
-code/build-cupcollector-Desktop_Qt_5_3_clang_64bit-Debug/complete_map_project.pgm
-=======
 *.autosave
+<<<<<<< HEAD
 >>>>>>> d39e180b7ab7bd746b105989d869852b48167c7f
 Rapport/master_doc.texnicle
+=======
+Rapport/master_doc.toc
+>>>>>>> 880e2cf5722858b9d39953232659083b1a6ad90b

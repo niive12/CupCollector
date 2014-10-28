@@ -4,7 +4,7 @@
 
 scanner::scanner(unsigned int x0, unsigned int y0, int r){
     int size = 2*r+1*2*r+1; //Always big enough, because it is big enough for square with sides 2*r+1
-    coordinate_array = new tekMap::posType[size];
+    coordinate_array = new tekMap::pos_t[size];
 
     std::cout << "Scanner - Hello World!"<<std::endl;
     unsigned int x,y;
@@ -14,8 +14,8 @@ scanner::scanner(unsigned int x0, unsigned int y0, int r){
         y = y0 + int(r * sin(i*M_PI/180));
 
         //Will put in lots of duplicates, and only the circumference and not all the coordinates in the cicle
+        coordinate_array[i] = tekMap::pos_t(x,y);
         //Should not be this way.....
-        coordinate_array[i] = tekMap::posType(x,y);
 
         /*if(x!=x1 || y!=y1){
             cout<<"x: "<<x<<", y: "<<y<<endl;
