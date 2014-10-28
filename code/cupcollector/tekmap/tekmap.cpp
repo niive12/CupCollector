@@ -14,11 +14,31 @@ inline bool tekMap::isInImage(const shared_ptr<Image> img, const int &x, const i
 inline tekMap::mapType tekMap::getType() const
 { return myType; }
 
-inline tekMap::coordValType &tekMap::cgetCoordVal(const pos_t &ofThisCoord) const {
-    return const_cast<coordValType&>(((myMap.at(ofThisCoord.first)).at(ofThisCoord.second)));
+
+inline tekMap::coordValType &tekMap::const_coordVal(const pos_t::x_type &x, const pos_t::y_type &y) const {
+    return const_cast<coordValType&>(((myMap.at(x)).at(y)));
 }
-inline tekMap::coordValType &tekMap::getCoordVal(const pos_t &ofThisCoord) {
-    return ((myMap.at(ofThisCoord.first)).at(ofThisCoord.second));
+inline tekMap::coordValType &tekMap::const_coordVal(pos_t::x_type &&x, pos_t::y_type &&y) const {
+    return const_cast<coordValType&>(((myMap.at(move(x))).at(move(y))));
+}
+inline tekMap::coordValType &tekMap::coordVal(const pos_t::x_type &x, const pos_t::y_type &y) {
+    return ((myMap.at(x)).at(y));
+}
+inline tekMap::coordValType &tekMap::coordVal(pos_t::x_type &&x, pos_t::y_type &&y) {
+    return ((myMap.at(move(x))).at(move(y)));
+}
+
+inline tekMap::coordValType &tekMap::const_coordVal(const pos_t &ofThisCoord) const {
+    return const_coordVal(ofThisCoord.first,ofThisCoord.second);
+}
+inline tekMap::coordValType &tekMap::const_coordVal(pos_t &&ofThisCoord) const {
+    return const_coordVal(move(ofThisCoord.first),move(ofThisCoord.second));
+}
+inline tekMap::coordValType &tekMap::coordVal(const pos_t &ofThisCoord) {
+    return coordVal(ofThisCoord.first,ofThisCoord.second);
+}
+inline tekMap::coordValType &tekMap::coordVal(pos_t &&ofThisCoord) {
+    return coordVal(move(ofThisCoord.first),move(ofThisCoord.second));
 }
 
 

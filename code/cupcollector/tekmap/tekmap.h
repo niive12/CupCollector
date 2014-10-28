@@ -19,11 +19,35 @@ using namespace std;
 class tekMap
 {
 public:
-    /** @brief posType aliases the integer coordinate type (a pair of uints) */
-    using pos_t = pair< unsigned int, unsigned int >;
-
+    using coordIndexType = unsigned int;
     /** @brief The value type for each pixel */
     using coordValType = long int;
+
+    struct pos_t : pair<coordIndexType, coordIndexType> {
+        using x_type = first_type;
+        using y_type = second_type;
+        /** @brief to get reference to x-coordinate of pos_t coord, do coord.x(). */
+        x_type &x() {return first;}
+        y_type &y() {return second;}
+        /** @brief to get const-reference to x-coordinate of pos_t coord, do coord.cx(). */
+        x_type &cx() const {return const_cast<first_type&>(first);}
+        y_type &cy() const {return const_cast<second_type&>(second);}
+
+        /** Lvalue constructor, calls base class constructor */
+        pos_t(const x_type &inx, const y_type &iny):pair::pair(inx,iny) {}
+        /** Rvalue constructor, calls base class constructor */
+        pos_t(x_type &&inx, y_type &&iny):pair::pair(move(inx),move(iny)) {}
+        /** Default constructor, calls base class constructor */
+        pos_t():pair::pair() {}
+        /** Copy constructor, calls base class constructor */
+        pos_t(const pair<x_type,y_type> &in):pair(in) {}
+        /** Move constructor, calls base class constructor */
+        pos_t(pair<x_type,y_type> &&in):pair(move(in)) {}
+
+        pos_t make_pos(const x_type &inx, const y_type &iny) {return make_pair(inx,iny);}
+        pos_t make_pos(x_type &&inx, y_type &&iny) {return make_pair(move(inx),move(iny));}
+    } ;
+    /** @brief posType aliases the integer coordinate type (a pair of uints) */
 
     /** @brief mapType denotes the different map types... */
     typedef enum {UNINITIALIZED, WAVEFRONT, BRUSHFIRE, PIXELSHADE} mapType;
@@ -45,8 +69,16 @@ public:
     inline mapType getType() const;
 
     /** @brief getCoordVal returns the coordinate value... */
-    inline coordValType &cgetCoordVal(const pos_t &ofThisCoord) const;
-    inline coordValType &getCoordVal(const pos_t &ofThisCoord);
+    inline coordValType &const_coordVal(const pos_t::x_type &x, const pos_t::y_type &y) const;
+    inline coordValType &const_coordVal(pos_t::x_type &&x, pos_t::y_type &&y) const;
+    inline coordValType &coordVal(const pos_t::x_type &x, const pos_t::y_type &y);
+    inline coordValType &coordVal(pos_t::x_type &&x, pos_t::y_type &&y);
+    inline coordValType &const_coordVal(const pos_t &ofThisCoord) const;
+    inline coordValType &const_coordVal(pos_t &&ofThisCoord) const;
+    inline coordValType &coordVal(const pos_t &ofThisCoord);
+    inline coordValType &coordVal(pos_t &&ofThisCoord);
+
+
 
 
 protected:

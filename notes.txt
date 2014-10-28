@@ -66,9 +66,12 @@ Summary:
 			- Implementation of brushfire
 			- Implementation of using brushfire to find door locations.
 		-Michael:
-			- 
+			- He has not made a shit. Except report LaTeX.
+			  He is confused with preamble.
 		-Lukas:
-			- 
+			- Funny robot header
+			  It's missing some robot constructor parameters such as robot radius etc.
+			  Functions could be optimized...
 		-Mikkel:
 			- scanner.h and scanner.cpp almost done.
 			  ctor takes x and y and radius and makes an array of coordinates inside circle.
@@ -79,3 +82,27 @@ Summary:
 
 	- Robot behavior decision: Make it pedagogical with respect to rooms vs. hallways.
 				   Also, make it travel_distance effective.
+
+	- Document your code! JavaDoc is mandatory!
+
+	- Weird Cannys algorithm vs. Brushfire local maxima: Brushfire local maxima wins!
+
+	- If vertex-edge graph representation of map becomes necessary,
+	  it should be easy to implement in the tekMap class; The interface should not change.
+
+	- Work for next time:
+		-Mikael:
+			- Assist Nikolaj.
+			- Make intuitive pos_t.
+		-Nikolaj:
+			- Merge doorfinder.
+		-Michael:
+			- Update the preamble!
+			- Update LaTeX structure.
+			- Brushfire local maxima to find rooms.
+		-Lukas:
+			- Document and update robot!
+			- Make some implementation.
+			- Stop using notepad or Notesblok instead of Qt.
+		-Mikkel:
+			- Finish scanner.
