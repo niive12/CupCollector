@@ -1,6 +1,6 @@
 /** @file */
 #include "scanner.h"
-#include "math.h"
+#include <cmath>
 
 scanner::scanner(unsigned int x0, unsigned int y0, int r){
     int size = 2*r+1*2*r+1; //Always big enough, because it is big enough for square with sides 2*r+1
@@ -10,10 +10,11 @@ scanner::scanner(unsigned int x0, unsigned int y0, int r){
     unsigned int x,y;
     unsigned int x1,y1;
     for(int i = 0; i< 360; i++){//Smaller steps later???
-        x = x0 + int( r * cos(i*M_PI/180));
+        x = x0 + int(r * cos(i*M_PI/180));
         y = y0 + int(r * sin(i*M_PI/180));
 
         //Will put in lots of duplicates, and only the circumference and not all the coordinates in the cicle
+        //Should not be this way.....
         coordinate_array[i] = tekMap::posType(x,y);
 
         /*if(x!=x1 || y!=y1){
