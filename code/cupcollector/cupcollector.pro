@@ -16,4 +16,6 @@ HEADERS += \
     libraries/PPMLoader.hpp \
     assignment.h \
     tekmap/tekmap.h \
-    scanner/scanner.h
+    scanner/scanner.h \
+    robot/robot.h
+
