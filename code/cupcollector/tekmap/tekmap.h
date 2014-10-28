@@ -45,7 +45,9 @@ public:
     inline mapType getType() const;
 
     /** @brief getCoordVal returns the coordinate value... */
-    inline coordValType getCoordVal(const posType &ofThisCoord) const;
+    inline coordValType &cgetCoordVal(const posType &ofThisCoord) const;
+    inline coordValType &getCoordVal(const posType &ofThisCoord);
+
 
 protected:
     /** @brief myType is this map's type*/
