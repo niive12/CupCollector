@@ -13,8 +13,8 @@ public:
 
 	// functionality
 	bool move(int direction);
-	bool pickupCup(position cupPosition);
-	bool startCupScan(vector <position> * cups);
+	bool pickupCup(pos_t cupPosition);
+	bool startCupScan(vector <pos_t> * cups);
 	bool emptyCupCarrier();
 
 	void cleanMapForCups();
@@ -25,7 +25,7 @@ public:
 	int getRobotWidth();
 	int getCupSearchRadius();
 	int getCupPickRadius();
-	position getRobotPos();
+	pos_t getRobotPos();
 	double getDistanceWalked();
 
 	// set'ers
@@ -43,9 +43,7 @@ private:
 	int cupPickRadius;
 	double distanceWalked;
 	// parameters for robots position
-	position robotPosition;
-
-
+	pos_t robotPosition;
 };
 
 
