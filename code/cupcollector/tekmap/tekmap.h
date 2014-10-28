@@ -20,7 +20,7 @@ class tekMap
 {
 public:
     /** @brief posType aliases the integer coordinate type (a pair of uints) */
-    using posType = pair< unsigned int, unsigned int >;
+    using pos_t = pair< unsigned int, unsigned int >;
 
     /** @brief The value type for each pixel */
     using coordValType = long int;
@@ -39,14 +39,14 @@ public:
      * algorithm will be faster. Thus, it's only useful to supply it for Brushfire maps.
      */
     tekMap(shared_ptr< Image > img, const mapType argMyType = UNINITIALIZED,
-        set<posType> coords = set< posType >() , const posType *reachableFreeSpace = nullptr);
+        set<pos_t> coords = set< pos_t >() , const pos_t *reachableFreeSpace = nullptr);
 
     /** @brief getType returns the type of map...*/
     inline mapType getType() const;
 
     /** @brief getCoordVal returns the coordinate value... */
-    inline coordValType &cgetCoordVal(const posType &ofThisCoord) const;
-    inline coordValType &getCoordVal(const posType &ofThisCoord);
+    inline coordValType &cgetCoordVal(const pos_t &ofThisCoord) const;
+    inline coordValType &getCoordVal(const pos_t &ofThisCoord);
 
 
 protected:
@@ -78,7 +78,7 @@ protected:
      *
      *    So this is O(N).
      */
-    virtual set< posType > findObstacleBorders(shared_ptr<Image> img) const;
+    virtual set< pos_t > findObstacleBorders(shared_ptr<Image> img) const;
 
     /**
      * @brief findObstacleBorders returns all RELEVANT obstacle borders in image.
@@ -95,14 +95,14 @@ protected:
      *
      *    So this is O(N) but performs better than the other findObstacleBorders.
      */
-    virtual inline set< posType > findObstacleBorders(shared_ptr<Image> img, const posType &validFreeSpaceCoord) const;
+    virtual inline set< pos_t > findObstacleBorders(shared_ptr<Image> img, const pos_t &validFreeSpaceCoord) const;
 
     /**
      * @brief wave I have no idea if this works. But if it does, it's awesome.
      * @param img Image pointer
      * @param goals set of goal coordinates
      */
-    virtual void wave(shared_ptr<Image> img, const set<posType> &goals);
+    virtual void wave(shared_ptr<Image> img, const set<pos_t> &goals);
 
     /**
      * @brief findCoords Finds workspace (freespace) coordinates or relevant borders.
@@ -112,6 +112,6 @@ protected:
      *                if false, only coords within the freespace are returned.
      * @return Coords bordering or within the freespace, depending on the borders parameter.
      */
-    virtual set< posType > findCoords(shared_ptr<Image> img, const posType &withinFreeSpace, const bool borders=true) const;
+    virtual set< pos_t > findCoords(shared_ptr<Image> img, const pos_t &withinFreeSpace, const bool borders=true) const;
 
 };

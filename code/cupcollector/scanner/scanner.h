@@ -44,5 +44,5 @@ public:
 
 private:
     /** @brief coordinate_array will point to an array with all coordinate inside the circle, when the constructor has run */
-    tekMap::posType* coordinate_array = nullptr;
+    tekMap::pos_t* coordinate_array = nullptr;
 };

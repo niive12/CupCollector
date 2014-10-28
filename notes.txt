@@ -63,12 +63,19 @@ Summary:
 		-Mikael:
 			- tekMap class
 		-Nikolaj:
-			-  
+			- Implementation of brushfire
+			- Implementation of using brushfire to find door locations.
 		-Michael:
 			- 
 		-Lukas:
 			- 
 		-Mikkel:
-			- 
+			- scanner.h and scanner.cpp almost done.
+			  ctor takes x and y and radius and makes an array of coordinates inside circle.
+			  scan(x,y) scans and uses the circle from ctor.
+			  Constructor is not done yet.
 
 	- WE USE shared_ptr's! YAY!
+
+	- Robot behavior decision: Make it pedagogical with respect to rooms vs. hallways.
+				   Also, make it travel_distance effective.
