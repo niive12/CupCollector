@@ -55,3 +55,20 @@ Summary:
 	- Mikkel makes the scanner class.
 	- Michael does some LaTeX work.
 	- Lukas makes the robot signature header.
+
+Third meeting (28th of october):
+Attendants: Entire group
+Summary:
+	- Work done since last time:
+		-Mikael:
+			- tekMap class
+		-Nikolaj:
+			-  
+		-Michael:
+			- 
+		-Lukas:
+			- 
+		-Mikkel:
+			- 
+
+	- WE USE shared_ptr's! YAY!
