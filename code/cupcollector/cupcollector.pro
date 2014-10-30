@@ -7,7 +7,6 @@ CONFIG += c++11
 SOURCES += main.cpp \
     libraries/Image.cpp \
     libraries/PPMLoader.cpp \
-    tekmap/tekmap.cpp \
     scanner/scanner.cpp
 
 HEADERS += \
@@ -15,7 +14,7 @@ HEADERS += \
     libraries/macros.hpp \
     libraries/PPMLoader.hpp \
     assignment.h \
-    tekmap/tekmap.h \
     scanner/scanner.h \
-    robot/robot.h
+    robot/robot.h \
+    tekmap/tekmap.hpp
 

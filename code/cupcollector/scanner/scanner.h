@@ -8,7 +8,7 @@
 #pragma once
 
 #include <iostream>
-#include "tekmap/tekmap.h"
+#include "tekmap/tekmap.hpp"
 
 using namespace std;
 
@@ -45,6 +45,6 @@ public:
 
 private:
     /** @brief coordinate_array will point to an array with all coordinate inside the circle, when the constructor has run */
-    tekMap::pos_t* coordinate_array = nullptr;
+    pos_t* coordinate_array = nullptr;
     //auto coordinate_array = make_shared<tekMap::pos_t>;
 };
