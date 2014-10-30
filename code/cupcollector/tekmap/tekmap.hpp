@@ -22,7 +22,6 @@ using namespace rw::sensor;
 using namespace std;
 
 using coordIndexType = unsigned int;
-
 struct pos_t : pair<coordIndexType, coordIndexType> {
     using x_type = first_type;
     using y_type = second_type;
@@ -314,3 +313,6 @@ protected:
     }
 
 };
+using brushfire_map = tekMap<unsigned char>;
+using wavefront_map = tekMap<long unsigned int>;
+using pixelshade_map = tekMap<unsigned char>;
