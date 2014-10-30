@@ -126,6 +126,11 @@ public:
     inline coordValType &coordVal(pos_t &&ofThisCoord)
     { return coordVal(move(ofThisCoord.first),move(ofThisCoord.second)); }
 
+    inline size_t getHeight() const
+    { return (myMap.at(0)).size(); }
+    inline size_t getWidth() const
+    { return myMap.size(); }
+
 protected:
     /** @brief myType is this map's type*/
     mapType myType;
@@ -309,7 +314,7 @@ protected:
             }
         }
 
-        return resulting_coords;
+        return move(resulting_coords);
     }
 
 };

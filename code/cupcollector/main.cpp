@@ -11,8 +11,8 @@
 #include <iostream>
 #include "libraries/Image.hpp"
 #include "libraries/PPMLoader.hpp"
-#include "scanner/scanner.h"
 #include <memory>
+#include "doordetector/doordetector.h"
 
 using namespace rw::sensor;
 using namespace rw::loaders;
@@ -23,11 +23,28 @@ using namespace std;
  * @param argv Name of .pgm file to open. Should be complete_map_project.pgm!
  */
 int main(int argc, char** argv) {
+    (void)argc;
     string filename(argv[1]);
     cout << "Loading image..." << endl;
     shared_ptr<Image> img(PPMLoader::load(filename));
     cout << "Image size: " << img->getWidth()
          << " x " << img->getHeight() << endl;
+
+    cin.get(); cout << "constructing brushfire map " << endl;
+    pos_t hej = {ROBOT_START_X,ROBOT_START_Y};
+    brushfire_map lolmap(img,brushfire_map::BRUSHFIRE,set< pos_t >(),&hej);
+    cin.get(); cout << "constructing doorDetector " << endl;
+    doorDetector mydetective;
+    cin.get(); cout << "Finding The Doors " << endl;
+    vector<pos_t> The_Doors = mydetective.detect_doorways(lolmap);
+    cin.get(); cout << "Painting The Doors" << endl;
+    for(auto i : The_Doors)
+    {
+        img->setPixel8U(i.x(),i.y(),5);
+    }
+    cout << "saving The Doors..." << endl;
+    img->saveAsPGM("The_Doors.pgm");
+
     return 0;
 }
 

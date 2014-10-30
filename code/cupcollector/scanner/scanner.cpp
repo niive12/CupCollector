@@ -10,8 +10,8 @@ scanner::scanner(unsigned int x0, unsigned int y0, int r){
     unsigned int x,y;
     unsigned int x1,y1;
     for(int i = 0; i< 360; i++){//Smaller steps later???
-        x = x0 + int(r * cos(i*M_PI/180));
-        y = y0 + int(r * sin(i*M_PI/180));
+        x = x0 + int(r * cos(i*3.14/180));
+        y = y0 + int(r * sin(i*3.14/180));
 
         //Will put in lots of duplicates, and only the circumference and not all the coordinates in the cicle
         coordinate_array[i] = pos_t(x,y);

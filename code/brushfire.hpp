@@ -4,9 +4,7 @@
 #include "settings/macros.hpp"
 #include <string>
 
-#define DOORWAY_SIZE        9
-#define DOOR_UNCERTAINTY    2
-#define COFFEE_CUP          150
+
 
 using namespace rw::sensor;
 

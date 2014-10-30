@@ -7,7 +7,8 @@ CONFIG += c++11
 SOURCES += main.cpp \
     libraries/Image.cpp \
     libraries/PPMLoader.cpp \
-    scanner/scanner.cpp
+    scanner/scanner.cpp \
+    doordetector/doordetector.cpp
 
 HEADERS += \
     libraries/Image.hpp \
@@ -16,5 +17,6 @@ HEADERS += \
     assignment.h \
     scanner/scanner.h \
     robot/robot.h \
-    tekmap/tekmap.hpp
+    tekmap/tekmap.hpp \
+    doordetector/doordetector.h
 

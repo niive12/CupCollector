@@ -1,5 +1,7 @@
 /** @file */
 #pragma once
+#define ROBOT_START_X               2626
+#define ROBOT_START_Y               1313
 #define ROBOT_DYNAMICS_RADIUS       4   // 0.4 meters = 4 pixels radius
 #define ROBOT_SCANNER_RADIUS        20  // 2 meters = 20 pixels radius
 #define ROBOT_ARM_RADIUS            10  // 1 meter = 10 pixels radius
@@ -17,6 +19,9 @@
 #define WSPACE_IS_ELEVATOR( NUM )   ( (NUM==128)||(NUM==129)||(NUM==130)||(NUM==131)||(NUM==132) )
 #define WSPACE_IS_OBSTACLE( NUM )   ( !( WSPACE_IS_FREE(NUM)|| \
     WSPACE_IS_CUP(NUM)||WSPACE_IS_OL_STATION(NUM)||WSPACE_IS_ELEVATOR(NUM) ) )
+
+#define WSPACE_DOORWAY_SIZE        7
+#define WSPACE_DOOR_UNCERTAINTY    2
 
 #define WAVE_VAL_UNV           -1
 #define WAVE_VAL_GOAL          0
