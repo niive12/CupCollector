@@ -13,6 +13,7 @@
 #include "libraries/PPMLoader.hpp"
 #include <memory>
 #include "doordetector/doordetector.h"
+#include "scanner/scanner.h"
 
 using namespace rw::sensor;
 using namespace rw::loaders;
@@ -73,6 +74,12 @@ int main(int argc, char** argv) {
     img->saveAsPGM("The_Doors.pgm");
 
     original.shade(img);
+
+    pos_t two_cups = {1320,1257};
+    cupScanner cs;
+    cout << "\nNumber of cups at ( " << two_cups.cx() << " , "
+         << two_cups.cy() << " ): " << cs.scan(two_cups,original)
+         << ", say again: " << cs.scan(two_cups,original) << endl;
 
     testTekMapConstructors(filename);
 

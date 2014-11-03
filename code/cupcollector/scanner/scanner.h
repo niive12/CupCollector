@@ -9,6 +9,7 @@
 
 #include <iostream>
 #include "tekmap/tekmap.hpp"
+#include <forward_list>
 
 using namespace std;
 
@@ -47,4 +48,14 @@ private:
     /** @brief coordinate_array will point to an array with all coordinate inside the circle, when the constructor has run */
     pos_t* coordinate_array = nullptr;
     //auto coordinate_array = make_shared<tekMap::pos_t>;
+};
+
+
+
+struct cupScanner {
+    size_t scan(pos_t center, const pixelshade_map &scanmap,
+              unsigned int radius=ROBOT_SCANNER_RADIUS);
+private:
+    unsigned int r = -1;
+    forward_list<pos_t> circle;
 };

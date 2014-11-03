@@ -20,6 +20,7 @@
 
 
 
+
 using namespace rw::sensor;
 using namespace std;
 
@@ -47,8 +48,17 @@ struct pos_t : pair<coordIndexType, coordIndexType> {
 
     pos_t make_pos(const x_type &inx, const y_type &iny) {return make_pair(inx,iny);}
     pos_t make_pos(x_type &&inx, y_type &&iny) {return make_pair(move(inx),move(iny));}
-} ;
 
+    friend const pos_t operator+(const pos_t& a, const pos_t& b)
+    { return move(pos_t(a.cx()+b.cx(),a.cy()+b.cy())); }
+    friend const pos_t operator+(pos_t&& a, pos_t&& b)
+    { return move(pos_t(a.cx()+b.cx(),a.cy()+b.cy())); }
+    friend const pos_t operator-(const pos_t& a, const pos_t& b)
+    { return move(pos_t(a.cx()-b.cx(),a.cy()-b.cy())); }
+    friend const pos_t operator-(pos_t&& a, pos_t&& b)
+    { return move(pos_t(a.cx()-b.cx(),a.cy()-b.cy())); }
+
+} ;
 
     /** @brief coordValType The value type for each pixel */
 template<typename coordValType=long int>
