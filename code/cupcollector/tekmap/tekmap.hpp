@@ -21,7 +21,7 @@
 using namespace rw::sensor;
 using namespace std;
 
-using coordIndexType = unsigned int;
+using coordIndexType = long int;
 struct pos_t : pair<coordIndexType, coordIndexType> {
     using x_type = first_type;
     using y_type = second_type;
