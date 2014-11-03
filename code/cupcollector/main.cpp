@@ -25,14 +25,16 @@ using namespace std;
 int main(int argc, char** argv) {
     (void)argc;
     string filename(argv[1]);
+    pos_t hej = {ROBOT_START_X,ROBOT_START_Y};
+
     cout << "Loading image..." << endl;
     shared_ptr<Image> img(PPMLoader::load(filename));
     cout << "Image size: " << img->getWidth()
          << " x " << img->getHeight() << endl;
 
     cin.get(); cout << "constructing brushfire map " << endl;
-    pos_t hej = {ROBOT_START_X,ROBOT_START_Y};
     brushfire_map lolmap(img,brushfire_map::BRUSHFIRE,set< pos_t >(),&hej);
+    cout << "done with bf map" << endl;
     cin.get(); cout << "constructing doorDetector " << endl;
     doorDetector mydetective;
     cin.get(); cout << "Finding The Doors " << endl;
@@ -44,6 +46,14 @@ int main(int argc, char** argv) {
     }
     cout << "saving The Doors..." << endl;
     img->saveAsPGM("The_Doors.pgm");
+
+    shared_ptr<Image> img2(PPMLoader::load(filename));
+    set<pos_t> cantina;
+    cantina.insert(hej);
+    //wavefront_map lolmap2(img2,wavefront_map::WAVEFRONT,cantina);
+    brushfire_map lolmap2(img2,brushfire_map::BRUSHFIRE,set<pos_t>(),&hej);
+    lolmap2.shade(img2);
+    img2->saveAsPGM("shade.pgm");
 
     return 0;
 }

@@ -15,6 +15,7 @@
 #include <set>
 #include <queue>
 #include <iostream>
+#include <limits>
 
 
 
@@ -85,6 +86,7 @@ public:
                         ( myMap.at(x) ).at(y) = (coordValType)( img->getPixelValuei(x,y,0) );
                     ( myMap.at(x) ).shrink_to_fit();
                 }
+
             }
             else
             {
@@ -95,6 +97,13 @@ public:
                         coords = findObstacleBorders(img); //non-efficient
                     else
                         coords = findObstacleBorders(img,*reachableFreeSpace); //faster
+
+//                    for(size_t x=0; x<img->getWidth(); ++x)
+//                        for(size_t y=0; y<img->getHeight(); ++y)
+//                            img->setPixel8U(x,y,255);
+//                    for(auto i:coords)
+//                        img->setPixel8U(i.first,i.second,0);
+//                    img->saveAsPGM("borders.pgm");
                 }
 
                 //Do wavefront on the coords set
@@ -131,6 +140,26 @@ public:
     inline size_t getWidth() const
     { return myMap.size(); }
 
+    void shade(shared_ptr<Image> img)
+    {
+        coordValType mymin=numeric_limits<coordValType>::max();
+        coordValType mymax=numeric_limits<coordValType>::min();
+        for(unsigned int x=0; x<getWidth(); ++x)
+            for(unsigned int y=0; y<getHeight(); ++y) {
+                if(myMap[x][y]>mymax && myMap[x][y]!=WAVE_VAL_UNV)
+                    mymax=myMap[x][y];
+                if(myMap[x][y]<mymin)
+                    mymin=myMap[x][y];
+            }
+        for(unsigned int x=0; x<getWidth(); ++x)
+            for(unsigned int y=0; y<getHeight(); ++y) {
+                img->setPixel8U(x,y,
+                                (unsigned char)(((myMap[x][y]==WAVE_VAL_UNV?(mymax-mymin):myMap[x][y])*255)/((mymax-mymin)))
+                                );
+            }
+    }
+
+
 protected:
     /** @brief myType is this map's type*/
     mapType myType;
@@ -146,7 +175,10 @@ protected:
      * @return true if pixel is inside image.
      */
     inline bool isInImage(const shared_ptr<Image> img, const int &x, const int &y) const
-    {     return (((int)(img->getWidth()) > x) && ((int)(img->getHeight()) > y)); }
+    {
+        return ((((int)(img->getWidth()) > x) && ((int)(img->getHeight()) > y))
+                  &&((x>0) && (y>0)) );
+    }
 
     /**
      * @brief findObstacleBorders returns all obstacle borders in image.
@@ -222,17 +254,17 @@ protected:
             {-1,-1},/* NW */{1,-1}, /* NE */
             {1,1},  /* SE */{-1,1}  /* SW */
          }};
-
         myMap.clear();
-        myMap.resize( img->getWidth(), vector<coordValType>( img->getHeight(),WAVE_VAL_UNV ));
-
+        myMap.resize( img->getWidth(), vector<coordValType>( img->getHeight() , WAVE_VAL_UNV));
+        vector<vector<bool> > visited(img->getWidth(),vector<bool>(img->getHeight(),false));
         queue<pos_t> q; //FIFO
-        for(auto i : goals)
-        {
-            (myMap.at(i.first)).at(i.second) = WAVE_VAL_GOAL;
+//        for(size_t x=0;x<img->getWidth();++x)
+//            for(size_t y=0;y<img->getHeight();++y)
+//                (myMap[x])[y] = WAVE_VAL_UNV;
+        for(auto i : goals) {
+            (myMap[i.first])[i.second] = WAVE_VAL_GOAL;
             q.push(i);
         }
-
         while(!q.empty())
         {
             pos_t cur = q.front();
@@ -242,22 +274,21 @@ protected:
                 if( isInImage( img, cur.first+n.at(0), cur.second+n.at(1) ) ) {
                     //if the neighbour is an unvisited non-obstacle:
                     if( ( !WSPACE_IS_OBSTACLE( img->getPixelValuei(cur.first+n.at(0),cur.second+n.at(1),0) ) )
-                            && (
-                                (  myMap.at(cur.first+n.at(0)).at(cur.second+n.at(1)) == WAVE_VAL_UNV ) //unvisited
-                                || ( ( myMap.at(cur.first+n.at(0)).at(cur.second+n.at(1)) )
-                                     > ( myMap.at(cur.first).at(cur.second) )
-                                     )
-                                )
+                            && ( !( (visited[cur.first+n.at(0)])[cur.second+n.at(1)] ) )
+                            && ((myMap[cur.first+n.at(0)])[cur.second+n.at(1)] != WAVE_VAL_GOAL)
                             )
                     {
                         //increment:
-                        myMap.at(cur.first+n.at(0)).at(cur.second+n.at(1))
-                                = myMap.at(cur.first).at(cur.second) +1;
+                        (myMap[cur.first+n.at(0)])[cur.second+n.at(1)]
+                                = (myMap[cur.first])[cur.second] +1;
+                        (visited[cur.first+n.at(0)])[cur.second+n.at(1)]=true;
+
                         //Add it to the wavefront
                         q.push(pos_t(cur.first+n.at(0),cur.second+n.at(1)));
                     }
                 }
             }
+            (visited[cur.first])[cur.second]=true;
         }
     }
 
@@ -285,6 +316,7 @@ protected:
 
             vector<vector<bool> > visited(img->getWidth(),vector<bool>(img->getHeight(),false));
             queue<pos_t> q; //FIFO
+
             q.push(withinFreeSpace);
 
             while(!q.empty())
@@ -299,18 +331,19 @@ protected:
                     //If neighbour is within image borders:
                     if( isInImage( img, cur.first+n.at(0), cur.second+n.at(1) ) ) {
                         //if the neighbour is an unvisited non-obstacle:
-                        if( !WSPACE_IS_OBSTACLE( img->getPixelValuei(cur.first+n.at(0),cur.second+n.at(1),0) )
-                                && !( (visited.at(cur.first+n.at(0))).at(cur.second+n.at(1)) ) ) {
+                        if( (!WSPACE_IS_OBSTACLE( img->getPixelValuei(cur.first+n.at(0),cur.second+n.at(1),0) ))
+                                && (!( (visited[cur.first+n.at(0)])[cur.second+n.at(1)] ) ) ) {
                             //Add it to the wavefront
-                            (visited.at(cur.first+n.at(0))).at(cur.second+n.at(1)) = true;
                             q.push(pos_t(cur.first+n.at(0),cur.second+n.at(1)));
+                            (visited[cur.first+n.at(0)])[cur.second+n.at(1)]=true;
                         }
-                        else if(borders){
+                        if(borders&&WSPACE_IS_OBSTACLE( img->getPixelValuei(cur.first+n.at(0),cur.second+n.at(1),0) )){
                             //If the neighbour WAS an obstacle, it must have been a border.
                             resulting_coords.insert(cur);
                         }
                     }
                 }
+                (visited[cur.first])[cur.second] = true;
             }
         }
 
