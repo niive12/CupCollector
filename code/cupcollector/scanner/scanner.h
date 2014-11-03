@@ -53,6 +53,13 @@ private:
 
 
 struct cupScanner {
+    /**
+     * @brief scan Returns the number of cups within scanner radius.
+     * @param center Center of scanner circle.
+     * @param scanmap The pixel map to scan in
+     * @param radius Radius in pixels of scanner.
+     * @return Number of cups within radius.
+     */
     size_t scan(pos_t center, const pixelshade_map &scanmap,
               unsigned int radius=ROBOT_SCANNER_RADIUS);
 private:
