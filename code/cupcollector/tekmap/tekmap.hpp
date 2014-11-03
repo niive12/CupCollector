@@ -53,6 +53,24 @@ template<typename coordValType=long int>
 class tekMap
 {
 public:
+
+	/**
+	 * @brief Convert map to pgm to visualize wave functionality.
+	 * @param img. The image that I load and save to.
+	 * @param fileName. Name of the output file.
+	 */
+	void convert_into_pgm( shared_ptr<Image> img, const std::string& fileName ){
+		unsigned char val;
+		for( coordIndexType x = 0; x < img->getWidth(); ++x){
+			for ( coordIndexType y = 0; y < img->getHeight(); ++y){
+//				val = ( myMap.at(x) ).at(y) % 255;
+				val = (unsigned char) (const_coordVal(x, y) %255 );
+				img->setPixel8U(x,y,val);
+			}
+		}
+		img->saveAsPGM( fileName );
+	}
+
     /** @brief mapType denotes the different map types... */
     typedef enum {UNINITIALIZED, WAVEFRONT, BRUSHFIRE, PIXELSHADE} mapType;
 
@@ -71,36 +89,36 @@ public:
         :myType(argMyType)
     {
         if( !img )
-            cerr << "No image passed to map ctor" << endl;
+	cerr << "No image passed to map ctor" << endl;
         else if( myType != UNINITIALIZED )
         {
-            if( myType == PIXELSHADE )
-            {
-                myMap.clear();
-                myMap.resize( img->getWidth(), vector<coordValType>( img->getHeight() ));
-                //Just give pixel values to the map and be done with it.
-                for( size_t x = 0; x < img->getWidth(); ++x)
-                {
-                    for( size_t y = 0; y < img->getHeight(); ++y)
-                        ( myMap.at(x) ).at(y) = (coordValType)( img->getPixelValuei(x,y,0) );
-                    ( myMap.at(x) ).shrink_to_fit();
-                }
-            }
-            else
-            {
-                if( myType == BRUSHFIRE )
-                {
-                    //Fill the coords set:
-                    if(!reachableFreeSpace)
-                        coords = findObstacleBorders(img); //non-efficient
-                    else
-                        coords = findObstacleBorders(img,*reachableFreeSpace); //faster
-                }
+	if( myType == PIXELSHADE )
+	{
+	    myMap.clear();
+	    myMap.resize( img->getWidth(), vector<coordValType>( img->getHeight() ));
+	    //Just give pixel values to the map and be done with it.
+	    for( size_t x = 0; x < img->getWidth(); ++x)
+	    {
+	        for( size_t y = 0; y < img->getHeight(); ++y)
+		( myMap.at(x) ).at(y) = (coordValType)( img->getPixelValuei(x,y,0) );
+	        ( myMap.at(x) ).shrink_to_fit();
+	    }
+	}
+	else
+	{
+	    if( myType == BRUSHFIRE )
+	    {
+	        //Fill the coords set:
+	        if(!reachableFreeSpace)
+		coords = findObstacleBorders(img); //non-efficient
+	        else
+		coords = findObstacleBorders(img,*reachableFreeSpace); //faster
+	    }
 
-                //Do wavefront on the coords set
-                // and fill the map with the resulting values:
-                wave(img,coords);
-            }
+	    //Do wavefront on the coords set
+	    // and fill the map with the resulting values:
+	    wave(img,coords);
+	}
         }
     }
 
@@ -166,26 +184,26 @@ protected:
         set<pos_t> resulting_coords;
         const array<array<int,2>,8> neighbours =
         {{  {-1,0}, /* W */ {1,0},  /* E */
-            {0,-1}, /* N */ {0,1},  /* S */
-            {-1,-1},/* NW */{1,-1}, /* NE */
-            {1,1},  /* SE */{-1,1}  /* SW */
+	{0,-1}, /* N */ {0,1},  /* S */
+	{-1,-1},/* NW */{1,-1}, /* NE */
+	{1,1},  /* SE */{-1,1}  /* SW */
          }};
 
         for( int x = 0; x < (int)(img->getWidth()); ++x) {
-            for( int y = 0; y < (int)(img->getHeight()); ++y) {
-                if( WSPACE_IS_OBSTACLE( img->getPixelValuei(x,y,0) ) ) {
-                    for(auto n : neighbours) {
-                        //If neighbour is within image borders:
-                        if( isInImage( img, x+n.at(0), y+n.at(1) ) ) {
-                            //if the neighbour is not an obstacle:
-                            if( !WSPACE_IS_OBSTACLE( img->getPixelValuei(x+n.at(0),y+n.at(1),0) ) ) {
-                                resulting_coords.insert(pos_t(x,y));
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
+	for( int y = 0; y < (int)(img->getHeight()); ++y) {
+	    if( WSPACE_IS_OBSTACLE( img->getPixelValuei(x,y,0) ) ) {
+	        for(auto n : neighbours) {
+		//If neighbour is within image borders:
+		if( isInImage( img, x+n.at(0), y+n.at(1) ) ) {
+		    //if the neighbour is not an obstacle:
+		    if( !WSPACE_IS_OBSTACLE( img->getPixelValuei(x+n.at(0),y+n.at(1),0) ) ) {
+		        resulting_coords.insert(pos_t(x,y));
+		        break;
+		    }
+		}
+	        }
+	    }
+	}
         }
 
         return resulting_coords;
@@ -218,9 +236,9 @@ protected:
     {
         const array<array<int,2>,8> neighbours =
         {{  {-1,0}, /* W */ {1,0},  /* E */
-            {0,-1}, /* N */ {0,1},  /* S */
-            {-1,-1},/* NW */{1,-1}, /* NE */
-            {1,1},  /* SE */{-1,1}  /* SW */
+	{0,-1}, /* N */ {0,1},  /* S */
+	{-1,-1},/* NW */{1,-1}, /* NE */
+	{1,1},  /* SE */{-1,1}  /* SW */
          }};
 
         myMap.clear();
@@ -229,35 +247,35 @@ protected:
         queue<pos_t> q; //FIFO
         for(auto i : goals)
         {
-            (myMap.at(i.first)).at(i.second) = WAVE_VAL_GOAL;
-            q.push(i);
+	(myMap.at(i.first)).at(i.second) = WAVE_VAL_GOAL;
+	q.push(i);
         }
 
         while(!q.empty())
         {
-            pos_t cur = q.front();
-            q.pop();
-            for(auto n : neighbours) {
-                //If neighbour is within image borders:
-                if( isInImage( img, cur.first+n.at(0), cur.second+n.at(1) ) ) {
-                    //if the neighbour is an unvisited non-obstacle:
-                    if( ( !WSPACE_IS_OBSTACLE( img->getPixelValuei(cur.first+n.at(0),cur.second+n.at(1),0) ) )
-                            && (
-                                (  myMap.at(cur.first+n.at(0)).at(cur.second+n.at(1)) == WAVE_VAL_UNV ) //unvisited
-                                || ( ( myMap.at(cur.first+n.at(0)).at(cur.second+n.at(1)) )
-                                     > ( myMap.at(cur.first).at(cur.second) )
-                                     )
-                                )
-                            )
-                    {
-                        //increment:
-                        myMap.at(cur.first+n.at(0)).at(cur.second+n.at(1))
-                                = myMap.at(cur.first).at(cur.second) +1;
-                        //Add it to the wavefront
-                        q.push(pos_t(cur.first+n.at(0),cur.second+n.at(1)));
-                    }
-                }
-            }
+	pos_t cur = q.front();
+	q.pop();
+	for(auto n : neighbours) {
+	    //If neighbour is within image borders:
+	    if( isInImage( img, cur.first+n.at(0), cur.second+n.at(1) ) ) {
+	        //if the neighbour is an unvisited non-obstacle:
+	        if( ( !WSPACE_IS_OBSTACLE( img->getPixelValuei(cur.first+n.at(0),cur.second+n.at(1),0) ) )
+		    && (
+		        (  myMap.at(cur.first+n.at(0)).at(cur.second+n.at(1)) == WAVE_VAL_UNV ) //unvisited
+		        || ( ( myMap.at(cur.first+n.at(0)).at(cur.second+n.at(1)) )
+			 > ( myMap.at(cur.first).at(cur.second) )
+			 )
+		        )
+		    )
+	        {
+		//increment:
+		myMap.at(cur.first+n.at(0)).at(cur.second+n.at(1))
+		        = myMap.at(cur.first).at(cur.second) +1;
+		//Add it to the wavefront
+		q.push(pos_t(cur.first+n.at(0),cur.second+n.at(1)));
+	        }
+	    }
+	}
         }
     }
 
@@ -274,44 +292,44 @@ protected:
         set<pos_t> resulting_coords;
 
         if(!isInImage(img,withinFreeSpace.first,withinFreeSpace.second))
-            cerr << "coord given to findCoords is not in image." << endl;
+	cerr << "coord given to findCoords is not in image." << endl;
         else {
-            const array<array<int,2>,8> neighbours =
-            {{  {-1,0}, /* W */ {1,0},  /* E */
-                {0,-1}, /* N */ {0,1},  /* S */
-                {-1,-1},/* NW */{1,-1}, /* NE */
-                {1,1},  /* SE */{-1,1}  /* SW */
-             }};
+	const array<array<int,2>,8> neighbours =
+	{{  {-1,0}, /* W */ {1,0},  /* E */
+	    {0,-1}, /* N */ {0,1},  /* S */
+	    {-1,-1},/* NW */{1,-1}, /* NE */
+	    {1,1},  /* SE */{-1,1}  /* SW */
+	 }};
 
-            vector<vector<bool> > visited(img->getWidth(),vector<bool>(img->getHeight(),false));
-            queue<pos_t> q; //FIFO
-            q.push(withinFreeSpace);
+	vector<vector<bool> > visited(img->getWidth(),vector<bool>(img->getHeight(),false));
+	queue<pos_t> q; //FIFO
+	q.push(withinFreeSpace);
 
-            while(!q.empty())
-            {
-                pos_t cur = q.front();
-                q.pop();
+	while(!q.empty())
+	{
+	    pos_t cur = q.front();
+	    q.pop();
 
-                if(!borders)
-                    resulting_coords.insert(cur);
+	    if(!borders)
+	        resulting_coords.insert(cur);
 
-                for(auto n : neighbours) {
-                    //If neighbour is within image borders:
-                    if( isInImage( img, cur.first+n.at(0), cur.second+n.at(1) ) ) {
-                        //if the neighbour is an unvisited non-obstacle:
-                        if( !WSPACE_IS_OBSTACLE( img->getPixelValuei(cur.first+n.at(0),cur.second+n.at(1),0) )
-                                && !( (visited.at(cur.first+n.at(0))).at(cur.second+n.at(1)) ) ) {
-                            //Add it to the wavefront
-                            (visited.at(cur.first+n.at(0))).at(cur.second+n.at(1)) = true;
-                            q.push(pos_t(cur.first+n.at(0),cur.second+n.at(1)));
-                        }
-                        else if(borders){
-                            //If the neighbour WAS an obstacle, it must have been a border.
-                            resulting_coords.insert(cur);
-                        }
-                    }
-                }
-            }
+	    for(auto n : neighbours) {
+	        //If neighbour is within image borders:
+	        if( isInImage( img, cur.first+n.at(0), cur.second+n.at(1) ) ) {
+		//if the neighbour is an unvisited non-obstacle:
+		if( !WSPACE_IS_OBSTACLE( img->getPixelValuei(cur.first+n.at(0),cur.second+n.at(1),0) )
+		        && !( (visited.at(cur.first+n.at(0))).at(cur.second+n.at(1)) ) ) {
+		    //Add it to the wavefront
+		    (visited.at(cur.first+n.at(0))).at(cur.second+n.at(1)) = true;
+		    q.push(pos_t(cur.first+n.at(0),cur.second+n.at(1)));
+		}
+		else if(borders){
+		    //If the neighbour WAS an obstacle, it must have been a border.
+		    resulting_coords.insert(cur);
+		}
+	        }
+	    }
+	}
         }
 
         return move(resulting_coords);
