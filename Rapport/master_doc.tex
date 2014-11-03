@@ -7,16 +7,16 @@
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{0.7\baselineskip}%
 
-\pagenumbering{gobble}
+\pagenumbering{gobble} %?
 \thispagestyle{empty}
-\include{./content/forside}
+\include{./content/frontpage}
 %\clearpage
 \fancyfoot{}
 \fancyfoot[CO,CE]{\thepage}
 \pagenumbering{Roman}
 %\include{./content/templates} % Kan bruges til copy paste ind i rapport for forskellige outputs.....
 %\include{./content/ansvarsomraader}
-\input{./content/indholdsfortegnelse}
+\tableofcontents
 
 % 
 % \pagestyle{fancy}
@@ -31,13 +31,25 @@
 \setcounter{page}{1}
 \fancyfoot[LO,RE]{\thepage}
 
-\include{./content/planning}
-\include{./content/coverage}
-\include{./content/localisation}
+\include{./content/intro}
+% Planning
+\include{./content/planning/method}
+\include{./content/planning/results}
+\include{./content/planning/conclusion}
+\include{./content/planning/future_work}
+% Coverage
+\include{./content/coverage/method}
+\include{./content/coverage/results}
+\include{./content/coverage/conclusion}
+\include{./content/coverage/future_work}
+% Localistation
+\include{./content/localisation/method}
+\include{./content/localisation/results}
+\include{./content/localisation/conclusion}
+\include{./content/localisation/future_work}
 
 
 
-%\bibliography{litteraturliste}
 %%%%%%%%%%%% Appendix %%%%%%%%%%%%
 \include{./content/appen}
 
