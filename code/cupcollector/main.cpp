@@ -18,6 +18,34 @@ using namespace rw::sensor;
 using namespace rw::loaders;
 using namespace std;
 
+void testTekMapConstructors(const string &filename)
+{
+    pos_t start = {ROBOT_START_X,ROBOT_START_Y};
+    cout << "Loading image..." << endl;
+    shared_ptr<Image> img(PPMLoader::load(filename));
+    shared_ptr<Image> canvas(PPMLoader::load(filename));
+    cout << "Image size: " << img->getWidth()
+         << " x " << img->getHeight() << endl;
+    //Store original image:
+    pixelshade_map original(img,pixelshade_map::PIXELSHADE);
+    //Run brushfire algorithm on reachable freespace:
+    brushfire_map brush(img,brushfire_map::BRUSHFIRE,set< pos_t >(),&start);
+    //Paint the brushfire values onto the canvas:
+    brush.shade(canvas);
+    //Save the brushfire painting:
+    canvas->saveAsPGM("brushfire.pgm");
+    //Run wavefront algorithm on reachable freespace, goals being the Offloading stations:
+    wavefront_map wave(img,wavefront_map::WAVEFRONT,wavefront_map::getOffloadingStations(img));
+    //Paint the wavefront values onto the canvas:
+    wave.shade(canvas);
+    //Save the wavefront painting:
+    canvas->saveAsPGM("wavefront.pgm");
+    //Turn the painted canvas back to the original:
+    original.shade(canvas);
+    //Save the original painting:
+    canvas->saveAsPGM("original.pgm");
+}
+
 /** Main entry point
  * @param argc Number of arguments. Should be 1!
  * @param argv Name of .pgm file to open. Should be complete_map_project.pgm!
@@ -32,28 +60,21 @@ int main(int argc, char** argv) {
     cout << "Image size: " << img->getWidth()
          << " x " << img->getHeight() << endl;
 
-    cin.get(); cout << "constructing brushfire map " << endl;
-    brushfire_map lolmap(img,brushfire_map::BRUSHFIRE,set< pos_t >(),&hej);
-    cout << "done with bf map" << endl;
-    cin.get(); cout << "constructing doorDetector " << endl;
+    pixelshade_map original(img,pixelshade_map::PIXELSHADE);
+
+    brushfire_map brush(img,brushfire_map::BRUSHFIRE,set< pos_t >(),&hej);
     doorDetector mydetective;
-    cin.get(); cout << "Finding The Doors " << endl;
-    vector<pos_t> The_Doors = mydetective.detect_doorways(lolmap);
-    cin.get(); cout << "Painting The Doors" << endl;
+    cout << "Finding The Doors " << endl;
+    vector<pos_t> The_Doors = mydetective.detect_doorways(brush);
+    cout << "Painting The Doors" << endl;
     for(auto i : The_Doors)
-    {
         img->setPixel8U(i.x(),i.y(),5);
-    }
-    cout << "saving The Doors..." << endl;
+    cout << "Saving The Doors as The_Doors.pgm..." << endl;
     img->saveAsPGM("The_Doors.pgm");
 
-    shared_ptr<Image> img2(PPMLoader::load(filename));
-    set<pos_t> cantina;
-    cantina.insert(hej);
-    //wavefront_map lolmap2(img2,wavefront_map::WAVEFRONT,cantina);
-    brushfire_map lolmap2(img2,brushfire_map::BRUSHFIRE,set<pos_t>(),&hej);
-    lolmap2.shade(img2);
-    img2->saveAsPGM("shade.pgm");
+    original.shade(img);
+
+    testTekMapConstructors(filename);
 
     return 0;
 }

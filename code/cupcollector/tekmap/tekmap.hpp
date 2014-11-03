@@ -13,6 +13,7 @@
 #include <array>
 #include <utility>
 #include <set>
+#include <list>
 #include <queue>
 #include <iostream>
 #include <limits>
@@ -177,6 +178,16 @@ public:
             }
     }
 
+    static set<pos_t> getOffloadingStations(const shared_ptr<Image> img) {
+        set<pos_t> result;
+        set<pos_t>::iterator i=result.begin();
+        for(coordIndexType x=0; x<img->getWidth(); ++x)
+            for(coordIndexType y=0; y<img->getHeight(); ++y)
+                if(WSPACE_IS_OL_STATION(img->getPixelValuei(x,y,0)))
+                    i=result.emplace_hint(i,x,y);
+        return move(result);
+    }
+
 
 protected:
     /** @brief myType is this map's type*/
@@ -323,7 +334,7 @@ protected:
         set<pos_t> resulting_coords;
 
         if(!isInImage(img,withinFreeSpace.first,withinFreeSpace.second))
-	cerr << "coord given to findCoords is not in image." << endl;
+            cerr << "coord given to findCoords is not in image." << endl;
         else {
             const array<array<int,2>,8> neighbours =
             {{  {-1,0}, /* W */ {1,0},  /* E */
