@@ -74,7 +74,7 @@ int main(int argc, char** argv) {
 
     original.shade(img);
 
-    testTekMapConstructors(filename);
+//    testTekMapConstructors(filename);
 
     return 0;
 }
