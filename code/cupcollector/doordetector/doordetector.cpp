@@ -113,8 +113,8 @@ vector<pos_t> doorDetector::detect_doorways( const brushfire_map &brushmap ){
     std::vector<pos_t> door_list_true; //list of doors.
 
     //pos_t i;
-    for(coordIndexType x=0;x<brushmap.getWidth();++x){ //search entire configuration space
-        for(coordIndexType y=0;y<brushmap.getHeight();++y){
+    for(coordIndexType x=0;x<(coordIndexType)(brushmap.getWidth());++x){ //search entire configuration space
+        for(coordIndexType y=0;y<(coordIndexType)(brushmap.getHeight());++y){
             if ( brushmap.const_coordVal( x, y ) >= WSPACE_DOORWAY_SIZE +2 - WSPACE_DOOR_UNCERTAINTY && //Mark every node that could be a doorway
                  brushmap.const_coordVal( x, y ) <= WSPACE_DOORWAY_SIZE +2 + WSPACE_DOOR_UNCERTAINTY ) {
                 door_list_potential.push_back( pos_t(x,y) );
