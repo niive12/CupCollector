@@ -1,24 +1,25 @@
-\documentclass[11pt,twoside,a4paper,titlepage]{article}
-%%%%%%% Standart settings %%%%%%%
+\documentclass[11pt,a4paper,titlepage]{article}
+% Could add twoside if wanted. 
+%%%%%%% Standard settings %%%%%%%
 \usepackage{amsmath}
 \usepackage{amssymb}
-\usepackage[nottoc, numbib, notlot, notlof]{tocbibind}
+%\usepackage[nottoc, numbib, notlot, notlof]{tocbibind}
 \usepackage{fancyhdr}
 \usepackage[utf8]{inputenc} 
 %\usepackage{mathtools}
 \usepackage[danish]{babel}
-\usepackage{microtype}
-\usepackage[svgnames]{xcolor}
-\usepackage{newclude}
+%\usepackage{microtype}
+%\usepackage[svgnames]{xcolor}
+%\usepackage{newclude}
 \usepackage{siunitx}
-\usepackage{booktabs}
+%\usepackage{booktabs}
 \usepackage{subfig}
 \usepackage{wrapfig} 
 \usepackage[subfigure]{tocloft}
 \usepackage{todonotes}
 %\usepackage[disable]{todonotes}
 \usepackage{lastpage} 
-\usepackage{lipsum,lastpage}  
+%\usepackage{lipsum,lastpage}  
 \usepackage{hanging}
 \usepackage{tabularx}
 \setlength{\headheight}{15pt}
@@ -52,23 +53,10 @@
   \plparsep=1pt
 
 %%%%%%% FIGURES %%%%%%%
-\usetikzlibrary{positioning} % in the preamble
-\usetikzlibrary{decorations.pathreplacing}
-\usetikzlibrary{arrows,shapes}
-\usepackage{tikz-timing}
-\usepackage{graphics}
-\usepackage{siunitx}
-\usepackage{tikz}
-\usetikzlibrary{shapes,arrows,chains, scopes}
-\usepackage{pgfplots}
-\usepackage{tabu}
 
-\pgfplotsset{compat=1.8} % Burde være understøttet på alle maskiner.
-\usepackage[americanvoltages, americancurrents, americanresistors, americaninductors, smartlabels]{circuitikz}
 \usepackage{graphicx} % bruges til MATLAB figurer samt formatet .eps
 \usepackage{epstopdf} % bruges til automatisk konvertering af .eps-filer til pdf; Ellers kan man ikke kompilere med pdfLaTeX.
-%\usepackage{mathtools}
-\usetikzlibrary{arrows,automata} % for drawing state machines
+
 
 %%%%%%% captions settings %%%%%%%
 \usepackage[round]{natbib}
@@ -82,7 +70,7 @@
 \usepackage{listings}
 \lstset{frame=tb,
 tabsize=4,
-language=C,
+language=C++,
 captionpos=b,
 tabsize=3,
 frame=false,
@@ -99,14 +87,14 @@ morecomment=[l][\color{brown}]{\#},
 stringstyle=\color{red}
 }
 %Figurtekst under kode udsnit
-\renewcommand\lstlistingname{Kodeudsnit}
+\renewcommand\lstlistingname{Code snippet}
 
 %%%%%%% Diverse %%%%%%%
 \usepackage{icomma}
 \usepackage{pdfpages}
 \usepackage[pdftex,
  hyperfigures=true,
- pdfauthor={Forfattere},
+ pdfauthor={},
  pdftitle={},
  pdfsubject={},
  pdfkeywords={},

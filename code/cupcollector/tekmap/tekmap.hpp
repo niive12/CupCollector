@@ -54,6 +54,24 @@ template<typename coordValType=long int>
 class tekMap
 {
 public:
+
+	/**
+	 * @brief Convert map to pgm to visualize wave functionality.
+	 * @param img. The image that I load and save to.
+	 * @param fileName. Name of the output file.
+     */
+    void convert_into_pgm( shared_ptr<Image> img, const std::string& fileName ){
+        unsigned char val;
+        for( coordIndexType x = 0; x < img->getWidth(); ++x){
+            for ( coordIndexType y = 0; y < img->getHeight(); ++y){
+                //				val = ( myMap.at(x) ).at(y) % 255;
+                val = (unsigned char) (const_coordVal(x, y) %255 );
+                img->setPixel8U(x,y,val);
+            }
+        }
+        img->saveAsPGM( fileName );
+    }
+
     /** @brief mapType denotes the different map types... */
     typedef enum {UNINITIALIZED, WAVEFRONT, BRUSHFIRE, PIXELSHADE} mapType;
 
@@ -68,7 +86,7 @@ public:
      * algorithm will be faster. Thus, it's only useful to supply it for Brushfire maps.
      */
     tekMap(shared_ptr< Image > img, const mapType argMyType = UNINITIALIZED,
-        set<pos_t> coords = set< pos_t >() , const pos_t *reachableFreeSpace = nullptr)
+           set<pos_t> coords = set< pos_t >() , const pos_t *reachableFreeSpace = nullptr)
         :myType(argMyType)
     {
         if( !img )
@@ -98,12 +116,12 @@ public:
                     else
                         coords = findObstacleBorders(img,*reachableFreeSpace); //faster
 
-//                    for(size_t x=0; x<img->getWidth(); ++x)
-//                        for(size_t y=0; y<img->getHeight(); ++y)
-//                            img->setPixel8U(x,y,255);
-//                    for(auto i:coords)
-//                        img->setPixel8U(i.first,i.second,0);
-//                    img->saveAsPGM("borders.pgm");
+                    //                    for(size_t x=0; x<img->getWidth(); ++x)
+                    //                        for(size_t y=0; y<img->getHeight(); ++y)
+                    //                            img->setPixel8U(x,y,255);
+                    //                    for(auto i:coords)
+                    //                        img->setPixel8U(i.first,i.second,0);
+                    //                    img->saveAsPGM("borders.pgm");
                 }
 
                 //Do wavefront on the coords set
@@ -198,26 +216,26 @@ protected:
         set<pos_t> resulting_coords;
         const array<array<int,2>,8> neighbours =
         {{  {-1,0}, /* W */ {1,0},  /* E */
-            {0,-1}, /* N */ {0,1},  /* S */
-            {-1,-1},/* NW */{1,-1}, /* NE */
-            {1,1},  /* SE */{-1,1}  /* SW */
+	{0,-1}, /* N */ {0,1},  /* S */
+	{-1,-1},/* NW */{1,-1}, /* NE */
+	{1,1},  /* SE */{-1,1}  /* SW */
          }};
 
         for( int x = 0; x < (int)(img->getWidth()); ++x) {
-            for( int y = 0; y < (int)(img->getHeight()); ++y) {
-                if( WSPACE_IS_OBSTACLE( img->getPixelValuei(x,y,0) ) ) {
-                    for(auto n : neighbours) {
-                        //If neighbour is within image borders:
-                        if( isInImage( img, x+n.at(0), y+n.at(1) ) ) {
-                            //if the neighbour is not an obstacle:
-                            if( !WSPACE_IS_OBSTACLE( img->getPixelValuei(x+n.at(0),y+n.at(1),0) ) ) {
-                                resulting_coords.insert(pos_t(x,y));
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
+	for( int y = 0; y < (int)(img->getHeight()); ++y) {
+	    if( WSPACE_IS_OBSTACLE( img->getPixelValuei(x,y,0) ) ) {
+	        for(auto n : neighbours) {
+		//If neighbour is within image borders:
+		if( isInImage( img, x+n.at(0), y+n.at(1) ) ) {
+		    //if the neighbour is not an obstacle:
+		    if( !WSPACE_IS_OBSTACLE( img->getPixelValuei(x+n.at(0),y+n.at(1),0) ) ) {
+		        resulting_coords.insert(pos_t(x,y));
+		        break;
+		    }
+		}
+	        }
+	    }
+	}
         }
 
         return resulting_coords;
@@ -250,9 +268,9 @@ protected:
     {
         const array<array<int,2>,8> neighbours =
         {{  {-1,0}, /* W */ {1,0},  /* E */
-            {0,-1}, /* N */ {0,1},  /* S */
-            {-1,-1},/* NW */{1,-1}, /* NE */
-            {1,1},  /* SE */{-1,1}  /* SW */
+	{0,-1}, /* N */ {0,1},  /* S */
+	{-1,-1},/* NW */{1,-1}, /* NE */
+	{1,1},  /* SE */{-1,1}  /* SW */
          }};
         myMap.clear();
         myMap.resize( img->getWidth(), vector<coordValType>( img->getHeight() , WAVE_VAL_UNV));
@@ -305,7 +323,7 @@ protected:
         set<pos_t> resulting_coords;
 
         if(!isInImage(img,withinFreeSpace.first,withinFreeSpace.second))
-            cerr << "coord given to findCoords is not in image." << endl;
+	cerr << "coord given to findCoords is not in image." << endl;
         else {
             const array<array<int,2>,8> neighbours =
             {{  {-1,0}, /* W */ {1,0},  /* E */
