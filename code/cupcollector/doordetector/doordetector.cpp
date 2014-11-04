@@ -114,7 +114,7 @@ vector<pos_t> doorDetector::detect_doorways( const brushfire_map &brushmap ){
 		    {0,-1}, /* N */ {0,1},  /* S */ }};
     std::vector<std::array<int,2>> matches;
 
-    unsigned char val; //TODO: this should be coordvaltype
+    brushfire_map::myValType val;
     for(coordIndexType x=1;x<(coordIndexType)(brushmap.getWidth())-1;++x){ //search entire configuration space
         for(coordIndexType y=1;y<(coordIndexType)(brushmap.getHeight())-1;++y){
 	        val = brushmap.const_coordVal( x, y );
