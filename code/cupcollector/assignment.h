@@ -23,8 +23,8 @@
  */
 #define WSPACE_IS_OBSTACLE( NUM )   (NUM==0)
 
-#define WSPACE_DOORWAY_SIZE        7
-#define WSPACE_DOOR_UNCERTAINTY    2
+#define WSPACE_DOORWAY_SIZE        8
+#define WSPACE_DOOR_UNCERTAINTY    5
 
 #define WAVE_VAL_UNV           -1
 #define WAVE_VAL_GOAL          0

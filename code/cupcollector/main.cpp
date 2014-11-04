@@ -76,6 +76,9 @@ int main(int argc, char** argv) {
 
     original.shade(img);
 
+<<<<<<< HEAD
+//    testTekMapConstructors(filename);
+=======
     pos_t two_cups = {1320,1257};
     cupScanner cs;
     cout << "\nNumber of cups at ( " << two_cups.cx() << " , "
@@ -83,6 +86,7 @@ int main(int argc, char** argv) {
          << ", say again: " << cs.scan(two_cups,original) << endl;
 
     testTekMapConstructors(filename);
+>>>>>>> bb8df304955bebf354c2fb707b50a826aa976fc0
 
     brush.test(img);
     img->saveAsPGM("test.pgm");
