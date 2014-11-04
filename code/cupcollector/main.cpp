@@ -13,6 +13,7 @@
 #include "libraries/PPMLoader.hpp"
 #include <memory>
 #include "doordetector/doordetector.h"
+#include "scanner/scanner.h"
 
 using namespace rw::sensor;
 using namespace rw::loaders;
@@ -29,7 +30,8 @@ void testTekMapConstructors(const string &filename)
     //Store original image:
     pixelshade_map original(img,pixelshade_map::PIXELSHADE);
     //Run brushfire algorithm on reachable freespace:
-    brushfire_map brush(img,brushfire_map::BRUSHFIRE,set< pos_t >(),&start);
+    brushfire_map brush(img,brushfire_map::BRUSHFIRE,list< pos_t >(),&start);
+    //brushfire_map brush(img,brushfire_map::BRUSHFIRE);
     //Paint the brushfire values onto the canvas:
     brush.shade(canvas);
     //Save the brushfire painting:
@@ -62,7 +64,7 @@ int main(int argc, char** argv) {
 
     pixelshade_map original(img,pixelshade_map::PIXELSHADE);
 
-    brushfire_map brush(img,brushfire_map::BRUSHFIRE,set< pos_t >(),&hej);
+    brushfire_map brush(img,brushfire_map::BRUSHFIRE,list< pos_t >(),&hej);
     doorDetector mydetective;
     cout << "Finding The Doors " << endl;
     vector<pos_t> The_Doors = mydetective.detect_doorways(brush);
@@ -74,7 +76,22 @@ int main(int argc, char** argv) {
 
     original.shade(img);
 
+<<<<<<< HEAD
 //    testTekMapConstructors(filename);
+=======
+    pos_t two_cups = {1320,1257};
+    cupScanner cs;
+    cout << "\nNumber of cups at ( " << two_cups.cx() << " , "
+         << two_cups.cy() << " ): " << cs.scan(two_cups,original)
+         << ", say again: " << cs.scan(two_cups,original) << endl;
+
+    testTekMapConstructors(filename);
+>>>>>>> bb8df304955bebf354c2fb707b50a826aa976fc0
+
+    brush.test(img);
+    img->saveAsPGM("test.pgm");
+    original.shade(img);
+
 
     return 0;
 }
