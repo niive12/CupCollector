@@ -8,7 +8,8 @@ SOURCES += main.cpp \
     libraries/Image.cpp \
     libraries/PPMLoader.cpp \
     scanner/scanner.cpp \
-    doordetector/doordetector.cpp
+    doordetector/doordetector.cpp \
+    robot/robot.cpp
 
 HEADERS += \
     libraries/Image.hpp \
