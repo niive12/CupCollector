@@ -65,7 +65,7 @@ template<typename coordValType=long int>
 class tekMap
 {
 public:
-
+    using myValType = coordValType;
 	/**
 	 * @brief Convert map to pgm to visualize wave functionality.
 	 * @param img. The image that I load and save to.
