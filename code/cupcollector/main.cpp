@@ -30,9 +30,8 @@ void testTekMapConstructors(const string &filename)
     //Store original image:
     pixelshade_map original(img,pixelshade_map::PIXELSHADE);
     //Run brushfire algorithm on reachable freespace:
-    cout << "brushfire" << flush;
     brushfire_map brush(img,brushfire_map::BRUSHFIRE,list< pos_t >(),&start);
-    cout << " done!" << endl;
+    //brushfire_map brush(img,brushfire_map::BRUSHFIRE);
     //Paint the brushfire values onto the canvas:
     brush.shade(canvas);
     //Save the brushfire painting:
@@ -87,6 +86,7 @@ int main(int argc, char** argv) {
 
     brush.test(img);
     img->saveAsPGM("test.pgm");
+    original.shade(img);
 
 
     return 0;
