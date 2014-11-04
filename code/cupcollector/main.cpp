@@ -30,7 +30,9 @@ void testTekMapConstructors(const string &filename)
     //Store original image:
     pixelshade_map original(img,pixelshade_map::PIXELSHADE);
     //Run brushfire algorithm on reachable freespace:
-    brushfire_map brush(img,brushfire_map::BRUSHFIRE,set< pos_t >(),&start);
+    cout << "brushfire" << flush;
+    brushfire_map brush(img,brushfire_map::BRUSHFIRE,list< pos_t >(),&start);
+    cout << " done!" << endl;
     //Paint the brushfire values onto the canvas:
     brush.shade(canvas);
     //Save the brushfire painting:
@@ -63,7 +65,7 @@ int main(int argc, char** argv) {
 
     pixelshade_map original(img,pixelshade_map::PIXELSHADE);
 
-    brushfire_map brush(img,brushfire_map::BRUSHFIRE,set< pos_t >(),&hej);
+    brushfire_map brush(img,brushfire_map::BRUSHFIRE,list< pos_t >(),&hej);
     doorDetector mydetective;
     cout << "Finding The Doors " << endl;
     vector<pos_t> The_Doors = mydetective.detect_doorways(brush);
@@ -82,6 +84,10 @@ int main(int argc, char** argv) {
          << ", say again: " << cs.scan(two_cups,original) << endl;
 
     testTekMapConstructors(filename);
+
+    brush.test(img);
+    img->saveAsPGM("test.pgm");
+
 
     return 0;
 }

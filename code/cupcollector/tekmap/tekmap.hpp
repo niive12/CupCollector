@@ -97,7 +97,7 @@ public:
      * algorithm will be faster. Thus, it's only useful to supply it for Brushfire maps.
      */
     tekMap(shared_ptr< Image > img, const mapType argMyType = UNINITIALIZED,
-           set<pos_t> coords = set< pos_t >() , const pos_t *reachableFreeSpace = nullptr)
+           list<pos_t> coords = list< pos_t >() , const pos_t *reachableFreeSpace = nullptr)
         :myType(argMyType)
     {
         if( !img )
@@ -188,14 +188,52 @@ public:
             }
     }
 
-    static set<pos_t> getOffloadingStations(const shared_ptr<Image> img) {
-        set<pos_t> result;
-        set<pos_t>::iterator i=result.begin();
+    static list<pos_t> getOffloadingStations(const shared_ptr<Image> img) {
+        list<pos_t> result;
         for(coordIndexType x=0; x<img->getWidth(); ++x)
             for(coordIndexType y=0; y<img->getHeight(); ++y)
                 if(WSPACE_IS_OL_STATION(img->getPixelValuei(x,y,0)))
-                    i=result.emplace_hint(i,x,y);
+                    result.emplace_back(x,y);
         return move(result);
+    }
+
+    void test(shared_ptr<Image> img)
+    {
+        set<pos_t> loma;
+        for(size_t x=0;x<getWidth();++x)
+        {
+            int y0=2, y1=1, y2=0;
+
+            while(y0<getHeight())
+            {
+                if(
+                        ((this->const_coordVal(x,y0))<(this->const_coordVal(x,y1)))
+                        &&((this->const_coordVal(x,y2))<(this->const_coordVal(x,y1)))
+                        )
+                    loma.emplace(x,y1);
+                ++y0;
+                ++y1;
+                ++y2;
+            }
+        }
+        for(size_t y=0;y<getHeight();++y)
+        {
+            int x0=2, x1=1, x2=0;
+
+            while(x0<getWidth())
+            {
+                if(
+                        ((this->const_coordVal(x0,y))<(this->const_coordVal(x1,y)))
+                        &&((this->const_coordVal(x2,y))<(this->const_coordVal(x1,y)))
+                        )
+                    loma.emplace(x1,y);
+                ++x0;
+                ++x1;
+                ++x2;
+            }
+        }
+        for(auto i:loma)
+            img->setPixel8U(i.cx(),i.cy(),0);
     }
 
 
@@ -232,7 +270,7 @@ protected:
      *
      *    So this is O(N).
      */
-    virtual set< pos_t > findObstacleBorders(shared_ptr<Image> img) const
+    virtual list< pos_t > findObstacleBorders(shared_ptr<Image> img) const
     {
         set<pos_t> resulting_coords;
         const array<array<int,2>,8> neighbours =
@@ -259,7 +297,7 @@ protected:
 	}
         }
 
-        return resulting_coords;
+        return move(list<pos_t>(resulting_coords.begin(),resulting_coords.end()));
     }
 
     /**
@@ -277,15 +315,15 @@ protected:
      *
      *    So this is O(N) but performs better than the other findObstacleBorders.
      */
-    virtual inline set< pos_t > findObstacleBorders(shared_ptr<Image> img, const pos_t &validFreeSpaceCoord) const
-    { return findCoords(img,validFreeSpaceCoord,true); }
+    virtual inline list< pos_t > findObstacleBorders(shared_ptr<Image> img, const pos_t &validFreeSpaceCoord) const
+    { return move(findCoords(img,validFreeSpaceCoord,true)); }
 
     /**
      * @brief wave I have no idea if this works. But if it does, it's awesome.
      * @param img Image pointer
      * @param goals set of goal coordinates
      */
-    virtual void wave(shared_ptr<Image> img, const set<pos_t> &goals)
+    virtual void wave(shared_ptr<Image> img, const list<pos_t> &goals)
     {
         const array<array<int,2>,8> neighbours =
         {{  {-1,0}, /* W */ {1,0},  /* E */
@@ -323,7 +361,7 @@ protected:
                         (visited[cur.first+n.at(0)])[cur.second+n.at(1)]=true;
 
                         //Add it to the wavefront
-                        q.push(pos_t(cur.first+n.at(0),cur.second+n.at(1)));
+                        q.emplace(cur.first+n.at(0),cur.second+n.at(1));
                     }
                 }
             }
@@ -339,9 +377,9 @@ protected:
      *                if false, only coords within the freespace are returned.
      * @return Coords bordering or within the freespace, depending on the borders parameter.
      */
-    virtual set< pos_t > findCoords(shared_ptr<Image> img, const pos_t &withinFreeSpace, const bool borders=true) const
+    virtual list< pos_t > findCoords(shared_ptr<Image> img, const pos_t &withinFreeSpace, const bool borders=true) const
     {
-        set<pos_t> resulting_coords;
+        list<pos_t> resulting_coords;
 
         if(!isInImage(img,withinFreeSpace.first,withinFreeSpace.second))
             cerr << "coord given to findCoords is not in image." << endl;
@@ -363,8 +401,9 @@ protected:
                 pos_t cur = q.front();
                 q.pop();
 
-                if(!borders)
-                    resulting_coords.insert(cur);
+                if(!borders) //We know it's unvisited.
+                    //resulting_coords.insert(cur);
+                    resulting_coords.push_back(cur);
 
                 for(auto n : neighbours) {
                     //If neighbour is within image borders:
@@ -378,7 +417,11 @@ protected:
                         }
                         if(borders&&WSPACE_IS_OBSTACLE( img->getPixelValuei(cur.first+n.at(0),cur.second+n.at(1),0) )){
                             //If the neighbour WAS an obstacle, it must have been a border.
-                            resulting_coords.insert(cur);
+                            if(!((visited[cur.first+n.at(0)])[cur.second+n.at(1)])) {
+                                //resulting_coords.emplace(cur.first+n.at(0),cur.second+n.at(1));
+                                resulting_coords.emplace_back(cur.first+n.at(0),cur.second+n.at(1));
+                                (visited[cur.first+n.at(0)])[cur.second+n.at(1)]=true;
+                            }
                         }
                     }
                 }
