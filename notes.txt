@@ -106,3 +106,54 @@ Summary:
 			- Stop using notepad or Notesblok instead of Qt.
 		-Mikkel:
 			- Finish scanner.
+
+Fourth meeting (4th of November):
+Attendants: Entire group
+Summary:
+	- Work done since last time:
+		-Mikael:
+			- Intuitive pos_t. Working Brushfire and Wavefront.
+			- CupScanner.
+		-Nikolaj:
+			- More door. Cooler nice much wow.
+		-Michael:
+			- He has not made a shit. Except a little more LaTeX.
+		-Lukas:
+			- Some robot functionality and pickup cup functionality.
+		-Mikkel:
+			- No scanner, because Mikael did it.
+
+	- First, use Brushfire algorithm to mark doors.
+	- Then, find centers of all rooms.
+	- Generate sorted list of room centres to visit.
+	- Travel between room centers while (not doorstep)
+		if doorstep, cover the one room.
+		- when room is covered, return to traveling between the rooms.
+
+	Queue(pos) rooms_in_order	= generate_list();
+	while(true) {
+		nextRoom = rooms_in_order.pop();
+		while(not door) {
+			move_towards(nextRoom);
+			if(stepped over doorStep)
+				break;
+		}
+		cover_room_and_return_to_this_position;
+	}
+
+	- When robot is scan-covering a room, it collects cups that get within 1 m,
+	but it doesn't deliberately move towards the detected cups before the room is scanned.
+	When the room is scanned, it collects the cups remaining in the room (now with known positions).
+
+	- Work for next time:
+		-Mikael:
+			- Make tekMap better inheritable.
+			- Make some more wavefront.
+		-Nikolaj:
+			- Doorsteps.
+		-Michael:
+			- Make scan around inside room. Coverage algorithm.
+		-Lukas:
+			- Robot snobot flobot frobit.
+		-Mikkel:
+			- Make some algorithm to make rooms_in_order based on room centers.
