@@ -50,9 +50,7 @@ void testTekMapConstructors(const string &filename)
     //Save the original painting:
     canvas->saveAsPGM("original.pgm");
 
-    cout << "dijkstra" << endl;
     dijkstraMap d(img,dijkstraMap::getOffloadingStations(img));
-    cout << "dijkstra done" << endl;
     d.shade(canvas);
     canvas->saveAsPGM("dijkstra.pgm");
 

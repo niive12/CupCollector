@@ -58,16 +58,16 @@ struct pos_t : pair<coordIndexType, coordIndexType> {
 
 } ;
 
-    /** @brief coordValType The value type for each pixel */
+/** @brief coordValType The value type for each pixel */
 template<typename coordValType=long int>
 class tekMap
 {
 public:
     using myValType = coordValType;
-	/**
-	 * @brief Convert map to pgm to visualize wave functionality.
-	 * @param img. The image that I load and save to.
-	 * @param fileName. Name of the output file.
+    /**
+     * @brief Convert map to pgm to visualize wave functionality.
+     * @param img. The image that I load and save to.
+     * @param fileName. Name of the output file.
      */
     void convert_into_pgm( shared_ptr<Image> img, const std::string& fileName ){
         unsigned char val;
@@ -154,7 +154,7 @@ protected:
     inline bool isInImage(const shared_ptr<Image> img, const int &x, const int &y) const
     {
         return ((((int)(img->getWidth()) > x) && ((int)(img->getHeight()) > y))
-                  &&((x>0) && (y>0)) );
+                &&((x>0) && (y>0)) );
     }
 
     /**
@@ -166,9 +166,9 @@ protected:
     {
         const array<array<int,2>,8> neighbours =
         {{  {-1,0}, /* W */ {1,0},  /* E */
-	{0,-1}, /* N */ {0,1},  /* S */
-	{-1,-1},/* NW */{1,-1}, /* NE */
-	{1,1},  /* SE */{-1,1}  /* SW */
+            {0,-1}, /* N */ {0,1},  /* S */
+            {-1,-1},/* NW */{1,-1}, /* NE */
+            {1,1},  /* SE */{-1,1}  /* SW */
          }};
         myMap.clear();
         myMap.resize( img->getWidth(), vector<coordValType>( img->getHeight() , WAVE_VAL_UNV));
@@ -290,29 +290,28 @@ protected:
     {
         set<pos_t> resulting_coords;
 
-        //MICHAEL: Shouldn't this use pos_type?
         const array<array<int,2>,8> neighbours =
         {{  {-1,0}, /* W */ {1,0},  /* E */
-    {0,-1}, /* N */ {0,1},  /* S */
-    {-1,-1},/* NW */{1,-1}, /* NE */
-    {1,1},  /* SE */{-1,1}  /* SW */
+            {0,-1}, /* N */ {0,1},  /* S */
+            {-1,-1},/* NW */{1,-1}, /* NE */
+            {1,1},  /* SE */{-1,1}  /* SW */
          }};
 
         for( int x = 0; x < (int)(img->getWidth()); ++x) {
-    for( int y = 0; y < (int)(img->getHeight()); ++y) {
-        if( WSPACE_IS_OBSTACLE( img->getPixelValuei(x,y,0) ) ) {
-            for(auto n : neighbours) {
-        //If neighbour is within image borders:
-        if( isInImage( img, x+n.at(0), y+n.at(1) ) ) {
-            //if the neighbour is not an obstacle:
-            if( !WSPACE_IS_OBSTACLE( img->getPixelValuei(x+n.at(0),y+n.at(1),0) ) ) {
-                resulting_coords.insert(pos_t(x,y));
-                break;
+            for( int y = 0; y < (int)(img->getHeight()); ++y) {
+                if( WSPACE_IS_OBSTACLE( img->getPixelValuei(x,y,0) ) ) {
+                    for(auto n : neighbours) {
+                        //If neighbour is within image borders:
+                        if( isInImage( img, x+n.at(0), y+n.at(1) ) ) {
+                            //if the neighbour is not an obstacle:
+                            if( !WSPACE_IS_OBSTACLE( img->getPixelValuei(x+n.at(0),y+n.at(1),0) ) ) {
+                                resulting_coords.insert(pos_t(x,y));
+                                break;
+                            }
+                        }
+                    }
+                }
             }
-        }
-            }
-        }
-    }
         }
 
         return move(list<pos_t>(resulting_coords.begin(),resulting_coords.end()));
@@ -467,9 +466,9 @@ public:
         const double sqrt2 =1.4142135623730950488016887242097;
         const array<array<int,2>,8> neighbours =
         {{  {-1,0}, /* W */ {1,0},  /* E */
-    {0,-1}, /* N */ {0,1},  /* S */
-    {-1,-1},/* NW */{1,-1}, /* NE */
-    {1,1},  /* SE */{-1,1}  /* SW */
+            {0,-1}, /* N */ {0,1},  /* S */
+            {-1,-1},/* NW */{1,-1}, /* NE */
+            {1,1},  /* SE */{-1,1}  /* SW */
          }};
         myMap.clear();
         //4000 looks nicer when printed, but any high value (INF) works:
