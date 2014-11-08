@@ -69,7 +69,8 @@ public:
      * @param img. The image that I load and save to.
      * @param fileName. Name of the output file.
      */
-    void convert_into_pgm( shared_ptr<Image> img, const std::string& fileName ){
+	void convert_into_pgm( shared_ptr<Image> img, const std::string& fileName )
+	{
         unsigned char val;
         for( coordIndexType x = 0; x < img->getWidth(); ++x){
             for ( coordIndexType y = 0; y < img->getHeight(); ++y){
@@ -88,7 +89,9 @@ public:
     }
 
 
-    /** @brief getCoordVal returns the coordinate value... */
+	/** @brief getCoordVal returns the coordinate value...
+	 * coordVal can take a pos_t or a x and y cord
+	 */
     inline coordValType &const_coordVal(const pos_t::x_type &x, const pos_t::y_type &y) const
     { return const_cast<coordValType&>(((myMap.at(x)).at(y))); }
     inline coordValType &const_coordVal(pos_t::x_type &&x, pos_t::y_type &&y) const
@@ -162,48 +165,7 @@ protected:
      * @param img Image pointer
      * @param goals set of goal coordinates
      */
-    virtual void wave(shared_ptr<Image> img, const list<pos_t> &goals)
-    {
-        const array<array<int,2>,8> neighbours =
-        {{  {-1,0}, /* W */ {1,0},  /* E */
-            {0,-1}, /* N */ {0,1},  /* S */
-            {-1,-1},/* NW */{1,-1}, /* NE */
-            {1,1},  /* SE */{-1,1}  /* SW */
-         }};
-        myMap.clear();
-        myMap.resize( img->getWidth(), vector<coordValType>( img->getHeight() , WAVE_VAL_UNV));
-        vector<vector<bool> > visited(img->getWidth(),vector<bool>(img->getHeight(),false));
-        queue<pos_t> q; //FIFO
-        for(auto i : goals) {
-            (myMap[i.first])[i.second] = WAVE_VAL_GOAL;
-            q.push(i);
-        }
-        while(!q.empty())
-        {
-            pos_t cur = q.front();
-            q.pop();
-            for(auto n : neighbours) {
-                //If neighbour is within image borders:
-                if( isInImage( img, cur.first+n.at(0), cur.second+n.at(1) ) ) {
-                    //if the neighbour is an unvisited non-obstacle:
-                    if( ( !WSPACE_IS_OBSTACLE( img->getPixelValuei(cur.first+n.at(0),cur.second+n.at(1),0) ) )
-                            && ( !( (visited[cur.first+n.at(0)])[cur.second+n.at(1)] ) )
-                            && ((myMap[cur.first+n.at(0)])[cur.second+n.at(1)] != WAVE_VAL_GOAL)
-                            )
-                    {
-                        //increment:
-                        (myMap[cur.first+n.at(0)])[cur.second+n.at(1)]
-                                = (myMap[cur.first])[cur.second] +1;
-                        (visited[cur.first+n.at(0)])[cur.second+n.at(1)]=true;
-
-                        //Add it to the wavefront
-                        q.emplace(cur.first+n.at(0),cur.second+n.at(1));
-                    }
-                }
-            }
-            (visited[cur.first])[cur.second]=true;
-        }
-    }
+	virtual void wave(shared_ptr<Image> img, const list<pos_t> &goals);
 
     /**
      * @brief findCoords Finds workspace (freespace) coordinates or relevant borders.
@@ -213,62 +175,117 @@ protected:
      *                if false, only coords within the freespace are returned.
      * @return Coords bordering or within the freespace, depending on the borders parameter.
      */
-    virtual list< pos_t > findCoords(shared_ptr<Image> img, const pos_t &withinFreeSpace, const bool borders=true) const
-    {
-        list<pos_t> resulting_coords;
-
-        if(!isInImage(img,withinFreeSpace.first,withinFreeSpace.second))
-            cerr << "coord given to findCoords is not in image." << endl;
-        else {
-            const array<array<int,2>,8> neighbours =
-            {{  {-1,0}, /* W */ {1,0},  /* E */
-                {0,-1}, /* N */ {0,1},  /* S */
-                {-1,-1},/* NW */{1,-1}, /* NE */
-                {1,1},  /* SE */{-1,1}  /* SW */
-             }};
-
-            vector<vector<bool> > visited(img->getWidth(),vector<bool>(img->getHeight(),false));
-            queue<pos_t> q; //FIFO
-
-            q.push(withinFreeSpace);
-
-            while(!q.empty())
-            {
-                pos_t cur = q.front();
-                q.pop();
-
-                if(!borders) //We know it's unvisited.
-                    //resulting_coords.insert(cur);
-                    resulting_coords.push_back(cur);
-
-                for(auto n : neighbours) {
-                    //If neighbour is within image borders:
-                    if( isInImage( img, cur.first+n.at(0), cur.second+n.at(1) ) ) {
-                        //if the neighbour is an unvisited non-obstacle:
-                        if( (!WSPACE_IS_OBSTACLE( img->getPixelValuei(cur.first+n.at(0),cur.second+n.at(1),0) ))
-                                && (!( (visited[cur.first+n.at(0)])[cur.second+n.at(1)] ) ) ) {
-                            //Add it to the wavefront
-                            q.push(pos_t(cur.first+n.at(0),cur.second+n.at(1)));
-                            (visited[cur.first+n.at(0)])[cur.second+n.at(1)]=true;
-                        }
-                        if(borders&&WSPACE_IS_OBSTACLE( img->getPixelValuei(cur.first+n.at(0),cur.second+n.at(1),0) )){
-                            //If the neighbour WAS an obstacle, it must have been a border.
-                            if(!((visited[cur.first+n.at(0)])[cur.second+n.at(1)])) {
-                                //resulting_coords.emplace(cur.first+n.at(0),cur.second+n.at(1));
-                                resulting_coords.emplace_back(cur.first+n.at(0),cur.second+n.at(1));
-                                (visited[cur.first+n.at(0)])[cur.second+n.at(1)]=true;
-                            }
-                        }
-                    }
-                }
-                (visited[cur.first])[cur.second] = true;
-            }
-        }
-
-        return move(resulting_coords);
-    }
+	virtual list< pos_t > findCoords(shared_ptr<Image> img, const pos_t &withinFreeSpace, const bool borders=true) const;
 
 };
+
+
+// -------------- Functions for tekmap start
+template<typename coordValType=long int>
+void tekMap<coordValType>::wave(shared_ptr<Image> img, const list<pos_t> &goals)
+{
+	const array<array<int,2>,8> neighbours =
+	{{  {-1,0}, /* W */ {1,0},  /* E */
+		{0,-1}, /* N */ {0,1},  /* S */
+		{-1,-1},/* NW */{1,-1}, /* NE */
+		{1,1},  /* SE */{-1,1}  /* SW */
+	 }};
+	myMap.clear();
+	myMap.resize( img->getWidth(), vector<coordValType>( img->getHeight() , WAVE_VAL_UNV));
+	vector<vector<bool> > visited(img->getWidth(),vector<bool>(img->getHeight(),false));
+	queue<pos_t> q; //FIFO
+	for(auto i : goals) {
+		(myMap[i.first])[i.second] = WAVE_VAL_GOAL;
+		q.push(i);
+	}
+	while(!q.empty())
+	{
+		pos_t cur = q.front();
+		q.pop();
+		for(auto n : neighbours) {
+			//If neighbour is within image borders:
+			if( isInImage( img, cur.first+n.at(0), cur.second+n.at(1) ) ) {
+				//if the neighbour is an unvisited non-obstacle:
+				if( ( !WSPACE_IS_OBSTACLE( img->getPixelValuei(cur.first+n.at(0),cur.second+n.at(1),0) ) )
+						&& ( !( (visited[cur.first+n.at(0)])[cur.second+n.at(1)] ) )
+						&& ((myMap[cur.first+n.at(0)])[cur.second+n.at(1)] != WAVE_VAL_GOAL)
+						)
+				{
+					//increment:
+					(myMap[cur.first+n.at(0)])[cur.second+n.at(1)]
+							= (myMap[cur.first])[cur.second] +1;
+					(visited[cur.first+n.at(0)])[cur.second+n.at(1)]=true;
+
+					//Add it to the wavefront
+					q.emplace(cur.first+n.at(0),cur.second+n.at(1));
+				}
+			}
+		}
+		(visited[cur.first])[cur.second]=true;
+	}
+}
+
+
+
+
+template<typename coordValType=long int>
+list< pos_t > tekMap<coordValType>::findCoords(shared_ptr<Image> img, const pos_t &withinFreeSpace, const bool borders=true) const
+{
+	list<pos_t> resulting_coords;
+
+	if(!isInImage(img,withinFreeSpace.first,withinFreeSpace.second))
+		cerr << "coord given to findCoords is not in image." << endl;
+	else {
+		const array<array<int,2>,8> neighbours =
+		{{  {-1,0}, /* W */ {1,0},  /* E */
+			{0,-1}, /* N */ {0,1},  /* S */
+			{-1,-1},/* NW */{1,-1}, /* NE */
+			{1,1},  /* SE */{-1,1}  /* SW */
+		 }};
+
+		vector<vector<bool> > visited(img->getWidth(),vector<bool>(img->getHeight(),false));
+		queue<pos_t> q; //FIFO
+
+		q.push(withinFreeSpace);
+
+		while(!q.empty())
+		{
+			pos_t cur = q.front();
+			q.pop();
+
+			if(!borders) //We know it's unvisited.
+				//resulting_coords.insert(cur);
+				resulting_coords.push_back(cur);
+
+			for(auto n : neighbours) {
+				//If neighbour is within image borders:
+				if( isInImage( img, cur.first+n.at(0), cur.second+n.at(1) ) ) {
+					//if the neighbour is an unvisited non-obstacle:
+					if( (!WSPACE_IS_OBSTACLE( img->getPixelValuei(cur.first+n.at(0),cur.second+n.at(1),0) ))
+							&& (!( (visited[cur.first+n.at(0)])[cur.second+n.at(1)] ) ) ) {
+						//Add it to the wavefront
+						q.push(pos_t(cur.first+n.at(0),cur.second+n.at(1)));
+						(visited[cur.first+n.at(0)])[cur.second+n.at(1)]=true;
+					}
+					if(borders&&WSPACE_IS_OBSTACLE( img->getPixelValuei(cur.first+n.at(0),cur.second+n.at(1),0) )){
+						//If the neighbour WAS an obstacle, it must have been a border.
+						if(!((visited[cur.first+n.at(0)])[cur.second+n.at(1)])) {
+							//resulting_coords.emplace(cur.first+n.at(0),cur.second+n.at(1));
+							resulting_coords.emplace_back(cur.first+n.at(0),cur.second+n.at(1));
+							(visited[cur.first+n.at(0)])[cur.second+n.at(1)]=true;
+						}
+					}
+				}
+			}
+			(visited[cur.first])[cur.second] = true;
+		}
+	}
+
+	return move(resulting_coords);
+}
+
+
+// -------------- Functions for tekmap end
 
 class brushfireMap : public tekMap<unsigned char>
 {
@@ -333,7 +350,9 @@ protected:
      *    So this is O(N) but performs better than the other findObstacleBorders.
      */
     virtual inline list< pos_t > findObstacleBorders(shared_ptr<Image> img, const pos_t &validFreeSpaceCoord) const
-    { return move(findCoords(img,validFreeSpaceCoord,true)); }
+	{
+		return move(findCoords(img,validFreeSpaceCoord,true));
+	}
 
 public:
     brushfireMap(shared_ptr< Image > img)
@@ -461,55 +480,58 @@ public:
      * @param img Image pointer
      * @param goals set of goal coordinates
      */
-    virtual void wave(shared_ptr<Image> img, const list<pos_t> &goals) override
-    {
-        const double sqrt2 =1.4142135623730950488016887242097;
-        const array<array<int,2>,8> neighbours =
-        {{  {-1,0}, /* W */ {1,0},  /* E */
-            {0,-1}, /* N */ {0,1},  /* S */
-            {-1,-1},/* NW */{1,-1}, /* NE */
-            {1,1},  /* SE */{-1,1}  /* SW */
-         }};
-        myMap.clear();
-        //4000 looks nicer when printed, but any high value (INF) works:
-        myMap.resize( img->getWidth(), vector<myValType>( img->getHeight() , 4000));
-        //myMap.resize( img->getWidth(), vector<myValType>( img->getHeight() , numeric_limits<myValType>::max()));
-        vector<vector<bool> > visited(img->getWidth(),vector<bool>(img->getHeight(),false));
-        priority_queue<edgeType,deque<edgeType>,edgeComp > q;
-        for(auto i : goals) {
-            (myMap[i.cx()])[i.cy()] = WAVE_VAL_GOAL;
-            q.emplace(i,(myMap[i.cx()])[i.cy()]);
-        }
-        while(!q.empty())
-        {
-            edgeType cur = q.top();
-            q.pop();
-            visited[cur.first.cx()][cur.first.cy()]=true;
-            for(auto n : neighbours) {
-                //If neighbour is within image borders:
-                if( isInImage( img, cur.first.cx()+n.at(0), cur.first.cy()+n.at(1) ) ) {
-                    //if the neighbour is an unvisited non-obstacle:
-                    if( ( !WSPACE_IS_OBSTACLE( img->getPixelValuei(cur.first.cx()+n.at(0),cur.first.cy()+n.at(1),0) ) )
-                            && ( !( (visited[cur.first.cx()+n.at(0)])[cur.first.cy()+n.at(1)] ) )
-                            && ((myMap[cur.first.cx()+n.at(0)])[cur.first.cy()+n.at(1)] != WAVE_VAL_GOAL)
-                            )
-                    {
-                        if(
-                                ((myMap[cur.first.cx()])[cur.first.cy()]
-                                 +(((n.at(0)==0) || (n.at(1)==0))?1.0:sqrt2))
-                                <((myMap[cur.first.cx()+n.at(0)])[cur.first.cy()+n.at(1)])
-                                ) {
-                            //increment:
-                            (myMap[cur.first.cx()+n.at(0)])[cur.first.cy()+n.at(1)]
-                                    = (myMap[cur.first.cx()])[cur.first.cy()]
-                                    +(((n.at(0)==0) || (n.at(1)==0))?1.0:sqrt2);
-                            //Add it to the wavefront
-                            q.emplace(pos_t(cur.first.cx()+n.at(0),cur.first.cy()+n.at(1)),
-                                      (myMap[cur.first.cx()+n.at(0)])[cur.first.cy()+n.at(1)]);
-                        }
-                    }
-                }
-            }
-        }
-    }
+	virtual void wave(shared_ptr<Image> img, const list<pos_t> &goals) override
+	{
+		const double sqrt2 =1.4142135623730950488016887242097;
+		const array<array<int,2>,8> neighbours =
+		{{  {-1,0}, /* W */ {1,0},  /* E */
+			{0,-1}, /* N */ {0,1},  /* S */
+			{-1,-1},/* NW */{1,-1}, /* NE */
+			{1,1},  /* SE */{-1,1}  /* SW */
+		 }};
+		myMap.clear();
+		//4000 looks nicer when printed, but any high value (INF) works:
+		myMap.resize( img->getWidth(), vector<myValType>( img->getHeight() , 4000));
+		//myMap.resize( img->getWidth(), vector<myValType>( img->getHeight() , numeric_limits<myValType>::max()));
+		vector<vector<bool> > visited(img->getWidth(),vector<bool>(img->getHeight(),false));
+		priority_queue<edgeType,deque<edgeType>,edgeComp > q;
+		for(auto i : goals) {
+			(myMap[i.cx()])[i.cy()] = WAVE_VAL_GOAL;
+			q.emplace(i,(myMap[i.cx()])[i.cy()]);
+		}
+		while(!q.empty())
+		{
+			edgeType cur = q.top();
+			q.pop();
+			visited[cur.first.cx()][cur.first.cy()]=true;
+			for(auto n : neighbours) {
+				//If neighbour is within image borders:
+				if( isInImage( img, cur.first.cx()+n.at(0), cur.first.cy()+n.at(1) ) ) {
+					//if the neighbour is an unvisited non-obstacle:
+					if( ( !WSPACE_IS_OBSTACLE( img->getPixelValuei(cur.first.cx()+n.at(0),cur.first.cy()+n.at(1),0) ) )
+							&& ( !( (visited[cur.first.cx()+n.at(0)])[cur.first.cy()+n.at(1)] ) )
+							&& ((myMap[cur.first.cx()+n.at(0)])[cur.first.cy()+n.at(1)] != WAVE_VAL_GOAL)
+							)
+					{
+						if(
+								((myMap[cur.first.cx()])[cur.first.cy()]
+								 +(((n.at(0)==0) || (n.at(1)==0))?1.0:sqrt2))
+								<((myMap[cur.first.cx()+n.at(0)])[cur.first.cy()+n.at(1)])
+								) {
+							//increment:
+							(myMap[cur.first.cx()+n.at(0)])[cur.first.cy()+n.at(1)]
+									= (myMap[cur.first.cx()])[cur.first.cy()]
+									+(((n.at(0)==0) || (n.at(1)==0))?1.0:sqrt2);
+							//Add it to the wavefront
+							q.emplace(pos_t(cur.first.cx()+n.at(0),cur.first.cy()+n.at(1)),
+									  (myMap[cur.first.cx()+n.at(0)])[cur.first.cy()+n.at(1)]);
+						}
+					}
+				}
+			}
+		}
+	}
 };
+
+
+
