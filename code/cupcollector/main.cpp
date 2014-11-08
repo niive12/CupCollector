@@ -52,11 +52,11 @@ int main(int argc, char** argv) {
 	(void)argc;
 	string filename(argv[1]);
 
-	shared_ptr<Image> img(PPMLoader::load(filename));
-
-	cout << "Image size: " << img->getWidth() << " x " << img->getHeight() << endl;
-	pixelshade_map original(img );
 	cout << "Loading image..." << endl;
+	shared_ptr<Image> img(PPMLoader::load(filename));
+	cout << "Image size: " << img->getWidth() << " x " << img->getHeight() << endl;
+
+	pixelshade_map original(img );
 	cout << "Giving start position for brushfire..." << endl;
 	pos_t robot_start = {ROBOT_START_X,ROBOT_START_Y};
 	cout << "Creating brushfire..." << endl;
@@ -65,9 +65,9 @@ int main(int argc, char** argv) {
 	doorDetector mydetective;
 	cout << "Finding The Doors " << endl;
 	vector<pos_t> The_Doors = mydetective.detect_doorways(img, brush);
-	cout << "Painting Door Steps" << endl;
+	cout << "Finding Door Steps" << endl;
 	pixelshade_map door_steps_map = mydetective.door_step(img, brush, The_Doors);
-	original.shade(img);
+	cout << "Painting Door Steps" << endl;
 	door_steps_map.shade(img);
 	img->saveAsPGM("door_step.pgm");
 	return 0;
