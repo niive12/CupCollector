@@ -2,43 +2,15 @@
 #include "doordetector.h"
 #include <cmath>
 
-std::vector<pos_t> doorDetector::reduce_number_of_doors ( const std::vector<pos_t> &large_door_list, const brushfire_map &brushmap ) {
-    /* Makes a map of where I have found a door.
-     * If There is one door detected there is no need for another door to be on the list
-     *
-     * I do this by creating a map that tells if I have a door or I don't have a door.
-     * If the area is clear I add the door to my final list of doors
-     *
-     * My output is a list of doors. Only one door per 18x18 area. (doorway size)
-     */
-    std::vector<pos_t> small_door_list;
-
-    vector<vector<bool> > temp_map(brushmap.getWidth(),vector<bool>(brushmap.getHeight(),false));
-
-    pos_t temp_pos;
-    for (int j = 0; j < (int)large_door_list.size(); ++j ) { //check all doors in the list.
-        temp_pos = large_door_list.at(j);
-        bool clear = true;
-        for( int x = -(WSPACE_DOORWAY_SIZE*2); x < (WSPACE_DOORWAY_SIZE*2); ++x ) {
-	for ( int y = -(WSPACE_DOORWAY_SIZE*2); y < (WSPACE_DOORWAY_SIZE*2); ++y ) { //if there is no door in 18x18 then clear will remain true
-	    if ( temp_map[temp_pos.x() + x][temp_pos.y() + y] ) {
-	        clear = false;
-	    }
-	}
-        }
-        if ( clear ){ //update map and door list
-	temp_map[temp_pos.x()][temp_pos.y()] = true;
-	small_door_list.push_back( temp_pos );
-        }
-    }
-
-    return small_door_list;
-}
-
-bool doorDetector::doorway_check ( pos_t pos, const brushfire_map &brushmap ){
-    /* The way I check if a position is a doorway is to see if
-     * there is a obstacle on both sides of the position.
-     */
+/**
+ * @brief doorDetector::doorway_check
+ * @param img                   An image of the entire map to check for obstacles
+ * @param pos                   A position to check if it is a doorway
+ * @return		        True or False
+ * The way I check if a position is a doorway is to see if
+ * there is a obstacle on both sides of the position.
+ */
+bool doorDetector::doorway_check ( shared_ptr<Image> img, pos_t pos, const brushfire_map &brushmap){
 
     auto door_distance = brushmap.const_coordVal( pos ) +1 ; // plus one if the doorway is an even number
 
@@ -47,7 +19,7 @@ bool doorDetector::doorway_check ( pos_t pos, const brushfire_map &brushmap ){
           (int)pos.y() <= door_distance || (int)pos.y() >= (int)brushmap.getHeight() -door_distance ) ) {
           return false;
     }
-    if ( WSPACE_IS_OBSTACLE(brushmap.const_coordVal( pos )) ) { //inside wall
+    if ( WSPACE_IS_OBSTACLE(img->getPixelValuei( pos.x(), pos.y() , 0 ) ) ) { //inside wall
         return false;
     }
 
@@ -66,47 +38,26 @@ bool doorDetector::doorway_check ( pos_t pos, const brushfire_map &brushmap ){
         testing_pos_A.y() = (long int)(pos.y()) + connectivity[i][1];
         testing_pos_B.x() = (long int)(pos.x()) + connectivity[i+1][0];
         testing_pos_B.y() = (long int)(pos.y()) + connectivity[i+1][1];
-        if ( WSPACE_IS_OBSTACLE(brushmap.const_coordVal( testing_pos_A ))
-	 && WSPACE_IS_OBSTACLE(brushmap.const_coordVal( testing_pos_B ))) {
+        if ( WSPACE_IS_OBSTACLE(img->getPixelValuei( pos.x(), pos.y(), 0 ) )
+	 && WSPACE_IS_OBSTACLE(img->getPixelValuei( pos.x(), pos.y(), 0) )) {
 	is_it_a_doorway = true;
         }
     }
-
-    /* Obstacle on both sides could also mean a hall.
-     * To see if the position is next to open space I check
-     * for an increase in the distance to the wall.
-     * because of 8 point connectivity in brushfire I have to
-     * check outside the door distance to see if there is an increase
-     */
-
-//    if ( is_it_a_doorway ) {
-//        is_it_a_doorway = false;
-//        pos_t test1_val;
-//        pos_t test2_val;
-
-//        int brushfire_val = brushmap.const_coordVal( pos );
-
-//        for ( int i = 0; i < 8; ++i ) {
-//	test1_val.x() = (int)(pos.x()) + connectivity[i][0] ;
-//	test1_val.y() = (int)(pos.y()) + connectivity[i][1] ;
-//	test2_val.x() = (int)(pos.x()) + connectivity[i][0]
-//	        + (std::signbit(connectivity[i][0])?        //In some cases is this more likely
-//		(WSPACE_DOOR_UNCERTAINTY):-(WSPACE_DOOR_UNCERTAINTY));
-//	test2_val.y() = (int)(pos.y()) + connectivity[i][1]
-//	        + (std::signbit(connectivity[i][1])?
-//		(WSPACE_DOOR_UNCERTAINTY):-(WSPACE_DOOR_UNCERTAINTY));
-//	if ( brushmap.const_coordVal( test1_val ) > brushfire_val ) {
-//	    is_it_a_doorway = true;
-//	} else if ( brushmap.const_coordVal( test2_val ) > brushfire_val ) {
-//	    is_it_a_doorway = true;
-//	}
-//        }
-//    }
     return is_it_a_doorway;
 }
 
+/**
+ * @brief doorDetector::detect_doorways
+ * @param img               Image of the entire map
+ * @param brushmap     Brushfire map is calculated elsewhere
+ * @return                       A list of doors
+ *
+ * Detects doorways by looking at brushfire values.
+ * If two waves collide the corner will form a T.
+ * This T will have the distance to the center of the doorframe
+ */
 
-vector<pos_t> doorDetector::detect_doorways( const brushfire_map &brushmap ){
+vector<pos_t> doorDetector::detect_doorways( shared_ptr<Image> img, const brushfire_map &brushmap ){
     std::vector<pos_t> door_list_potential; //list of doors.
     std::vector<pos_t> door_list_true; //list of doors.
     const std::array<std::array<int,2>,4> neighbours = {{
@@ -134,13 +85,59 @@ vector<pos_t> doorDetector::detect_doorways( const brushfire_map &brushmap ){
 	        matches.clear();
         }
     }
- std::cout << "halfway\n";
+
     for (int j = 0; j < (int)door_list_potential.size(); j++ ) {                   //append these coordinates to the list.
-        if ( doorway_check( door_list_potential.at(j), brushmap ) ){
+        if ( doorway_check( img, door_list_potential.at(j), brushmap ) ){
 	door_list_true.push_back( door_list_potential.at(j) );
         }
     }
-std::cout << "done\n";
-//    door_list_true = reduce_number_of_doors ( door_list_true, brushmap );
     return move(door_list_true);
+}
+
+/**
+ * @brief doorDetector::door_step
+ * @param img                     The image class is used to detect obstacles
+ * @param brushmap           The brushmap is used to see distance to door frame
+ * @param the_doors           A list of doors found by detect_doorways function.
+ * @return door_step_map  The map with the door steps
+ *
+ * Go through every door in list
+ * Check direction by checking if there is an obstacle on both sides of door
+ * paint pixel black from door to obstacle in door direction
+ * return a map with door steps painted black
+ */
+pixelshade_map doorDetector::door_step(shared_ptr<Image> img, brushfire_map &brushmap, std::vector<pos_t> the_doors){
+	pixelshade_map door_step_map(img,pixelshade_map::PIXELSHADE);
+
+	brushfire_map::myValType val;
+
+	pos_t test_A, test_B;
+
+	pos_t relative;
+
+	const std::array<std::array<int,2>,4> directions = {{
+			{-1,0}, /* W */ {1,0},  /* E */
+			{0,-1}, /* N */ {0,1},  /* S */ }};
+
+	for ( auto door : the_doors ) {
+		val = brushmap.const_coordVal( door );
+		for ( int n = 0; n < 4; n += 2 ) {
+			test_A.x() = (long int)(door.x()) + (directions[n][0] * (val +1 ));
+			test_A.y() = (long int)(door.y()) + (directions[n][1] * (val +1));
+			test_B.x() = (long int)(door.x()) + (directions[n+1][0] *(val + 1));
+			test_B.y() = (long int)(door.y()) + (directions[n+1][1] * (val + 1));
+
+			if ( brushmap.const_coordVal( test_A ) == WSPACE_OBSTACLE &&
+			      brushmap.const_coordVal( test_B ) == WSPACE_OBSTACLE ) {
+				for ( int dir = 0; dir < 2; ++dir){
+					for ( int i = 0 ; i < val;++i) {
+						relative.x() = door.x() + (directions[n+dir][0] * i);
+						relative.y() = door.y() + (directions[n+dir][1] * i);
+						door_step_map.coordVal( relative ) = WSPACE_OBSTACLE;
+					}
+				}
+			}
+		}
+	}
+	return move( door_step_map );
 }

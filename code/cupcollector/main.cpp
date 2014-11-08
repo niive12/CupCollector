@@ -55,38 +55,31 @@ void testTekMapConstructors(const string &filename)
 int main(int argc, char** argv) {
     (void)argc;
     string filename(argv[1]);
-    pos_t hej = {ROBOT_START_X,ROBOT_START_Y};
 
-    cout << "Loading image..." << endl;
-    shared_ptr<Image> img(PPMLoader::load(filename));
-    cout << "Image size: " << img->getWidth()
-         << " x " << img->getHeight() << endl;
+    cout << "Image size: " << img->getWidth() << " x " << img->getHeight() << endl;
 
     pixelshade_map original(img,pixelshade_map::PIXELSHADE);
 
-    brushfire_map brush(img,brushfire_map::BRUSHFIRE,list< pos_t >(),&hej);
+    cout << "Loading image..." << endl;
+    shared_ptr<Image> img(PPMLoader::load(filename));
+    cout << "Giving start position for brushfire..." << endl;
+    pos_t robot_start = {ROBOT_START_X,ROBOT_START_Y};
+    cout << "Creating brushfire..." << endl;
+    brushfire_map brush(img,brushfire_map::BRUSHFIRE,list< pos_t >(),&robot_start);
+    cout << "brushfire done..." << endl;
+
+
     doorDetector mydetective;
     cout << "Finding The Doors " << endl;
-    vector<pos_t> The_Doors = mydetective.detect_doorways(brush);
-    cout << "Painting The Doors" << endl;
-    for(auto i : The_Doors)
-        img->setPixel8U(i.x(),i.y(),5);
-    cout << "Saving The Doors as The_Doors.pgm..." << endl;
-    img->saveAsPGM("The_Doors.pgm");
+    vector<pos_t> The_Doors = mydetective.detect_doorways(img, brush);
+
+    cout << "Painting Door Steps" << endl;
+    pixelshade_map door_steps_map(img,pixelshade_map::PIXELSHADE) = mydetective.door_step(img, brush, The_Doors);
+
 
     original.shade(img);
-
-    pos_t two_cups = {1320,1257};
-    cupScanner cs;
-    cout << "\nNumber of cups at ( " << two_cups.cx() << " , "
-         << two_cups.cy() << " ): " << cs.scan(two_cups,original)
-         << ", say again: " << cs.scan(two_cups,original) << endl;
-
-    testTekMapConstructors(filename);
-
-    brush.test(img);
-    img->saveAsPGM("test.pgm");
-    original.shade(img);
+    door_steps_map.shade(img);
+    img->saveAsPGM("door_step.pgm");
 
 
     return 0;
