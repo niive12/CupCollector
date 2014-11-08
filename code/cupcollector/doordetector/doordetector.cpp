@@ -107,7 +107,7 @@ vector<pos_t> doorDetector::detect_doorways( shared_ptr<Image> img, const brushf
  * return a map with door steps painted black
  */
 pixelshade_map doorDetector::door_step(shared_ptr<Image> img, brushfire_map &brushmap, std::vector<pos_t> the_doors){
-	pixelshade_map door_step_map(img,pixelshade_map::PIXELSHADE);
+	pixelshade_map door_step_map(img);
 
 	brushfire_map::myValType val;
 
