@@ -73,11 +73,11 @@ public:
 	{
         unsigned char val;
         for( coordIndexType x = 0; x < img->getWidth(); ++x){
-            for ( coordIndexType y = 0; y < img->getHeight(); ++y){
-                //				val = ( myMap.at(x) ).at(y) % 255;
-                val = (unsigned char) (const_coordVal(x, y) %255 );
-                img->setPixel8U(x,y,val);
-            }
+	for ( coordIndexType y = 0; y < img->getHeight(); ++y){
+	    //				val = ( myMap.at(x) ).at(y) % 255;
+	    val = (unsigned char) (const_coordVal(x, y) %255 );
+	    img->setPixel8U(x,y,val);
+	}
         }
         img->saveAsPGM( fileName );
     }
@@ -85,7 +85,7 @@ public:
     tekMap(shared_ptr<Image> img)
     {
         if( !img )
-            cerr << "No image passed to map ctor" << endl;
+	cerr << "No image passed to map ctor" << endl;
     }
 
 
@@ -119,26 +119,26 @@ public:
         coordValType mymin=numeric_limits<coordValType>::max();
         coordValType mymax=numeric_limits<coordValType>::min();
         for(unsigned int x=0; x<getWidth(); ++x)
-            for(unsigned int y=0; y<getHeight(); ++y) {
-                if(myMap[x][y]>mymax && myMap[x][y]!=WAVE_VAL_UNV)
-                    mymax=myMap[x][y];
-                if(myMap[x][y]<mymin)
-                    mymin=myMap[x][y];
-            }
+	for(unsigned int y=0; y<getHeight(); ++y) {
+	    if(myMap[x][y]>mymax && myMap[x][y]!=WAVE_VAL_UNV)
+	        mymax=myMap[x][y];
+	    if(myMap[x][y]<mymin)
+	        mymin=myMap[x][y];
+	}
         for(unsigned int x=0; x<getWidth(); ++x)
-            for(unsigned int y=0; y<getHeight(); ++y) {
-                img->setPixel8U(x,y,
-                                (unsigned char)(((myMap[x][y]==WAVE_VAL_UNV?(mymax-mymin):myMap[x][y])*255)/((mymax-mymin)))
-                                );
-            }
+	for(unsigned int y=0; y<getHeight(); ++y) {
+	    img->setPixel8U(x,y,
+		        (unsigned char)(((myMap[x][y]==WAVE_VAL_UNV?(mymax-mymin):myMap[x][y])*255)/((mymax-mymin)))
+		        );
+	}
     }
 
     static list<pos_t> getOffloadingStations(const shared_ptr<Image> img) {
         list<pos_t> result;
         for(coordIndexType x=0; x<coordIndexType(img->getWidth()); ++x)
-            for(coordIndexType y=0; y<coordIndexType(img->getHeight()); ++y)
-                if(WSPACE_IS_OL_STATION(img->getPixelValuei(x,y,0)))
-                    result.emplace_back(x,y);
+	for(coordIndexType y=0; y<coordIndexType(img->getHeight()); ++y)
+	    if(WSPACE_IS_OL_STATION(img->getPixelValuei(x,y,0)))
+	        result.emplace_back(x,y);
         return move(result);
     }
 
@@ -157,7 +157,7 @@ protected:
     inline bool isInImage(const shared_ptr<Image> img, const int &x, const int &y) const
     {
         return ((((int)(img->getWidth()) > x) && ((int)(img->getHeight()) > y))
-                &&((x>0) && (y>0)) );
+	    &&((x>0) && (y>0)) );
     }
 
     /**
@@ -309,26 +309,26 @@ protected:
 
         const array<array<int,2>,8> neighbours =
         {{  {-1,0}, /* W */ {1,0},  /* E */
-            {0,-1}, /* N */ {0,1},  /* S */
-            {-1,-1},/* NW */{1,-1}, /* NE */
-            {1,1},  /* SE */{-1,1}  /* SW */
+	{0,-1}, /* N */ {0,1},  /* S */
+	{-1,-1},/* NW */{1,-1}, /* NE */
+	{1,1},  /* SE */{-1,1}  /* SW */
          }};
 
         for( int x = 0; x < (int)(img->getWidth()); ++x) {
-            for( int y = 0; y < (int)(img->getHeight()); ++y) {
-                if( WSPACE_IS_OBSTACLE( img->getPixelValuei(x,y,0) ) ) {
-                    for(auto n : neighbours) {
-                        //If neighbour is within image borders:
-                        if( isInImage( img, x+n.at(0), y+n.at(1) ) ) {
-                            //if the neighbour is not an obstacle:
-                            if( !WSPACE_IS_OBSTACLE( img->getPixelValuei(x+n.at(0),y+n.at(1),0) ) ) {
-                                resulting_coords.insert(pos_t(x,y));
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
+	for( int y = 0; y < (int)(img->getHeight()); ++y) {
+	    if( WSPACE_IS_OBSTACLE( img->getPixelValuei(x,y,0) ) ) {
+	        for(auto n : neighbours) {
+		//If neighbour is within image borders:
+		if( isInImage( img, x+n.at(0), y+n.at(1) ) ) {
+		    //if the neighbour is not an obstacle:
+		    if( !WSPACE_IS_OBSTACLE( img->getPixelValuei(x+n.at(0),y+n.at(1),0) ) ) {
+		        resulting_coords.insert(pos_t(x,y));
+		        break;
+		    }
+		}
+	        }
+	    }
+	}
         }
 
         return move(list<pos_t>(resulting_coords.begin(),resulting_coords.end()));
@@ -381,7 +381,7 @@ public:
         :tekMap(img)
     {
         if(coords.empty())
-            cerr << "No coords passed to wavefrontMap constructor!" << endl;
+	cerr << "No coords passed to wavefrontMap constructor!" << endl;
         wave(img,coords);
     }
 
@@ -398,9 +398,9 @@ public:
         //Just give pixel values to the map and be done with it.
         for( size_t x = 0; x < img->getWidth(); ++x)
         {
-            for( size_t y = 0; y < img->getHeight(); ++y)
-                ( myMap.at(x) ).at(y) = (myValType)( img->getPixelValuei(x,y,0) );
-            ( myMap.at(x) ).shrink_to_fit();
+	for( size_t y = 0; y < img->getHeight(); ++y)
+	    ( myMap.at(x) ).at(y) = (myValType)( img->getPixelValuei(x,y,0) );
+	( myMap.at(x) ).shrink_to_fit();
         }
     }
 };
@@ -422,38 +422,38 @@ public:
         set<pos_t> loma;
         for(coordIndexType x=0;x<getWidth();++x)
         {
-            coordIndexType y0=2, y1=1, y2=0;
+	coordIndexType y0=2, y1=1, y2=0;
 
-            while(y0<getHeight())
-            {
-                if(
-                        ((this->const_coordVal(x,y0))<(this->const_coordVal(x,y1)))
-                        &&((this->const_coordVal(x,y2))<(this->const_coordVal(x,y1)))
-                        )
-                    loma.emplace(x,y1);
-                ++y0;
-                ++y1;
-                ++y2;
-            }
+	while(y0<getHeight())
+	{
+	    if(
+		((this->const_coordVal(x,y0))<(this->const_coordVal(x,y1)))
+		&&((this->const_coordVal(x,y2))<(this->const_coordVal(x,y1)))
+		)
+	        loma.emplace(x,y1);
+	    ++y0;
+	    ++y1;
+	    ++y2;
+	}
         }
         for(coordIndexType y=0;y<getHeight();++y)
         {
-            coordIndexType x0=2, x1=1, x2=0;
+	coordIndexType x0=2, x1=1, x2=0;
 
-            while(x0<getWidth())
-            {
-                if(
-                        ((this->const_coordVal(x0,y))<(this->const_coordVal(x1,y)))
-                        &&((this->const_coordVal(x2,y))<(this->const_coordVal(x1,y)))
-                        )
-                    loma.emplace(x1,y);
-                ++x0;
-                ++x1;
-                ++x2;
-            }
+	while(x0<getWidth())
+	{
+	    if(
+		((this->const_coordVal(x0,y))<(this->const_coordVal(x1,y)))
+		&&((this->const_coordVal(x2,y))<(this->const_coordVal(x1,y)))
+		)
+	        loma.emplace(x1,y);
+	    ++x0;
+	    ++x1;
+	    ++x2;
+	}
         }
         for(auto i:loma)
-            img->setPixel8U(i.cx(),i.cy(),0);
+	img->setPixel8U(i.cx(),i.cy(),0);
     }
 };
 
@@ -466,7 +466,7 @@ public:
         :tekMap(img)
     {
         if(coords.empty())
-            cerr << "No coords passed to dijkstraMap constructor!" << endl;
+	cerr << "No coords passed to dijkstraMap constructor!" << endl;
         wave(img,coords);
     }
 
