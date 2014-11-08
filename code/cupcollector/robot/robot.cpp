@@ -11,7 +11,7 @@ int walkAround(pos_t currentPos, pixelshade_map * map);
 int walkUp(pos_t currentPos, pixelshade_map * map);
 
 
-robot::robot(shared_ptr<Image> map)
+robot::robot(shared_ptr<Image> map):cupsHolding(0)
 {
 	setCupPickRadius (ROBOT_ARM_RADIUS);
 	setCupSearchRadius (ROBOT_SCANNER_RADIUS);
