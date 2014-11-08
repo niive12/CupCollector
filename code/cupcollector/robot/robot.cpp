@@ -232,7 +232,6 @@ void robot::cleanRoom(void * doOnCoverage, void * doAfterCoverage, int coverageW
 int walkDown(pos_t currentPos, pixelshade_map * map)
 {
 	// returns direction (N/S/NW...)
-
 	pos_t dir(1,0);
 	pos_t position = currentPos;
 	position.x() -= 1;
@@ -272,14 +271,12 @@ int walkDown(pos_t currentPos, pixelshade_map * map)
 
 int walkAround(pos_t currentPos, pixelshade_map * map)
 {
-
 	return false;
 }
 
 
 int walkUp(pos_t currentPos, pixelshade_map * map)
 {
-
 	return false;
 }
 

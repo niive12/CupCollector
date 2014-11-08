@@ -85,12 +85,13 @@ vector<pos_t> doorDetector::detect_doorways( shared_ptr<Image> img, const brushf
 	        matches.clear();
         }
     }
-
+    std::cout << "possible doors = " << door_list_potential.size() << std::endl;
     for (int j = 0; j < (int)door_list_potential.size(); j++ ) {                   //append these coordinates to the list.
         if ( doorway_check( img, door_list_potential.at(j), brushmap ) ){
 	door_list_true.push_back( door_list_potential.at(j) );
         }
     }
+    std::cout << "after detection = " << door_list_true.size() << std::endl;
     return move(door_list_true);
 }
 
