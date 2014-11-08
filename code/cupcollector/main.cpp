@@ -28,16 +28,19 @@ void testTekMapConstructors(const string &filename)
     cout << "Image size: " << img->getWidth()
          << " x " << img->getHeight() << endl;
     //Store original image:
-    pixelshade_map original(img,pixelshade_map::PIXELSHADE);
+    //pixelshade_map original(img,pixelshade_map::PIXELSHADE);
+    pixelshadeMap original(img);
     //Run brushfire algorithm on reachable freespace:
-    brushfire_map brush(img,brushfire_map::BRUSHFIRE,list< pos_t >(),&start);
+    //brushfire_map brush(img,brushfire_map::BRUSHFIRE,list< pos_t >(),&start);
     //brushfire_map brush(img,brushfire_map::BRUSHFIRE);
+    brushfireMap brush(img,start);
     //Paint the brushfire values onto the canvas:
     brush.shade(canvas);
     //Save the brushfire painting:
     canvas->saveAsPGM("brushfire.pgm");
     //Run wavefront algorithm on reachable freespace, goals being the Offloading stations:
-    wavefront_map wave(img,wavefront_map::WAVEFRONT,wavefront_map::getOffloadingStations(img));
+    //wavefront_map wave(img,wavefront_map::WAVEFRONT,wavefront_map::getOffloadingStations(img));
+    wavefrontMap wave(img,wavefrontMap::getOffloadingStations(img));
     //Paint the wavefront values onto the canvas:
     wave.shade(canvas);
     //Save the wavefront painting:
@@ -46,6 +49,11 @@ void testTekMapConstructors(const string &filename)
     original.shade(canvas);
     //Save the original painting:
     canvas->saveAsPGM("original.pgm");
+
+    dijkstraMap d(img,dijkstraMap::getOffloadingStations(img));
+    d.shade(canvas);
+    canvas->saveAsPGM("dijkstra.pgm");
+
 }
 
 /** Main entry point
@@ -58,29 +66,32 @@ int main(int argc, char** argv) {
 
     cout << "Image size: " << img->getWidth() << " x " << img->getHeight() << endl;
 
-    pixelshade_map original(img,pixelshade_map::PIXELSHADE);
+    pixelshade_map original(img);
 
     cout << "Loading image..." << endl;
     shared_ptr<Image> img(PPMLoader::load(filename));
     cout << "Giving start position for brushfire..." << endl;
     pos_t robot_start = {ROBOT_START_X,ROBOT_START_Y};
     cout << "Creating brushfire..." << endl;
-    brushfire_map brush(img,brushfire_map::BRUSHFIRE,list< pos_t >(),&robot_start);
+    brushfire_map brush(img,&robot_start);
     cout << "brushfire done..." << endl;
-
 
     doorDetector mydetective;
     cout << "Finding The Doors " << endl;
     vector<pos_t> The_Doors = mydetective.detect_doorways(img, brush);
 
     cout << "Painting Door Steps" << endl;
-    pixelshade_map door_steps_map(img,pixelshade_map::PIXELSHADE) = mydetective.door_step(img, brush, The_Doors);
+    pixelshade_map door_steps_map(img) = mydetective.door_step(img, brush, The_Doors);
 
+    pos_t two_cups = {1320,1257};
+    scanner cs;
+    cout << "\nNumber of cups at ( " << two_cups.cx() << " , "
+         << two_cups.cy() << " ): " << cs.scan(two_cups,original)
+         << ", say again: " << cs.scan(two_cups,original) << endl;
 
     original.shade(img);
     door_steps_map.shade(img);
     img->saveAsPGM("door_step.pgm");
-
 
     return 0;
 }

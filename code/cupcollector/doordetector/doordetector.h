@@ -1,6 +1,6 @@
 /** @file */
 #pragma once
-#include "tekmap/tekmap.hpp"
+#include "../tekmap/tekmap.hpp"
 #include <vector>
 
 

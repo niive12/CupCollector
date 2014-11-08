@@ -8,7 +8,8 @@ SOURCES += main.cpp \
     libraries/Image.cpp \
     libraries/PPMLoader.cpp \
     scanner/scanner.cpp \
-    doordetector/doordetector.cpp
+    doordetector/doordetector.cpp \
+    robot/robot.cpp
 
 HEADERS += \
     libraries/Image.hpp \
@@ -19,4 +20,3 @@ HEADERS += \
     robot/robot.h \
     tekmap/tekmap.hpp \
     doordetector/doordetector.h
-
