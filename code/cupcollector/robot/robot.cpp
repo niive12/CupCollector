@@ -5,10 +5,12 @@
 
 #define RUNMODE TESTROOM
 
+#define WALK_DOWN(a,b) (a < b)?true:false
+#define WALK_UP(a,b) (a > b)?true:false
+#define WALK_AROUND(a,b) (a == b)?true:false
 
-int walkDown(pos_t currentPos, pixelshade_map * map);
-int walkAround(pos_t currentPos, pixelshade_map * map);
-int walkUp(pos_t currentPos, pixelshade_map * map);
+
+int walk(pos_t currentPos, pixelshade_map * map, bool (*comp)(int a, int b));
 
 
 robot::robot(shared_ptr<Image> map)
@@ -157,7 +159,7 @@ bool robot::emptyCupCarrier()
 }
 
 
-void robot::cleanRoom(void * doOnCoverage, void * doAfterCoverage, int coverageWidth)
+void robot::cleanRoom(void (*doOnCoverage)(), void (*doAfterCoverage)(), int coverageWidth)
 {
 	int dir;
 	int maxLvl = mapBrush->coordVal (getRobotPos ());
@@ -172,9 +174,9 @@ void robot::cleanRoom(void * doOnCoverage, void * doAfterCoverage, int coverageW
 		dir = walkDown (getRobotPos(),mapRooms);
 		move(dir);
 
-		if(doOnCoverage != nullptr)
+		if(doOnCoverage() != nullptr)
 		{
-			doOnCoverage;
+			doOnCoverage();
 		}
 	}
 
@@ -189,9 +191,9 @@ void robot::cleanRoom(void * doOnCoverage, void * doAfterCoverage, int coverageW
 		do{
 			dir = walkAround (getRobotPos (),mapRooms);
 			move (dir);
-			if(doOnCoverage != nullptr)
+			if(doOnCoverage() != nullptr)
 			{
-				doOnCoverage;
+				doOnCoverage();
 			}
 		} while (getRobotPos () != startPos);
 
@@ -215,21 +217,22 @@ void robot::cleanRoom(void * doOnCoverage, void * doAfterCoverage, int coverageW
 			{
 				dir = walkAround (getRobotPos (),mapRooms);
 				move(dir);
-				if(doOnCoverage != nullptr)
+				if(doOnCoverage() != nullptr)
 				{
-					doOnCoverage;
+					doOnCoverage();
 				}
 			}
 		}
 	}
 
-	if(doAfterCoverage != nullptr)
+	if(doAfterCoverage() != nullptr)
 	{
-		doAfterCoverage;
+		doAfterCoverage();
 	}
 }
 
-int walkDown(pos_t currentPos, pixelshade_map * map)
+// comp: a < b => down, a > b => up and a == b => around
+int walk(pos_t currentPos, pixelshade_map * map, bool (*comp)(int a, int b))
 {
 	// returns direction (N/S/NW...)
 	pos_t dir(1,0);
@@ -242,7 +245,7 @@ int walkDown(pos_t currentPos, pixelshade_map * map)
 	// walk CW around currentpos
 	for(int i = 1; i < 9; i++)
 	{
-		if(map->coordVal (position) < map->coordVal (currentPos))
+		if(comp(map->coordVal (position), map->coordVal (currentPos)))
 		{
 			// return the first direction that leads down
 			return result[(i-1)];
@@ -267,19 +270,6 @@ int walkDown(pos_t currentPos, pixelshade_map * map)
 	// only to surpress warning :D there will always be a way down on a brush unless you are next to the wall!
 	return false;
 }
-
-
-int walkAround(pos_t currentPos, pixelshade_map * map)
-{
-	return false;
-}
-
-
-int walkUp(pos_t currentPos, pixelshade_map * map)
-{
-	return false;
-}
-
 
 
 void robot::cupClean()

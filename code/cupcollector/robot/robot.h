@@ -77,7 +77,7 @@ public:
 	 * @param doOnRun call this function on every step (like pick up cups)
 	 * @param coverageWidth the rnage it is able to cover by walking around the room (scan or wash radius)
 	 */
-	void cleanRoom(void * doOnCoverage, void * doAfterCoverage, int coverageWidth);
+	void cleanRoom(void (*doOnCoverage)(), void (*doAfterCoverage)(), int coverageWidth);
 
 	/**
 	 * @brief cupClean run necessary funcs to clean the map for cups
