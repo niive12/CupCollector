@@ -1,9 +1,9 @@
 #ifndef ROBOT_H
 #define ROBOT_H
 
-#include "assignment.h"
-#include "tekmap/tekmap.hpp"
-#include "libraries/Image.hpp"
+#include "../assignment.h"
+#include "../tekmap/tekmap.hpp"
+#include "../libraries/Image.hpp"
 
 #include <vector>
 
@@ -43,18 +43,18 @@ public:
 	bool pickupCup(pos_t cupPosition);
 
 	/**
-	 * @brief pickupAllCups picks up all the cups in the vector by going close to them, if out or range, and then return
+	 * @brief pickupAllCups picks up all the cups in the vector which are within range
 	 * @param cups pointer to vector of cups to be picked up
 	 * @return if cupholder is full = false, else = true
 	 */
-	bool pickupAllCups(shared_ptr<vector <pos_t>> cups);
+	bool pickupCupsInRange(shared_ptr<vector <pos_t>> cups);
 
 	/**
 	 * @brief startCupScan scans for cups in its range
 	 * @param cups pointer to a vector used to hold the poistion of the cups in range
 	 * @return if cups where detected, true = yes, false = no cups
 	 */
-	bool startCupScan(shared_ptr<vector <pos_t>> cups);
+	bool startCupScan();
 
 	/**
 	 * @brief emptyCupCarrier empties the cup storage on
@@ -71,6 +71,18 @@ public:
 	 * @brief cleanFloorOnMap initiates the process of cleaning the floor on the map
 	 */
 	void cleanFloorOnMap();
+
+	/**
+	 * @brief cleanRoom initiates the process of cleaning the floor on the current room
+	 * @param doOnRun call this function on every step (like pick up cups)
+	 * @param coverageWidth the rnage it is able to cover by walking around the room (scan or wash radius)
+	 */
+	void cleanRoom(void * doOnRun = nullptr, int coverageWidth);
+
+	/**
+	 * @brief cupClean run necessary funcs to clean the map for cups
+	 */
+	void cupClean();
 
 	// get'ers
 	/**
@@ -157,9 +169,14 @@ private:
 	pos_t robotPosition;
 
 	// maps
-	brushfire_map mapBrush;
-	wavefront_map mapWave;
-	// normal/door map for navigation?
+	brushfire_map * mapBrush;
+	wavefront_map * mapWave;
+	pixelshade_map * mapNormal; // are the cups on this map type??
+	pixelshade_map * mapRooms;
+
+	// vector to hold the cups
+	std::vector<pos_t> cupsToPickUp;
+
 };
 
 

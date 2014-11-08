@@ -7,8 +7,11 @@ robot::robot(shared_ptr<Image> map)
 	setDistanceWalked (0);
 	setRobotWidth (ROBOT_DYNAMICS_RADIUS);
 
-	brushfire_map(map,brushfire_map.BRUSHFIRE);
-	wavefront_map(map,wavefront_map.WAVEFRONT);
+	//init the maps
+	mapBrush = new brushfire_map(map);
+	mapWave = new wavefront_map(map);
+	mapNormal = new pixelshade_map(map);
+	mapRooms = new pixelshade_map(map);
 }
 
 bool robot::move(int direction)
@@ -55,7 +58,7 @@ bool robot::move(int direction)
 	}
 
 	// if newPosition is valid
-	if()
+	if(WSPACE_IS_FREE (mapNormal->coordVal (newPosition)))
 	{
 		setRobotPos(newPosition);
 		setDistanceWalked(walked);
@@ -83,47 +86,43 @@ bool robot::pickupCup(pos_t cupPosition)
 			result = true;
 			setCups(getCupsHolding() + 1);
 			// remove cup from map
-
+			mapNormal->coordVal (cupPosition) = WSPACE_FREE;
 		}
 	}
 	return result;
 }
 
-bool robot::pickupAllCups(vector <pos_t> * cups)
+bool robot::pickupCupsInRange(shared_ptr<vector <pos_t>> cups)
 {
-	// 1) first loop through the vector to remove all the cups within range, without moving
-	// 2) then, if cups left, move towards them and return to start position afterwards
+	// loop through the vector to remove all the cups within range, without moving
 	// return false if cup holder runs full
-	pos_t returnPos = getRobotPos();
-	bool result = false;
+	bool result = true;
 
-	// 1)
+	// pick up cups in range
 	for(int i = 0; i < cups->size(); i++)
 	{
-		if(pickupCup(*cups[i]))
+		if(pickupCup(cups->at (i)))
 		{
 			// remove cup from vector
 			cups->erase(cups->begin() + i);
 		}
 	}
 
-	// 2), first check if there still is space for them all (avoid walking towards cups just because full)
-	if(getCupsHolding() < ROBOT_CUP_CAPACITY)
+	// check if has no space left
+	if(getCupsHolding() == ROBOT_CUP_CAPACITY)
 	{
-		// start picking up other cups
-
-		// return to position
+		result = false;
 	}
 
 	return result;
 }
 
 
-bool robot::startCupScan(vector <pos_t> * cups)
+bool robot::startCupScan()
 {
 	// start cupscan through other class (pass pointer to map and cup vector?)
 	bool result = false;
-
+	// call with shared_ptr<vector <pos_t>> cups
 	return result;
 }
 
@@ -133,12 +132,42 @@ bool robot::emptyCupCarrier()
 	bool result = false;
 
 	// if standing on valid spot
-	if()
+	if(WSPACE_IS_OL_STATION(mapNormal->coordVal (getRobotPos ())))
 	{
 		result = true;
 		setCups(0);
 	}
 	return result;
+}
+
+
+void robot::cleanRoom(void * doOnRun, int coverageWidth)
+{
+	// first generate brush of room assuming you are in the room to clean
+
+	//generate brush
+
+	// go to edge of a room (the value of coverage range)
+
+
+
+
+	if(doOnRun != nullptr)
+	{
+		doOnRun();
+	}
+
+
+}
+
+//pos_t
+
+
+void robot::cupClean()
+{
+	// scan
+	startCupScan();
+	pickupCupsInRange(&cupsToPickUp);
 }
 
 
@@ -215,4 +244,9 @@ void robot::setCupPickRadius(int pickRadius)
 void robot::setDistanceWalked(double distance)
 {
 	distanceWalked = distance;
+}
+
+void robot::setRobotPos(pos_t position)
+{
+	robotPosition = position;
 }
