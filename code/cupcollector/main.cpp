@@ -61,7 +61,7 @@ int main(int argc, char** argv) {
 	pos_t robot_start = {ROBOT_START_X,ROBOT_START_Y};
 
 	cout << "Creating brushfire..." << endl;
-	brushfire_map brush(img);
+	brushfire_map brush(img , robot_start);
 
 	cout << "brushfire done..." << endl;
 
@@ -72,10 +72,18 @@ int main(int argc, char** argv) {
 	cout << "Finding Door Steps" << endl;
 	pixelshade_map door_steps_map = mydetective.door_step(img, brush, The_Doors);
 
+	brush.shade(img);
+
+
 	cout << "Painting Door Steps" << endl;
 	door_steps_map.shade(img);
 	img->saveAsPGM("door_step.pgm");
 
+	original.shade(img);
+	for ( auto n : The_Doors ) {
+		img->setPixel8U( n.x(), n.y() , 0);
+	}
+	img->saveAsPGM("The_Doors.pgm");
 
 	return 0;
 }
