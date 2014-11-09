@@ -169,10 +169,11 @@ private:
 	pos_t robotPosition;
 
 	// maps
-	brushfire_map * mapBrush;
-	wavefront_map * mapWave;
-	pixelshade_map * mapNormal; // are the cups on this map type??
-	pixelshade_map * mapRooms;
+	shared_ptr<brushfire_map> mapBrush;
+	shared_ptr<wavefront_map> mapWave;
+	shared_ptr<pixelshade_map> mapNormal; // are the cups on this map type??
+	shared_ptr<pixelshade_map> mapRooms;
+	shared_ptr<brushfire_map> mapRoomBrush;
 
 	// vector to hold the cups
 	std::vector<pos_t> cupsToPickUp;

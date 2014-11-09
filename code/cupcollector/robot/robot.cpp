@@ -5,12 +5,13 @@
 
 #define RUNMODE TESTROOM
 
-#define WALK_DOWN(a,b) (a < b)?true:false
-#define WALK_UP(a,b) (a > b)?true:false
-#define WALK_AROUND(a,b) (a == b)?true:false
 
+#define WALK_DOWN 0
+#define WALK_UP 1
+#define WALK_AROUND 2
 
-int walk(pos_t currentPos, pixelshade_map * map, bool (*comp)(int a, int b));
+// used for walking in a room
+int walk(pos_t currentPos, shared_ptr<brushfire_map> map, int direction);
 
 
 robot::robot(shared_ptr<Image> map):cupsHolding(0)
@@ -21,10 +22,11 @@ robot::robot(shared_ptr<Image> map):cupsHolding(0)
 	setRobotWidth (ROBOT_DYNAMICS_RADIUS);
 
 	//init the maps
-	mapBrush = new brushfire_map(map);
-	mapWave = new wavefront_map(map);
-	mapNormal = new pixelshade_map(map);
-	mapRooms = new pixelshade_map(map);
+	mapBrush = make_shared<brushfire_map>(map);
+	mapWave = make_shared<wavefront_map>(map);
+	mapNormal = make_shared<pixelshade_map>(map);
+	mapRooms = make_shared<pixelshade_map>(map);
+	mapRoomBrush = make_shared<brushfireMap>(map); // need to change this so it does it for the rooms only
 }
 
 bool robot::move(int direction)
@@ -162,7 +164,7 @@ bool robot::emptyCupCarrier()
 void robot::cleanRoom(void (*doOnCoverage)(), void (*doAfterCoverage)(), int coverageWidth)
 {
 	int dir;
-	int maxLvl = mapBrush->coordVal (getRobotPos ());
+	int maxLvl = mapRoomBrush->coordVal (getRobotPos ());
 	int currentLvl = coverageWidth;
 	// first generate brush of room assuming you are in the room to clean
 
@@ -171,13 +173,10 @@ void robot::cleanRoom(void (*doOnCoverage)(), void (*doAfterCoverage)(), int cov
 	// go to edge of a room (the value of coverage range)
 	while (mapBrush->coordVal (getRobotPos ()) > currentLvl)
 	{
-		dir = walkDown (getRobotPos(),mapRooms);
+		dir = walk(getRobotPos(),mapRoomBrush, WALK_DOWN);
 		move(dir);
 
-		if(doOnCoverage() != nullptr)
-		{
-			doOnCoverage();
-		}
+		doOnCoverage();
 	}
 
 	// walk around in circles and when returned to "start" walk towards center
@@ -189,16 +188,13 @@ void robot::cleanRoom(void (*doOnCoverage)(), void (*doAfterCoverage)(), int cov
 
 		// walk around on the lvl till back on original spot
 		do{
-			dir = walkAround (getRobotPos (),mapRooms);
+			dir = walk(getRobotPos (),mapRoomBrush, WALK_AROUND);
 			move (dir);
-			if(doOnCoverage() != nullptr)
-			{
-				doOnCoverage();
-			}
+			doOnCoverage();
 		} while (getRobotPos () != startPos);
 
 		// check if room done
-		if(mapBrush->coordVal (getRobotPos ()) == maxLvl)
+		if(mapRoomBrush->coordVal (getRobotPos ()) == maxLvl)
 		{
 			roomDone = true;
 		}
@@ -213,26 +209,20 @@ void robot::cleanRoom(void (*doOnCoverage)(), void (*doAfterCoverage)(), int cov
 			}
 
 			// move up to next lvl
-			while (mapBrush->coordVal (getRobotPos ()) < currentLvl)
+			while (mapRoomBrush->coordVal (getRobotPos ()) < currentLvl)
 			{
-				dir = walkAround (getRobotPos (),mapRooms);
+				dir = walk(getRobotPos (),mapRoomBrush, WALK_UP);
 				move(dir);
-				if(doOnCoverage() != nullptr)
-				{
-					doOnCoverage();
-				}
+				doOnCoverage();
 			}
 		}
 	}
 
-	if(doAfterCoverage() != nullptr)
-	{
-		doAfterCoverage();
-	}
+	doAfterCoverage();
 }
 
 // comp: a < b => down, a > b => up and a == b => around
-int walk(pos_t currentPos, pixelshade_map * map, bool (*comp)(int a, int b))
+int walk(pos_t currentPos, shared_ptr<brushfire_map> map, int direc)
 {
 	// returns direction (N/S/NW...)
 	pos_t dir(1,0);
@@ -245,10 +235,30 @@ int walk(pos_t currentPos, pixelshade_map * map, bool (*comp)(int a, int b))
 	// walk CW around currentpos
 	for(int i = 1; i < 9; i++)
 	{
-		if(comp(map->coordVal (position), map->coordVal (currentPos)))
-		{
-			// return the first direction that leads down
-			return result[(i-1)];
+		switch (direc) {
+			case WALK_DOWN:
+				// return the first direction that leads down
+				if (map->coordVal (position) < map->coordVal (currentPos))
+				{
+					return result[(i-1)];
+				}
+				break;
+			case WALK_UP:
+				// return the first direction that leads up
+				if (map->coordVal (position) > map->coordVal (currentPos))
+				{
+					return result[(i-1)];
+				}
+				break;
+			case WALK_AROUND:
+				// return the first direction that leads around
+				if (map->coordVal (position) == map->coordVal (currentPos))
+				{
+					return result[(i-1)];
+				}
+				break;
+			default:
+				break;
 		}
 
 		position = position + dir;
