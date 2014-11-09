@@ -43,7 +43,38 @@ void testTekMapConstructors(const string &filename)
 	original.shade(canvas);
 	//Save the original painting:
 	canvas->saveAsPGM("original.pgm");
+	dijkstraMap dij(img,dijkstraMap::getOffloadingStations(img));
+	dij.shade(canvas);
+	canvas->saveAsPGM("dijkstra.pgm");
 }
+
+void testShortestPath(shared_ptr<Image> img)
+{
+	pos_t start = {ROBOT_START_X,ROBOT_START_Y};
+	pos_t goal = {2710,1292};
+	cout << "Constructing tekmaps" << endl;
+	wavefront_map wave(img,wavefront_map::getOffloadingStations(img));
+	pixelshade_map pix(img);
+
+	cout << "Getting shortest path..." << endl;
+	list<pos_t> path1 = wave.getWavefrontPath(img,start,goal);
+	//for(auto i:path1) cout << "( " << i.cx() << " , " << i.cy() << " )" << endl;
+	cout << "Done" << endl;
+	cout << "One more time!" << endl;
+	list<pos_t> path2 = pix.getWavefrontPath(start,goal);
+	//for(auto i:path2) cout << "( " << i.cx() << " , " << i.cy() << " )" << endl;
+	cout << (path1==path2?":-)":":-(") << endl;
+
+	list<pos_t> path3 = pix.getDijsktraPath(start,goal);
+	for(auto i:path3) cout << "( " << i.cx() << " , " << i.cy() << " )" << endl;
+	cout << "Dijkstra length: " << path3.size()
+		 << " vs. wavefront length: " << path2.size() << endl;
+
+	list<pos_t> path4 = wave.getDijkstraPath(img,start,goal);
+	for(auto i:path4) cout << "( " << i.cx() << " , " << i.cy() << " )" << endl;
+	cout << "Dijkstra length: " << path4.size() << (path3==path4?":-)":":-(") << endl;
+}
+
 /** Main entry point
 * @param argc Number of arguments. Should be 1!
 * @param argv Name of .pgm file to open. Should be complete_map_project.pgm!
@@ -55,6 +86,10 @@ int main(int argc, char** argv) {
 	cout << "Loading image..." << endl;
 	shared_ptr<Image> img(PPMLoader::load(filename));
 	cout << "Image size: " << img->getWidth() << " x " << img->getHeight() << endl;
+
+	testShortestPath(img);
+	testTekMapConstructors(filename);
+
 
 	pixelshade_map original(img );
 	cout << "Giving start position for brushfire..." << endl;

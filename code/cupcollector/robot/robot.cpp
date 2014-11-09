@@ -119,7 +119,7 @@ bool robot::pickupCupsInRange(std::vector<pos_t> * cups)
 	bool result = true;
 
 	// pick up cups in range
-	for(int i = 0; i < cups->size(); i++)
+	for(size_t i = 0; i < cups->size(); i++)
 	{
 		if(pickupCup(cups->at (i)))
 		{
