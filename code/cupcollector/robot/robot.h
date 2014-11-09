@@ -6,6 +6,7 @@
 #include "../libraries/Image.hpp"
 
 #include <vector>
+#include <cmath>
 
 #define MOVE_N 0
 #define MOVE_NE 1

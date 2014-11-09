@@ -17,6 +17,9 @@ bool doorDetector::doorway_check ( shared_ptr<Image> img, pos_t pos, const brush
     bool is_it_a_doorway = false;
     if ( ((int)pos.x() <= door_distance || (int)pos.x() >= (int)brushmap.getWidth()  -door_distance || //outside picture
           (int)pos.y() <= door_distance || (int)pos.y() >= (int)brushmap.getHeight() -door_distance ) ) {
+	    std::cout << "| " << door_distance << " |\n";
+	    std::cout << "| " << brushmap.getWidth() << " x " << brushmap.getHeight() << " |\n";
+	    std::cout << "( " << pos.x() << " , " << pos.y() << " )\n";
           return false;
     }
     if ( WSPACE_IS_OBSTACLE(img->getPixelValuei( pos.x(), pos.y() , 0 ) ) ) { //inside wall
@@ -38,8 +41,8 @@ bool doorDetector::doorway_check ( shared_ptr<Image> img, pos_t pos, const brush
         testing_pos_A.y() = (long int)(pos.y()) + connectivity[i][1];
         testing_pos_B.x() = (long int)(pos.x()) + connectivity[i+1][0];
         testing_pos_B.y() = (long int)(pos.y()) + connectivity[i+1][1];
-        if ( WSPACE_IS_OBSTACLE(img->getPixelValuei( pos.x(), pos.y(), 0 ) )
-	 && WSPACE_IS_OBSTACLE(img->getPixelValuei( pos.x(), pos.y(), 0) )) {
+        if ( WSPACE_IS_OBSTACLE(img->getPixelValuei( pos.x(), pos.y(), 0 ) ) &&
+	   WSPACE_IS_OBSTACLE(img->getPixelValuei( pos.x(), pos.y(), 0) )) {
 	is_it_a_doorway = true;
         }
     }
