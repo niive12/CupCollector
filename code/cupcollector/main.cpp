@@ -13,6 +13,7 @@
 #include <memory>
 #include "doordetector/doordetector.h"
 #include "scanner/scanner.h"
+#include "robot/robot.h"
 using namespace rw::sensor;
 using namespace rw::loaders;
 using namespace std;
@@ -46,6 +47,31 @@ void testTekMapConstructors(const string &filename)
 		dijkstraMap dij(img,dijkstraMap::getOffloadingStations(img));
 		dij.shade(canvas);
 		canvas->saveAsPGM("dijkstra.pgm");
+}
+
+void nothing(){}
+
+void testRobot(shared_ptr<Image> img)
+{
+	cout << "creating robot..." << endl;
+	robot JanEgeland(img);
+	cout << "testing robot..." << endl;
+
+	// move to test location
+	JanEgeland.setRobotPos (pos_t(669,911));
+	// 640,465 = perfect square
+	// 889,827 = complex squares = deffect room (brush)
+	// 5043,1204 = "hexagon" = deffect room (brush)
+	// 669,911 = complex
+
+	cout << " Cleaning" << endl;
+	// test coverage of room
+	JanEgeland.cleanRoom (&nothing,&nothing,5);
+
+	cout << " Saving image" << endl;
+	// output
+	JanEgeland.saveNormalMap (img,"walked_clean_test.pgm");
+
 }
 
 void testShortestPath(shared_ptr<Image> img)
@@ -86,6 +112,8 @@ int main(int argc, char** argv) {
 		cout << "Loading image..." << endl;
 		shared_ptr<Image> img(PPMLoader::load(filename));
 		cout << "Image size: " << img->getWidth() << " x " << img->getHeight() << endl;
+
+//		testRobot (img);
 
 		testShortestPath(img);
 		testTekMapConstructors(filename);

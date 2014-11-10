@@ -158,6 +158,9 @@ public:
 	 */
 		void setRobotPos(pos_t position);
 
+
+		void saveNormalMap(shared_ptr<Image> map, std::string name);
+
 private:
 	// parameters for the robots functionality
 	int cupsHolding;
@@ -171,7 +174,7 @@ private:
 	// maps
 	brushfire_map mapBrush;
 	//wavefront_map mapWave;
-	pixelshade_map mapNormal; // are the cups on this map type??
+	pixelshade_map mapNormal, mapTrack; // are the cups on this map type??
 	shared_ptr<pixelshade_map> mapRooms;
 	shared_ptr<brushfire_map> mapRoomBrush;
 

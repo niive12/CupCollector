@@ -17,45 +17,30 @@
 int walk(pos_t currentPos, shared_ptr<brushfire_map> map, int direction);
 
 
-robot::robot(shared_ptr<Image> map):cupsHolding(0), mapBrush(map), mapNormal(map)
+robot::robot(shared_ptr<Image> map):cupsHolding(0), mapBrush(map, pos_t(ROBOT_START_X,ROBOT_START_Y)), mapNormal(map), mapTrack(map)
 {
 	setCupPickRadius (ROBOT_ARM_RADIUS);
 	setCupSearchRadius (ROBOT_SCANNER_RADIUS);
 	setDistanceWalked (0);
 	setRobotWidth (ROBOT_DYNAMICS_RADIUS);
-
-	//init the maps
-	// rooms
-	// Create a vector of door coordinates
-	//doorDetector mydetective;
-	//vector<pos_t> The_Doors = mydetective.detect_doorways(map, mapBrush);
-
-	// Create a map with every room sealed off.
-	//mapRooms = mydetective.door_step(map, mapBrush, The_Doors);
-
-	//mapRooms = make_shared<pixelshade_map>(map);
-	//mapRoomBrush = make_shared<brushfireMap>(map);
+	setRobotPos (pos_t(ROBOT_START_X,ROBOT_START_Y));
 
 	// Create a vector of door coordinates
 	doorDetector mydetective;
 	vector<pos_t> The_Doors = mydetective.detect_doorways(map, mapBrush);
 
 	// Create a map with every room sealed off.
-	mapRooms = make_shared<pixelshade_map> (mydetective.door_step(map, mapBrush, The_Doors));
-	mapRoomBrush = make_shared<brushfire_map> ((const pixelshadeMap &) mapRooms);
-
-	mapBrush.shade (map);
-	map->saveAsPGM("brush_test.pgm");
-
-	mapNormal.shade (map);
-	map->saveAsPGM("normal_test.pgm");
-
-	mapRooms->shade (map);
-	map->saveAsPGM("rooms_test.pgm");
-
-	mapRoomBrush->shade (map);
-	map->saveAsPGM("roombrush_test.pgm");
+	mapRooms = make_shared<pixelshade_map> (mydetective.door_step(map, mapBrush, The_Doors)); // only works if brush was called with coordinate!
+	mapRoomBrush = make_shared<brushfire_map> ((const pixelshadeMap &) *mapRooms); // defect?
 }
+
+
+void robot::saveNormalMap(shared_ptr<Image> map, std::string name)
+{
+	mapTrack.shade (map);
+	map->saveAsPGM (name);
+}
+
 
 bool robot::move(int direction)
 {
@@ -101,7 +86,7 @@ bool robot::move(int direction)
 	}
 
 	// if newPosition is valid
-	if(WSPACE_IS_FREE (mapNormal.coordVal (newPosition)))
+	if(WSPACE_IS_FREE (mapNormal.coordVal (newPosition)) || WSPACE_IS_CUP(mapNormal.coordVal (newPosition)) || WSPACE_IS_OL_STATION(mapNormal.coordVal (newPosition)))
 	{
 		setRobotPos(newPosition);
 		setDistanceWalked(walked);
@@ -109,7 +94,7 @@ bool robot::move(int direction)
 
 #if RUNMODE == TESTROOM
 		// track movement
-		mapNormal.coordVal (newPosition) = 200;
+		mapTrack.coordVal (newPosition) = mapTrack.coordVal (newPosition) + 40;
 #endif
 	}
 
@@ -192,19 +177,18 @@ bool robot::emptyCupCarrier()
 void robot::cleanRoom(void (*doOnCoverage)(), void (*doAfterCoverage)(), int coverageWidth)
 {
 	int dir;
-	int maxLvl = mapRoomBrush->coordVal (getRobotPos ());
-	int currentLvl = coverageWidth;
-	pos_t stepHistory[2];
-	// first generate brush of room assuming you are in the room to clean
-
-	//generate brush
+	char maxLvl = mapRoomBrush->coordVal (getRobotPos ());
+	char currentLvl = coverageWidth;
+	pos_t history[2] = {pos_t(-1,-1),pos_t(-2,-2)};
 
 	// go to edge of a room (the value of coverage range)
 	while (mapBrush.coordVal (getRobotPos ()) > currentLvl)
 	{
+		// get walking direction
 		dir = walk(getRobotPos(),mapRoomBrush, WALK_DOWN);
+		// move
 		move(dir);
-
+		// execute this on evrey move (eg scan)
 		doOnCoverage();
 	}
 
@@ -214,16 +198,27 @@ void robot::cleanRoom(void (*doOnCoverage)(), void (*doAfterCoverage)(), int cov
 
 	while (!roomDone) {
 		startPos = getRobotPos ();
-
 		// walk around on the lvl till back on original spot
 		do{
+			// get walking direction
 			dir = walk(getRobotPos (),mapRoomBrush, WALK_AROUND);
+			// move
 			move (dir);
+			// execute this on evrey move (eg scan)
 			doOnCoverage();
-		} while (getRobotPos () != startPos);
+			// if looping in same area or stuck, stop
+			if((history[0] == getRobotPos ()) || (history[1] == getRobotPos ()) || (history[0] == history[1]))
+			{
+				roomDone = true;
+			}
+			// create history
+			history[1] = history[0];
+			history[0] = getRobotPos ();
+
+		} while (getRobotPos() != startPos && !roomDone);
 
 		// check if room done
-		if(mapRoomBrush->coordVal (getRobotPos ()) == maxLvl)
+		if(mapRoomBrush->coordVal (getRobotPos ()) == maxLvl || roomDone)
 		{
 			roomDone = true;
 		}
@@ -238,11 +233,17 @@ void robot::cleanRoom(void (*doOnCoverage)(), void (*doAfterCoverage)(), int cov
 			}
 
 			// move up to next lvl
-			while (mapRoomBrush->coordVal (getRobotPos ()) < currentLvl)
+			while (mapRoomBrush->coordVal (getRobotPos ()) < currentLvl && !roomDone)
 			{
 				dir = walk(getRobotPos (),mapRoomBrush, WALK_UP);
-				move(dir);
-				doOnCoverage();
+				if(dir == -1)
+				{
+					roomDone = true;
+				}
+				else {
+					move(dir);
+					doOnCoverage();
+				}
 			}
 		}
 	}
@@ -254,10 +255,10 @@ void robot::cleanRoom(void (*doOnCoverage)(), void (*doAfterCoverage)(), int cov
 int walk(pos_t currentPos, shared_ptr<brushfire_map> map, int direc)
 {
 	// returns direction (N/S/NW...)
-	pos_t dir(1,0);
-	pos_t position = currentPos;
-	position.x() -= 1;
-	position.y() -= 1;
+	pos_t dir(0,1);
+	pos_t position = pos_t(currentPos.x()-1,currentPos.y()-1);
+	char last = map->coordVal (pos_t(currentPos.x(),currentPos.y()-1));
+	char current = map->coordVal (currentPos);
 
 	int result[8] = {MOVE_SW, MOVE_W, MOVE_NW, MOVE_N, MOVE_NE, MOVE_E, MOVE_SE, MOVE_S};
 
@@ -267,24 +268,25 @@ int walk(pos_t currentPos, shared_ptr<brushfire_map> map, int direc)
 		switch (direc) {
 			case WALK_DOWN:
 				// return the first direction that leads down
-				if (map->coordVal (position) < map->coordVal (currentPos))
+				if (map->coordVal (position) < current)
 				{
 					return result[(i-1)];
 				}
 				break;
 			case WALK_UP:
 				// return the first direction that leads up
-				if (map->coordVal (position) > map->coordVal (currentPos))
+				if (map->coordVal (position) > current)
 				{
 					return result[(i-1)];
 				}
 				break;
 			case WALK_AROUND:
-				// return the first direction that leads around
-				if (map->coordVal (position) == map->coordVal (currentPos))
+				// return the first direction that leads around (stalk the circle one closer to the wall)
+				if ((map->coordVal (position) == current) && (last == (current-1)))
 				{
 					return result[(i-1)];
 				}
+				last = map->coordVal (position);
 				break;
 			default:
 				break;
@@ -307,7 +309,7 @@ int walk(pos_t currentPos, shared_ptr<brushfire_map> map, int direc)
 		}
 	}
 	// only to surpress warning :D there will always be a way down on a brush unless you are next to the wall!
-	return false;
+	return -1;
 }
 
 
