@@ -3,6 +3,7 @@
 #include "../assignment.h"
 #include "../tekmap/tekmap.hpp"
 #include "../libraries/Image.hpp"
+#include "../doordetector/doordetector.h"
 
 #include <vector>
 
@@ -168,9 +169,9 @@ private:
 	pos_t robotPosition;
 
 	// maps
-	shared_ptr<brushfire_map> mapBrush;
-	shared_ptr<wavefront_map> mapWave;
-	shared_ptr<pixelshade_map> mapNormal; // are the cups on this map type??
+	brushfire_map mapBrush;
+	//wavefront_map mapWave;
+	pixelshade_map mapNormal; // are the cups on this map type??
 	shared_ptr<pixelshade_map> mapRooms;
 	shared_ptr<brushfire_map> mapRoomBrush;
 

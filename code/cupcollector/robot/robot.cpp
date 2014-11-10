@@ -17,7 +17,7 @@
 int walk(pos_t currentPos, shared_ptr<brushfire_map> map, int direction);
 
 
-robot::robot(shared_ptr<Image> map):cupsHolding(0)
+robot::robot(shared_ptr<Image> map):cupsHolding(0), mapBrush(map), mapNormal(map)
 {
 	setCupPickRadius (ROBOT_ARM_RADIUS);
 	setCupSearchRadius (ROBOT_SCANNER_RADIUS);
@@ -25,11 +25,36 @@ robot::robot(shared_ptr<Image> map):cupsHolding(0)
 	setRobotWidth (ROBOT_DYNAMICS_RADIUS);
 
 	//init the maps
-	mapBrush = make_shared<brushfire_map>(map);
-	mapWave = make_shared<wavefront_map>(map);
-	mapNormal = make_shared<pixelshade_map>(map);
-	mapRooms = make_shared<pixelshade_map>(map);
-	mapRoomBrush = make_shared<brushfireMap>(map); // need to change this so it does it for the rooms only
+	// rooms
+	// Create a vector of door coordinates
+	//doorDetector mydetective;
+	//vector<pos_t> The_Doors = mydetective.detect_doorways(map, mapBrush);
+
+	// Create a map with every room sealed off.
+	//mapRooms = mydetective.door_step(map, mapBrush, The_Doors);
+
+	//mapRooms = make_shared<pixelshade_map>(map);
+	//mapRoomBrush = make_shared<brushfireMap>(map);
+
+	// Create a vector of door coordinates
+	doorDetector mydetective;
+	vector<pos_t> The_Doors = mydetective.detect_doorways(map, mapBrush);
+
+	// Create a map with every room sealed off.
+	mapRooms = make_shared<pixelshade_map> (mydetective.door_step(map, mapBrush, The_Doors));
+	mapRoomBrush = make_shared<brushfire_map> ((const pixelshadeMap &) mapRooms);
+
+	mapBrush.shade (map);
+	map->saveAsPGM("brush_test.pgm");
+
+	mapNormal.shade (map);
+	map->saveAsPGM("normal_test.pgm");
+
+	mapRooms->shade (map);
+	map->saveAsPGM("rooms_test.pgm");
+
+	mapRoomBrush->shade (map);
+	map->saveAsPGM("roombrush_test.pgm");
 }
 
 bool robot::move(int direction)
@@ -45,7 +70,7 @@ bool robot::move(int direction)
 			break;
 		case MOVE_NE:
 			newPosition = pos_t(newPosition.x() + 1, newPosition.y() + 1);
-			walked += sqrt(2);
+			walked += SQRT_2;
 			break;
 		case MOVE_E:
 			newPosition = pos_t(newPosition.x() + 1, newPosition.y());
@@ -53,7 +78,7 @@ bool robot::move(int direction)
 			break;
 		case MOVE_SE:
 			newPosition = pos_t(newPosition.x() + 1, newPosition.y() - 1);
-			walked += sqrt(2);
+			walked += SQRT_2;
 			break;
 		case MOVE_S:
 			newPosition = pos_t(newPosition.x(), newPosition.y() - 1);
@@ -61,7 +86,7 @@ bool robot::move(int direction)
 			break;
 		case MOVE_SW:
 			newPosition = pos_t(newPosition.x() - 1, newPosition.y() - 1);
-			walked += sqrt(2);
+			walked += SQRT_2;
 			break;
 		case MOVE_W:
 			newPosition = pos_t(newPosition.x() - 1, newPosition.y());
@@ -69,14 +94,14 @@ bool robot::move(int direction)
 			break;
 		case MOVE_NW:
 			newPosition = pos_t(newPosition.x() - 1, newPosition.y() + 1);
-			walked += sqrt(2);
+			walked += SQRT_2;
 			break;
 		default:
 			break;
 	}
 
 	// if newPosition is valid
-	if(WSPACE_IS_FREE (mapNormal->coordVal (newPosition)))
+	if(WSPACE_IS_FREE (mapNormal.coordVal (newPosition)))
 	{
 		setRobotPos(newPosition);
 		setDistanceWalked(walked);
@@ -84,7 +109,7 @@ bool robot::move(int direction)
 
 #if RUNMODE == TESTROOM
 		// track movement
-		mapNormal->coordVal (newPosition) = 200;
+		mapNormal.coordVal (newPosition) = 200;
 #endif
 	}
 
@@ -109,7 +134,7 @@ bool robot::pickupCup(pos_t cupPosition)
 			result = true;
 			setCups(getCupsHolding() + 1);
 			// remove cup from map
-			mapNormal->coordVal (cupPosition) = WSPACE_FREE;
+			mapNormal.coordVal (cupPosition) = WSPACE_FREE;
 		}
 	}
 	return result;
@@ -155,7 +180,7 @@ bool robot::emptyCupCarrier()
 	bool result = false;
 
 	// if standing on valid spot
-	if(WSPACE_IS_OL_STATION(mapNormal->coordVal (getRobotPos ())))
+	if(WSPACE_IS_OL_STATION(mapNormal.coordVal (getRobotPos ())))
 	{
 		result = true;
 		setCups(0);
@@ -169,12 +194,13 @@ void robot::cleanRoom(void (*doOnCoverage)(), void (*doAfterCoverage)(), int cov
 	int dir;
 	int maxLvl = mapRoomBrush->coordVal (getRobotPos ());
 	int currentLvl = coverageWidth;
+	pos_t stepHistory[2];
 	// first generate brush of room assuming you are in the room to clean
 
 	//generate brush
 
 	// go to edge of a room (the value of coverage range)
-	while (mapBrush->coordVal (getRobotPos ()) > currentLvl)
+	while (mapBrush.coordVal (getRobotPos ()) > currentLvl)
 	{
 		dir = walk(getRobotPos(),mapRoomBrush, WALK_DOWN);
 		move(dir);
