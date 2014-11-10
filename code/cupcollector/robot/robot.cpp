@@ -19,356 +19,356 @@ int walk(pos_t currentPos, shared_ptr<brushfire_map> map, int direction);
 
 robot::robot(shared_ptr<Image> map):cupsHolding(0)
 {
-	setCupPickRadius (ROBOT_ARM_RADIUS);
-	setCupSearchRadius (ROBOT_SCANNER_RADIUS);
-	setDistanceWalked (0);
-	setRobotWidth (ROBOT_DYNAMICS_RADIUS);
+		setCupPickRadius (ROBOT_ARM_RADIUS);
+		setCupSearchRadius (ROBOT_SCANNER_RADIUS);
+		setDistanceWalked (0);
+		setRobotWidth (ROBOT_DYNAMICS_RADIUS);
 
-	//init the maps
-	mapBrush = make_shared<brushfire_map>(map);
-	mapWave = make_shared<wavefront_map>(map);
-	mapNormal = make_shared<pixelshade_map>(map);
-	mapRooms = make_shared<pixelshade_map>(map);
-	mapRoomBrush = make_shared<brushfireMap>(map); // need to change this so it does it for the rooms only
+		//init the maps
+		mapBrush = make_shared<brushfire_map>(map);
+		mapWave = make_shared<wavefront_map>(map);
+		mapNormal = make_shared<pixelshade_map>(map);
+		mapRooms = make_shared<pixelshade_map>(map);
+		mapRoomBrush = make_shared<brushfireMap>(map); // need to change this so it does it for the rooms only
 }
 
 bool robot::move(int direction)
 {
-	pos_t newPosition = getRobotPos();
-	double walked = getDistanceWalked();
-	bool result = false;
-	// determine new value
-	switch (direction) {
+		pos_t newPosition = getRobotPos();
+		double walked = getDistanceWalked();
+		bool result = false;
+		// determine new value
+		switch (direction) {
 		case MOVE_N:
-			newPosition = pos_t(newPosition.x(), newPosition.y() + 1);
-			walked += 1;
-			break;
+				newPosition = pos_t(newPosition.x(), newPosition.y() + 1);
+				walked += 1;
+				break;
 		case MOVE_NE:
-			newPosition = pos_t(newPosition.x() + 1, newPosition.y() + 1);
-			walked += sqrt(2);
-			break;
+				newPosition = pos_t(newPosition.x() + 1, newPosition.y() + 1);
+				walked += sqrt(2);
+				break;
 		case MOVE_E:
-			newPosition = pos_t(newPosition.x() + 1, newPosition.y());
-			walked += 1;
-			break;
+				newPosition = pos_t(newPosition.x() + 1, newPosition.y());
+				walked += 1;
+				break;
 		case MOVE_SE:
-			newPosition = pos_t(newPosition.x() + 1, newPosition.y() - 1);
-			walked += sqrt(2);
-			break;
+				newPosition = pos_t(newPosition.x() + 1, newPosition.y() - 1);
+				walked += sqrt(2);
+				break;
 		case MOVE_S:
-			newPosition = pos_t(newPosition.x(), newPosition.y() - 1);
-			walked += 1;
-			break;
+				newPosition = pos_t(newPosition.x(), newPosition.y() - 1);
+				walked += 1;
+				break;
 		case MOVE_SW:
-			newPosition = pos_t(newPosition.x() - 1, newPosition.y() - 1);
-			walked += sqrt(2);
-			break;
+				newPosition = pos_t(newPosition.x() - 1, newPosition.y() - 1);
+				walked += sqrt(2);
+				break;
 		case MOVE_W:
-			newPosition = pos_t(newPosition.x() - 1, newPosition.y());
-			walked += 1;
-			break;
+				newPosition = pos_t(newPosition.x() - 1, newPosition.y());
+				walked += 1;
+				break;
 		case MOVE_NW:
-			newPosition = pos_t(newPosition.x() - 1, newPosition.y() + 1);
-			walked += sqrt(2);
-			break;
+				newPosition = pos_t(newPosition.x() - 1, newPosition.y() + 1);
+				walked += sqrt(2);
+				break;
 		default:
-			break;
-	}
+				break;
+		}
 
-	// if newPosition is valid
-	if(WSPACE_IS_FREE (mapNormal->coordVal (newPosition)))
-	{
-		setRobotPos(newPosition);
-		setDistanceWalked(walked);
-		result = true;
+		// if newPosition is valid
+		if(WSPACE_IS_FREE (mapNormal->coordVal (newPosition)))
+		{
+				setRobotPos(newPosition);
+				setDistanceWalked(walked);
+				result = true;
 
 #if RUNMODE == TESTROOM
-		// track movement
-		mapNormal->coordVal (newPosition) = 200;
+				// track movement
+				mapNormal->coordVal (newPosition) = 200;
 #endif
-	}
+		}
 
-	return result;
+		return result;
 }
 
 
 bool robot::pickupCup(pos_t cupPosition)
 {
-	double cupDistanceSquared;
-	pos_t robotPos = getRobotPos();
-	bool result = false;
+		double cupDistanceSquared;
+		pos_t robotPos = getRobotPos();
+		bool result = false;
 
-	// get distance
-	cupDistanceSquared = pow((robotPos.x() + cupPosition.x()),2) + pow((robotPos.y() + cupPosition.y()),2);
+		// get distance
+		cupDistanceSquared = pow((robotPos.x() + cupPosition.x()),2) + pow((robotPos.y() + cupPosition.y()),2);
 
-	// if within reach
-	if(cupDistanceSquared <= pow(getCupPickRadius(),2))
-	{
-		if(getCupsHolding() < ROBOT_CUP_CAPACITY)
+		// if within reach
+		if(cupDistanceSquared <= pow(getCupPickRadius(),2))
 		{
-			result = true;
-			setCups(getCupsHolding() + 1);
-			// remove cup from map
-			mapNormal->coordVal (cupPosition) = WSPACE_FREE;
+				if(getCupsHolding() < ROBOT_CUP_CAPACITY)
+				{
+						result = true;
+						setCups(getCupsHolding() + 1);
+						// remove cup from map
+						mapNormal->coordVal (cupPosition) = WSPACE_FREE;
+				}
 		}
-	}
-	return result;
+		return result;
 }
 
 bool robot::pickupCupsInRange(std::vector<pos_t> * cups)
 {
-	// loop through the vector to remove all the cups within range, without moving
-	// return false if cup holder runs full
-	bool result = true;
+		// loop through the vector to remove all the cups within range, without moving
+		// return false if cup holder runs full
+		bool result = true;
 
-	// pick up cups in range
-	for(size_t i = 0; i < cups->size(); i++)
-	{
-		if(pickupCup(cups->at (i)))
+		// pick up cups in range
+		for(size_t i = 0; i < cups->size(); i++)
 		{
-			// remove cup from vector
-			cups->erase(cups->begin() + i);
+				if(pickupCup(cups->at (i)))
+				{
+						// remove cup from vector
+						cups->erase(cups->begin() + i);
+				}
 		}
-	}
 
-	// check if has no space left
-	if(getCupsHolding() == ROBOT_CUP_CAPACITY)
-	{
-		result = false;
-	}
+		// check if has no space left
+		if(getCupsHolding() == ROBOT_CUP_CAPACITY)
+		{
+				result = false;
+		}
 
-	return result;
+		return result;
 }
 
 
 bool robot::startCupScan()
 {
-	// start cupscan through other class (pass pointer to map and cup vector?)
-	bool result = false;
-	// call with shared_ptr<vector <pos_t>> cups
-	return result;
+		// start cupscan through other class (pass pointer to map and cup vector?)
+		bool result = false;
+		// call with shared_ptr<vector <pos_t>> cups
+		return result;
 }
 
 
 bool robot::emptyCupCarrier()
 {
-	bool result = false;
+		bool result = false;
 
-	// if standing on valid spot
-	if(WSPACE_IS_OL_STATION(mapNormal->coordVal (getRobotPos ())))
-	{
-		result = true;
-		setCups(0);
-	}
-	return result;
+		// if standing on valid spot
+		if(WSPACE_IS_OL_STATION(mapNormal->coordVal (getRobotPos ())))
+		{
+				result = true;
+				setCups(0);
+		}
+		return result;
 }
 
 
 void robot::cleanRoom(void (*doOnCoverage)(), void (*doAfterCoverage)(), int coverageWidth)
 {
-	int dir;
-	int maxLvl = mapRoomBrush->coordVal (getRobotPos ());
-	int currentLvl = coverageWidth;
-	// first generate brush of room assuming you are in the room to clean
+		int dir;
+		int maxLvl = mapRoomBrush->coordVal (getRobotPos ());
+		int currentLvl = coverageWidth;
+		// first generate brush of room assuming you are in the room to clean
 
-	//generate brush
+		//generate brush
 
-	// go to edge of a room (the value of coverage range)
-	while (mapBrush->coordVal (getRobotPos ()) > currentLvl)
-	{
-		dir = walk(getRobotPos(),mapRoomBrush, WALK_DOWN);
-		move(dir);
-
-		doOnCoverage();
-	}
-
-	// walk around in circles and when returned to "start" walk towards center
-	bool roomDone = false;
-	pos_t startPos;
-
-	while (!roomDone) {
-		startPos = getRobotPos ();
-
-		// walk around on the lvl till back on original spot
-		do{
-			dir = walk(getRobotPos (),mapRoomBrush, WALK_AROUND);
-			move (dir);
-			doOnCoverage();
-		} while (getRobotPos () != startPos);
-
-		// check if room done
-		if(mapRoomBrush->coordVal (getRobotPos ()) == maxLvl)
+		// go to edge of a room (the value of coverage range)
+		while (mapBrush->coordVal (getRobotPos ()) > currentLvl)
 		{
-			roomDone = true;
-		}
-		else
-		{
-			// calc next lvl
-			currentLvl += 2*(coverageWidth);
-			if(currentLvl > maxLvl)
-			{
-				currentLvl = maxLvl;
-
-			}
-
-			// move up to next lvl
-			while (mapRoomBrush->coordVal (getRobotPos ()) < currentLvl)
-			{
-				dir = walk(getRobotPos (),mapRoomBrush, WALK_UP);
+				dir = walk(getRobotPos(),mapRoomBrush, WALK_DOWN);
 				move(dir);
-				doOnCoverage();
-			}
-		}
-	}
 
-	doAfterCoverage();
+				doOnCoverage();
+		}
+
+		// walk around in circles and when returned to "start" walk towards center
+		bool roomDone = false;
+		pos_t startPos;
+
+		while (!roomDone) {
+				startPos = getRobotPos ();
+
+				// walk around on the lvl till back on original spot
+				do{
+						dir = walk(getRobotPos (),mapRoomBrush, WALK_AROUND);
+						move (dir);
+						doOnCoverage();
+				} while (getRobotPos () != startPos);
+
+				// check if room done
+				if(mapRoomBrush->coordVal (getRobotPos ()) == maxLvl)
+				{
+						roomDone = true;
+				}
+				else
+				{
+						// calc next lvl
+						currentLvl += 2*(coverageWidth);
+						if(currentLvl > maxLvl)
+						{
+								currentLvl = maxLvl;
+
+						}
+
+						// move up to next lvl
+						while (mapRoomBrush->coordVal (getRobotPos ()) < currentLvl)
+						{
+								dir = walk(getRobotPos (),mapRoomBrush, WALK_UP);
+								move(dir);
+								doOnCoverage();
+						}
+				}
+		}
+
+		doAfterCoverage();
 }
 
 // comp: a < b => down, a > b => up and a == b => around
 int walk(pos_t currentPos, shared_ptr<brushfire_map> map, int direc)
 {
-	// returns direction (N/S/NW...)
-	pos_t dir(1,0);
-	pos_t position = currentPos;
-	position.x() -= 1;
-	position.y() -= 1;
+		// returns direction (N/S/NW...)
+		pos_t dir(1,0);
+		pos_t position = currentPos;
+		position.x() -= 1;
+		position.y() -= 1;
 
-	int result[8] = {MOVE_SW, MOVE_W, MOVE_NW, MOVE_N, MOVE_NE, MOVE_E, MOVE_SE, MOVE_S};
+		int result[8] = {MOVE_SW, MOVE_W, MOVE_NW, MOVE_N, MOVE_NE, MOVE_E, MOVE_SE, MOVE_S};
 
-	// walk CW around currentpos
-	for(int i = 1; i < 9; i++)
-	{
-		switch (direc) {
-			case WALK_DOWN:
-				// return the first direction that leads down
-				if (map->coordVal (position) < map->coordVal (currentPos))
-				{
-					return result[(i-1)];
-				}
-				break;
-			case WALK_UP:
-				// return the first direction that leads up
-				if (map->coordVal (position) > map->coordVal (currentPos))
-				{
-					return result[(i-1)];
-				}
-				break;
-			case WALK_AROUND:
-				// return the first direction that leads around
-				if (map->coordVal (position) == map->coordVal (currentPos))
-				{
-					return result[(i-1)];
-				}
-				break;
-			default:
-				break;
-		}
-
-		position = position + dir;
-
-		// turn right at every corner
-		if(i % 2 == 0)
+		// walk CW around currentpos
+		for(int i = 1; i < 9; i++)
 		{
-			pos_t temp(dir.y(),dir.x());
-			dir = temp;
-		}
+				switch (direc) {
+				case WALK_DOWN:
+						// return the first direction that leads down
+						if (map->coordVal (position) < map->coordVal (currentPos))
+						{
+								return result[(i-1)];
+						}
+						break;
+				case WALK_UP:
+						// return the first direction that leads up
+						if (map->coordVal (position) > map->coordVal (currentPos))
+						{
+								return result[(i-1)];
+						}
+						break;
+				case WALK_AROUND:
+						// return the first direction that leads around
+						if (map->coordVal (position) == map->coordVal (currentPos))
+						{
+								return result[(i-1)];
+						}
+						break;
+				default:
+						break;
+				}
 
-		// invert dir every 4 steps
-		if(i % 4 == 0)
-		{
-			dir.x() = -(dir.x());
-			dir.y() = -(dir.y());
+				position = position + dir;
+
+				// turn right at every corner
+				if(i % 2 == 0)
+				{
+						pos_t temp(dir.y(),dir.x());
+						dir = temp;
+				}
+
+				// invert dir every 4 steps
+				if(i % 4 == 0)
+				{
+						dir.x() = -(dir.x());
+						dir.y() = -(dir.y());
+				}
 		}
-	}
-	// only to surpress warning :D there will always be a way down on a brush unless you are next to the wall!
-	return false;
+		// only to surpress warning :D there will always be a way down on a brush unless you are next to the wall!
+		return false;
 }
 
 
 void robot::cupClean()
 {
-	// scan
-	startCupScan();
-	pickupCupsInRange(&cupsToPickUp);
+		// scan
+		startCupScan();
+		pickupCupsInRange(&cupsToPickUp);
 }
 
 
 void robot::cleanMapForCups()
 {
-	// run around map :)
+		// run around map :)
 }
 
 void robot::cleanFloorOnMap()
 {
-	// run, baby run!
+		// run, baby run!
 }
 
 int robot::getCupsHolding()
 {
-	return cupsHolding;
+		return cupsHolding;
 }
 
 
 int robot::getRobotWidth()
 {
-	return robotWidth;
+		return robotWidth;
 }
 
 int robot::getCupSearchRadius()
 {
-	return cupSearchRadius;
+		return cupSearchRadius;
 }
 
 
 int robot::getCupPickRadius()
 {
-	return cupPickRadius;
+		return cupPickRadius;
 }
 
 
 pos_t robot::getRobotPos()
 {
-	return robotPosition;
+		return robotPosition;
 }
 
 double robot::getDistanceWalked()
 {
-	return distanceWalked;
+		return distanceWalked;
 }
 
 void robot::setCups(int cups)
 {
-	if(cups <= ROBOT_CUP_CAPACITY)
-	{
-		cupsHolding = cups;
-	}
+		if(cups <= ROBOT_CUP_CAPACITY)
+		{
+				cupsHolding = cups;
+		}
 }
 
 
 void robot::setRobotWidth(int width)
 {
-	robotWidth = width;
+		robotWidth = width;
 }
 
 
 void robot::setCupSearchRadius(int searchRadius)
 {
-	cupSearchRadius = searchRadius;
+		cupSearchRadius = searchRadius;
 }
 
 
 void robot::setCupPickRadius(int pickRadius)
 {
-	cupPickRadius = pickRadius;
+		cupPickRadius = pickRadius;
 }
 
 
 void robot::setDistanceWalked(double distance)
 {
-	distanceWalked = distance;
+		distanceWalked = distance;
 }
 
 void robot::setRobotPos(pos_t position)
 {
-	robotPosition = position;
+		robotPosition = position;
 }
