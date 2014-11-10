@@ -1,12 +1,10 @@
-#ifndef ROBOT_H
-#define ROBOT_H
-
+/** @file */
+#pragma once
 #include "../assignment.h"
 #include "../tekmap/tekmap.hpp"
 #include "../libraries/Image.hpp"
 
 #include <vector>
-#include <cmath>
 
 #define MOVE_N 0
 #define MOVE_NE 1
@@ -180,6 +178,3 @@ private:
 	std::vector<pos_t> cupsToPickUp;
 
 };
-
-
-#endif // ROBOT_H

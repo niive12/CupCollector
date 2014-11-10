@@ -1,4 +1,7 @@
+/** @file */
 #include "robot.h"
+#include <cmath>
+
 
 #define NORMAL 0
 #define TESTROOM 1
