@@ -27,7 +27,7 @@ void testTekMapConstructors(const string &filename)
 	//Store original image:
 	pixelshade_map original(img);
 	//Run brushfire algorithm on reachable freespace:
-	brushfire_map brush(img,start);
+	brushfire_map brush(original,start);
 	//brushfire_map brush(img,brushfire_map::BRUSHFIRE);
 	//Paint the brushfire values onto the canvas:
 	brush.shade(canvas);

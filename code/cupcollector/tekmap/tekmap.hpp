@@ -185,6 +185,9 @@ public:
 	inline bool isInMap(const coordIndexType &x, const coordIndexType &y) const {
 		return ((((int)(getWidth())>x)&&((int)(getHeight())>y))&&((x>0)&&(y>0)));
 	}
+	inline bool isInMap(const pos_t &pos) const {
+		return isInMap(pos.cx(),pos.cy());
+	}
 
 	/**
 	 * @brief getWavefrontPath Finds the shortest path using normInf Wavefront algorithm.
@@ -487,7 +490,7 @@ public:
 		   {1,1}, /* SE */{-1,1} /* SW */
 		 }} ;
 		vector<vector<bool> > visited(getWidth(),vector<bool>(getHeight(),false));
-		map<pos_t,pos_t> parent;
+		unordered_map<pos_t,pos_t> parent;
 		queue<pos_t> q; //FIFO
 		q.push(to);
 		while(!q.empty())
@@ -499,18 +502,19 @@ public:
 			}
 			q.pop();
 			for(auto n : neighbours) {
+				pos_t w = cur+pos_t(n.at(0),n.at(1));
 				//If neighbour is within image borders:
-				if( isInMap(cur.cx()+n.at(0), cur.cy()+n.at(1)) ) {
+				if( isInMap(w) ) {
 					//if the neighbour is an unvisited non-obstacle:
-					if( ( !WSPACE_IS_OBSTACLE( const_coordVal(cur.cx()+n.at(0),cur.cy()+n.at(1))))
-							&& ( !( (visited[cur.cx()+n.at(0)])[cur.cy()+n.at(1)] ) )
-							&& ((pos_t(cur.cx()+n.at(0),cur.cy()+n.at(1)))!=(to))
+					if( ( !WSPACE_IS_OBSTACLE( const_coordVal(w)))
+							&& ( !( (visited[w.cx()])[w.cy()] ) )
+							&& (w!=to)
 							)
 					{
-						parent[pos_t(cur.cx()+n.at(0),cur.cy()+n.at(1))]=cur;
-						(visited[cur.cx()+n.at(0)])[cur.cy()+n.at(1)]=true;
+						parent[w]=cur;
+						(visited[w.cx()])[w.cy()]=true;
 						//Add it to the wavefront
-						q.emplace(cur.cx()+n.at(0),cur.cy()+n.at(1));
+						q.push(w);
 					}
 				}
 			}
@@ -571,7 +575,7 @@ public:
 			for(auto n : neighbours) {
 				pos_t w = pos_t(eVert(cur).cx()+n.at(0), eVert(cur).cy()+n.at(1));
 				//If neighbour is within image borders:
-				if( isInMap(w.cx(), w.cy()) ) {
+				if( isInMap(w) ) {
 					//if the neighbour is an unvisited non-obstacle:
 					if( ( !WSPACE_IS_OBSTACLE( const_coordVal(w)))
 							&& (!visited(w))
@@ -602,6 +606,54 @@ public:
 class brushfireMap : public tekMap<unsigned char>
 {
 protected:
+	virtual list< pos_t > findCoords(const pixelshadeMap &img, const pos_t &withinFreeSpace, const bool borders=true) const
+	{
+		list<pos_t> resulting_coords;
+		if(!img.isInMap(withinFreeSpace))
+			cerr << "coord given to findCoords is not in image." << endl;
+		else {
+			const array<array<int,2>,8> neighbours =
+			{{ {-1,0}, /* W */ {1,0}, /* E */
+			   {0,-1}, /* N */ {0,1}, /* S */
+			   {-1,-1},/* NW */{1,-1}, /* NE */
+			   {1,1}, /* SE */{-1,1} /* SW */
+			 }};
+			vector<vector<bool> > visited(img.getWidth(),vector<bool>(img.getHeight(),false));
+			queue<pos_t> q; //FIFO
+			q.push(withinFreeSpace);
+			while(!q.empty())
+			{
+				pos_t cur = q.front();
+				q.pop();
+				if(!borders) //We know it's unvisited.
+					//resulting_coords.insert(cur);
+					resulting_coords.push_back(cur);
+				for(auto n : neighbours) {
+					pos_t w = cur+pos_t(n.at(0),n.at(1));
+					//If neighbour is within image borders:
+					if( img.isInMap(w) ) {
+						//if the neighbour is an unvisited non-obstacle:
+						if( (!WSPACE_IS_OBSTACLE( img.const_coordVal(w) ))
+								&& (!( (visited[w.cx()])[w.cy()] ) ) ) {
+							//Add it to the wavefront
+							q.push(w);
+							(visited[w.cx()])[w.cy()]=true;
+						}
+						if(borders&&WSPACE_IS_OBSTACLE( img.const_coordVal(w) )){
+							//If the neighbour WAS an obstacle, it must have been a border.
+							if(!((visited[w.cx()])[w.cy()])) {
+								//resulting_coords.emplace(cur.first+n.at(0),cur.second+n.at(1));
+								resulting_coords.push_back(w);
+								(visited[w.cx()])[w.cy()]=true;
+							}
+						}
+					}
+				}
+				(visited[cur.cx()])[cur.cy()] = true;
+			}
+		}
+		return move(resulting_coords);
+	}
 	/**
 * @brief findObstacleBorders returns all obstacle borders in image.
 * @param img The image to find obstacle borders in.
@@ -643,6 +695,34 @@ protected:
 		}
 		return move(list<pos_t>(resulting_coords.begin(),resulting_coords.end()));
 	}
+	virtual list< pos_t > findObstacleBorders(const pixelshadeMap &img) const
+	{
+		set<pos_t> resulting_coords;
+		const array<array<int,2>,8> neighbours =
+		{{ {-1,0}, /* W */ {1,0}, /* E */
+		   {0,-1}, /* N */ {0,1}, /* S */
+		   {-1,-1},/* NW */{1,-1}, /* NE */
+		   {1,1}, /* SE */{-1,1} /* SW */
+		 }};
+		for( int x = 0; x < (int)(img.getWidth()); ++x) {
+			for( int y = 0; y < (int)(img.getHeight()); ++y) {
+				if( WSPACE_IS_OBSTACLE( img.const_coordVal(x,y) ) ) {
+					for(auto n : neighbours) {
+						pos_t w = pos_t(x+n.at(0),y+n.at(1));
+						//If neighbour is within image borders:
+						if( img.isInMap(w) ) {
+							//if the neighbour is not an obstacle:
+							if( !WSPACE_IS_OBSTACLE( img.const_coordVal(w) ) ) {
+								resulting_coords.insert(w);
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
+		return move(list<pos_t>(resulting_coords.begin(),resulting_coords.end()));
+	}
 	/**
 * @brief findObstacleBorders returns all RELEVANT obstacle borders in image.
 * @param img The image to find relevant obstacle borders in.
@@ -659,6 +739,10 @@ protected:
 * So this is O(N) but performs better than the other findObstacleBorders.
 */
 	virtual inline list< pos_t > findObstacleBorders(shared_ptr<Image> img, const pos_t &validFreeSpaceCoord) const
+	{
+		return move(findCoords(img,validFreeSpaceCoord,true));
+	}
+	virtual inline list< pos_t > findObstacleBorders(const pixelshadeMap &img, const pos_t &validFreeSpaceCoord) const
 	{
 		return move(findCoords(img,validFreeSpaceCoord,true));
 	}
@@ -679,6 +763,66 @@ public:
 		coords = findObstacleBorders(img,reachableFreeSpace); //faster
 		wave(img,coords);
 	}
+	brushfireMap(const pixelshadeMap &img)
+		:tekMap(img)
+	{
+		list<pos_t> coords;
+		//Fill the coords set:
+		coords = findObstacleBorders(img); //non-efficient
+		wave(img,coords);
+	}
+	brushfireMap(const pixelshadeMap &img, const pos_t &reachableFreeSpace)
+		:tekMap(img)
+	{
+		list<pos_t> coords;
+		//Fill the coords set:
+		coords = findObstacleBorders(img,reachableFreeSpace); //faster
+		wave(img,coords);
+	}
+	virtual void wave(const pixelshadeMap &img, const list<pos_t> &goals)
+	{
+		const array<array<int,2>,8> neighbours =
+		{{ {-1,0}, /* W */ {1,0}, /* E */
+		   {0,-1}, /* N */ {0,1}, /* S */
+		   {-1,-1},/* NW */{1,-1}, /* NE */
+		   {1,1}, /* SE */{-1,1} /* SW */
+		 }} ;
+		myMap.clear();
+		myMap.resize( img.getWidth(), vector<myValType>( img.getHeight() , WAVE_VAL_UNV));
+		vector<vector<bool> > visited(img.getWidth(),vector<bool>(img.getHeight(),false));
+		queue<pos_t> q; //FIFO
+		for(auto i : goals) {
+			(myMap[i.cx()])[i.cy()] = WAVE_VAL_GOAL;
+			q.push(i);
+		}
+		while(!q.empty())
+		{
+			pos_t cur = q.front();
+			q.pop();
+			for(auto n : neighbours) {
+				pos_t w=cur+pos_t(n.at(0),n.at(1));
+				//If neighbour is within image borders:
+				if( img.isInMap(w) ) {
+					//if the neighbour is an unvisited non-obstacle:
+					if( ( !WSPACE_IS_OBSTACLE( img.const_coordVal(w) ) )
+							&& ( !( (visited[w.cx()])[w.cy()] ) )
+							&& ((myMap[w.cx()])[w.cy()] != WAVE_VAL_GOAL)
+							)
+					{
+						//increment:
+						(myMap[w.cx()])[w.cy()]
+								= (myMap[cur.cx()])[cur.cy()] +1;
+						(visited[w.cx()])[w.cy()]=true;
+						//Add it to the wavefront
+						//q.emplace(w.cx(),w.cy());
+						q.push(w);
+					}
+				}
+			}
+			(visited[cur.cx()])[cur.cy()]=true;
+		}
+	}
+
 };
 class wavefrontMap : public tekMap<long unsigned int>
 {
