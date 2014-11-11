@@ -8,6 +8,7 @@
 #include <algorithm> //merge
 #include <iomanip>
 #include <sstream>
+#include <forward_list>
 
 
 using namespace std;
@@ -127,6 +128,53 @@ public:
 		return move(result);
 	}
 
+	static bool isRemainder(pos_t center, const unordered_set<pos_t> &coords, unsigned int radius)
+	{
+		static unsigned int r=0;
+		static forward_list<pos_t> circle;
+		bool remainder=true;
+		if(r!=radius) {
+			circle.clear();
+			const array<array<int,2>,8> neighbours =
+			{{  {-1,0}, /* W */ {1,0},  /* E */
+				{0,-1}, /* N */ {0,1},  /* S */
+				{-1,-1},/* NW */{1,-1}, /* NE */
+				{1,1},  /* SE */{-1,1}  /* SW */
+			 }};
+			r=radius;
+			int rsquared = r*r;
+			queue<pos_t> q;
+			q.emplace(0,0);
+			unordered_set<pos_t> visited;
+			while(!q.empty()) {
+				pos_t cur = q.front();
+				q.pop();
+				circle.push_front(cur);
+				for(auto n:neighbours)
+					if( ((cur.cx()+n[0])*(cur.cx()+n[0])
+						 +(cur.cy()+n[1])*(cur.cy()+n[1]))<=rsquared )
+						if((visited.emplace(cur.cx()+n[0], cur.cy()+n[1])).second)
+							q.emplace(cur.cx()+n[0], cur.cy()+n[1]);
+			}
+		}
+		for(auto i:circle) {
+			try {
+				if(coords.find(center+i)!=coords.end()) {
+					remainder=false;
+					break;
+				}
+			} catch (const std::out_of_range& oor) {(void)oor;}
+		}
+		return remainder;
+	}
+
+	static void getRemainders(const pixelshadeMap &img, unordered_set<pos_t> &coordSet, const pos_t &freespaceCoord) {
+		unordered_set<pos_t> freespace = img.findFreespace(freespaceCoord);
+		for(auto c:freespace)
+			if(isRemainder(c,coordSet,ROBOT_DYNAMICS_RADIUS))
+				coordSet.insert(c);
+	}
+
 	static void test(shared_ptr<Image> img, bool banim=true)
 	{
 		const pos_t start = {ROBOT_START_X,ROBOT_START_Y};
@@ -152,22 +200,32 @@ public:
 			cout << "Done" << endl;
 		}
 
-		//Local maxima are thrown into coords here:
-		unordered_set<pos_t> loMa = getLocalMaxima(configurationSpace,brush,start,true);
+//		//Local maxima are thrown into coords here:
+//		unordered_set<pos_t> loMa = getLocalMaxima(configurationSpace,brush,start,true);
+//		if(banim) {
+//			cout << "Saving local maxima as \"test_local_maxima.pgm\"... " << flush;
+//			for(auto c:loMa)
+//				img->setPixel8U(c.cx(),c.cy(),20);
+//			img->saveAsPGM("test_local_maxima.pgm");
+//			theImg.shade(img);
+//			cout << "Done." << endl;
+//		}
+//		coords.insert(loMa.begin(),loMa.end());
+//		if(banim) {
+//			cout << "Saving brushfire edges and local maxima as \"test_full_coordinate_set.pgm\"... " << flush;
+//			for(auto c:coords)
+//				img->setPixel8U(c.cx(),c.cy(),20);
+//			img->saveAsPGM("test_full_coordinate_set.pgm");
+//			theImg.shade(img);
+//			cout << "Done." << endl;
+//		}
+
+		getRemainders(configurationSpace,coords,start);
 		if(banim) {
-			cout << "Saving local maxima as \"test_local_maxima.pgm\"... " << flush;
-			for(auto c:loMa)
-				img->setPixel8U(c.cx(),c.cy(),20);
-			img->saveAsPGM("test_local_maxima.pgm");
-			theImg.shade(img);
-			cout << "Done." << endl;
-		}
-		coords.insert(loMa.begin(),loMa.end());
-		if(banim) {
-			cout << "Saving brushfire edges and local maxima as \"test_full_coordinate_set.pgm\"... " << flush;
+			cout << "Saving brushfire edges and remainders as \"test_full_be_and_remainders.pgm\"... " << flush;
 			for(auto c:coords)
 				img->setPixel8U(c.cx(),c.cy(),20);
-			img->saveAsPGM("test_full_coordinate_set.pgm");
+			img->saveAsPGM("test_full_be_and_remainders.pgm");
 			theImg.shade(img);
 			cout << "Done." << endl;
 		}
