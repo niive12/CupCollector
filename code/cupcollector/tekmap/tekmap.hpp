@@ -601,6 +601,44 @@ public:
 				}
 				return move(resulting_path);
 		}
+
+		virtual unordered_set< pos_t > findFreespace(const pos_t &withinFreeSpace) const {
+			unordered_set<pos_t> resulting_coords;
+			if(!isInMap(withinFreeSpace))
+					cerr << "coord given to findFreespace is not in pixmap." << endl;
+			else {
+					const array<array<int,2>,8> neighbours =
+					{{ {-1,0}, /* W */ {1,0}, /* E */
+					   {0,-1}, /* N */ {0,1}, /* S */
+					   {-1,-1},/* NW */{1,-1}, /* NE */
+					   {1,1}, /* SE */{-1,1} /* SW */
+					 }};
+					vector<vector<bool> > visited(getWidth(),vector<bool>(getHeight(),false));
+					queue<pos_t> q; //FIFO
+					q.push(withinFreeSpace);
+					while(!q.empty()) {
+							pos_t cur = q.front();
+							q.pop();
+							resulting_coords.insert(cur);
+							for(auto n : neighbours) {
+									pos_t w = cur+pos_t(n.at(0),n.at(1));
+									//If neighbour is within image borders:
+									if( isInMap(w)) {
+											//if the neighbour is an unvisited non-obstacle:
+											if( (!WSPACE_IS_OBSTACLE( const_coordVal(w) ))
+															&& (!( (visited[w.cx()])[w.cy()] ) ) ) {
+													//Add it to the wavefront
+													q.push(w);
+													(visited[w.cx()])[w.cy()]=true;
+											}
+									}
+							}
+							(visited[cur.cx()])[cur.cy()] = true;
+					}
+			}
+			return move(resulting_coords);
+		}
+
 };
 class brushfireMap : public tekMap<unsigned char>
 {
