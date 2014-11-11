@@ -157,3 +157,20 @@ Summary:
 			- Robot snobot flobot frobit.
 		-Mikkel:
 			- Make some algorithm to make rooms_in_order based on room centers.
+
+
+Meeting (11th of November):
+Attendants: Entire group
+Summary:
+	- We got a new idea which is described in “description of new solution.txt”	
+
+	- Work for next time:
+		- Michael changes the brushfire algorithm. He is only allowed to change 		one that takes a coordinate in the constructor.
+		
+		- Nikolaj documents his work with graphs and other cool stuff. He 			remembers to not go into too much detail about the code, but describe the 		algorithms and so on.
+
+		- Lukas finishes part 3
+		
+		- Mikkel finishes cup scanner.
+
+		- Mikael finishes the floor sweeper.
