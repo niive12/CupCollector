@@ -1,2 +1,22 @@
 \section{Planning}
 \subsection{Method}
+\begin{enumerate}
+\item Generate brushfire BF0 from original image.
+\item Paint doors, pixelshademap PXD, using BF0.
+\item Generate brushfire BFD from PXD. 
+\item Generate set SD from BFD, so that BFd-value\%diameter == Radius
+\item Generate set SL from BF0, of local maxima. 
+\item Remove unnecessary local maxima from SL.
+\item Generate set Sm = merge(Sd,Sl)
+\end{enumerate}
+
+
+\begin{verbatim}
+while(!(Sm.empty()))
+{
+	c = nearest_coordinate_in(Sm);
+	s = shortest_path_to(c);
+	s_temp = merge(c,s);
+	Sm = Sm - s_temp; // Unmark
+}
+\end{verbatim}
