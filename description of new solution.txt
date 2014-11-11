@@ -1,0 +1,21 @@
+Tag tilfældigt max koordinat. 
+Kør wavefront. 
+Grupper alle sammenhængende punkter. 
+
+
+1: Generate brushfire BF0 from original image.
+2: Paint doors, pixelshademap PXD, using BF0.
+3: Generate brushfire BFD from PXD. 
+4: Generate set SD from BFD, so that BFd-value%diameter == Radius
+5: Generate set SL from BF0, of local maxima. 
+5.5: Remove unnecessary local maxima from SL.
+6: Generate set Sm = merge(Sd,Sl)
+7: 
+while(!(Sm.empty()))
+{
+	c = nearest_coordinate_in(Sm);
+	s = shortest_path_to(c);
+	s_temp = merge(c,s);
+	Sm = Sm - s_temp; // Unmark
+}
+	
