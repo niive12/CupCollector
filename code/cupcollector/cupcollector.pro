@@ -19,4 +19,5 @@ HEADERS += \
     scanner/scanner.h \
     robot/robot.h \
     tekmap/tekmap.hpp \
-    doordetector/doordetector.h
+    doordetector/doordetector.h \
+    test.hpp

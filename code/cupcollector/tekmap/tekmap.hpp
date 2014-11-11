@@ -12,7 +12,6 @@
 #include <array>
 #include <utility>
 #include <set>
-#include <map>
 #include <unordered_map>
 #include <unordered_set>
 #include <list>
@@ -531,7 +530,7 @@ public:
 		return move(resulting_path);
 	}
 
-	list<pos_t> getDijsktraPath(const pos_t &from, const pos_t &to) const
+	list<pos_t> getDijkstraPath(const pos_t &from, const pos_t &to) const
 	{
 		const double sqrt2 =1.4142135623730950488016887242097;
 		list<pos_t> resulting_path;
@@ -838,48 +837,7 @@ public:
 using brushfire_map = brushfireMap;
 using wavefront_map = wavefrontMap;
 using pixelshade_map = pixelshadeMap;
-class testMap : public brushfireMap {
-public:
-	testMap(shared_ptr<Image> img, const pos_t &reachableFreeSpace)
-		:brushfireMap(img,reachableFreeSpace)
-	{}
-	void test(shared_ptr<Image> img)
-	{
-		set<pos_t> loma;
-		for(coordIndexType x=0;x<(coordIndexType)(getWidth());++x)
-		{
-			coordIndexType y0=2, y1=1, y2=0;
-			while(y0<(coordIndexType)(getHeight()))
-			{
-				if(
-						((this->const_coordVal(x,y0))<(this->const_coordVal(x,y1)))
-						&&((this->const_coordVal(x,y2))<(this->const_coordVal(x,y1)))
-						)
-					loma.emplace(x,y1);
-				++y0;
-				++y1;
-				++y2;
-			}
-		}
-		for(coordIndexType y=0;y<(coordIndexType)(getHeight());++y)
-		{
-			coordIndexType x0=2, x1=1, x2=0;
-			while(x0<(coordIndexType)(getWidth()))
-			{
-				if(
-						((this->const_coordVal(x0,y))<(this->const_coordVal(x1,y)))
-						&&((this->const_coordVal(x2,y))<(this->const_coordVal(x1,y)))
-						)
-					loma.emplace(x1,y);
-				++x0;
-				++x1;
-				++x2;
-			}
-		}
-		for(auto i:loma)
-			img->setPixel8U(i.cx(),i.cy(),0);
-	}
-};
+
 /**
 * @brief The dijkstraMap class Same as integer wavefront, except it's norm2 potential function.
 */

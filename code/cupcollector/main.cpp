@@ -13,6 +13,7 @@
 #include <memory>
 #include "doordetector/doordetector.h"
 #include "scanner/scanner.h"
+#include "test.hpp"
 using namespace rw::sensor;
 using namespace rw::loaders;
 using namespace std;
@@ -65,7 +66,7 @@ void testShortestPath(shared_ptr<Image> img)
 	//for(auto i:path2) cout << "( " << i.cx() << " , " << i.cy() << " )" << endl;
 	cout << (path1==path2?":-)":":-(") << endl;
 
-	list<pos_t> path3 = pix.getDijsktraPath(start,goal);
+	list<pos_t> path3 = pix.getDijkstraPath(start,goal);
 	for(auto i:path3) cout << "( " << i.cx() << " , " << i.cy() << " )" << endl;
 	cout << "Dijkstra length: " << path3.size()
 		 << " vs. wavefront length: " << path2.size() << endl;
@@ -87,9 +88,9 @@ int main(int argc, char** argv) {
 	shared_ptr<Image> img(PPMLoader::load(filename));
 	cout << "Image size: " << img->getWidth() << " x " << img->getHeight() << endl;
 
-	testShortestPath(img);
-	testTekMapConstructors(filename);
-
+//	cout << "MW-test starting..." << endl;
+//	tester::test(img);
+//	cout << "MW-test done!" << endl;
 
 	pixelshade_map original(img );
 	cout << "Giving start position for brushfire..." << endl;
