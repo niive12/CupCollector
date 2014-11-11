@@ -29,3 +29,6 @@
 
 #define WAVE_VAL_UNV           -1
 #define WAVE_VAL_GOAL          0
+
+
+#define SQRT_2 1.414213562373095
