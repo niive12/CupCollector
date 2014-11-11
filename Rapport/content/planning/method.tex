@@ -1,5 +1,6 @@
 \section{Planning}
 \subsection{Method}
+
 \begin{enumerate}
 \item Generate brushfire BF0 from original image.
 \item Paint doors, pixelshademap PXD, using BF0.
@@ -10,13 +11,12 @@
 \item Generate set Sm = merge(Sd,Sl)
 \end{enumerate}
 
-
 \begin{verbatim}
-while(!(Sm.empty()))
-{
-	c = nearest_coordinate_in(Sm);
-	s = shortest_path_to(c);
-	s_temp = merge(c,s);
-	Sm = Sm - s_temp; // Unmark
+while( !(Sm.empty()) ){
+   c = nearest_coordinate_in(Sm);
+   s = shortest_path_to(c);
+   s_temp = merge(c,s);
+   Sm = Sm - s_temp; // Unmark
 }
 \end{verbatim}
+

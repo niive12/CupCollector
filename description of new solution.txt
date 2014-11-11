@@ -18,4 +18,3 @@ while(!(Sm.empty()))
 	s_temp = merge(c,s);
 	Sm = Sm - s_temp; // Unmark
 }
-	
