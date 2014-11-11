@@ -2,7 +2,7 @@ The Cup Collector
 =================
 Animation
 ---------
-[See robot 0 animation](https://github.com/niive12/CupCollector/blob/master/code/cupcollector/robot_0.gif)
+[See robot 0 animation](https://raw.githubusercontent.com/niive12/CupCollector/master/robot_0.gif)
 Awesome contributors
 --------------------
 Lukas, Michael, Nikolaj, Mikkel & Mikael
