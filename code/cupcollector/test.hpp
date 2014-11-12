@@ -9,6 +9,7 @@
 #include <iomanip>
 #include <sstream>
 #include <forward_list>
+#include "doordetector/doordetector.h"
 
 
 using namespace std;
@@ -180,8 +181,9 @@ public:
 					imgToPad.coordVal(x,y) = WSPACE_OBSTACLE;
 	}
 
+	template<typename BrushmapT>
 	static unordered_set<pos_t> getLocalMaxima(const pixelshadeMap &img,
-											   const brushfireMap &brush,
+											   const BrushmapT &brush,
 											   const pos_t &validFreespaceCoord,
 											   bool twoPointMaxima=true)
 	{
@@ -197,11 +199,20 @@ public:
 						) {
 					pos_t pos(x,y1);
 					if(freespace.find(pos)!=freespace.end()) {
-						if((brush.const_coordVal(x,y2))==(brush.const_coordVal(x,y1))) {
-							if((brush.const_coordVal(x,y2-1))==(brush.const_coordVal(x,y0)))
+//						if((brush.const_coordVal(x,y2))==(brush.const_coordVal(x,y1))) {
+//							if((brush.const_coordVal(x,y2-1))==(brush.const_coordVal(x,y0)))
+						if( (( std::max((brush.const_coordVal(x,y2)),(brush.const_coordVal(x,y1)))
+							  -std::min((brush.const_coordVal(x,y2)),(brush.const_coordVal(x,y1))))
+							  <1) ) {
+							if( ( (std::max((brush.const_coordVal(x,y2-1)),(brush.const_coordVal(x,y0)))
+								 -std::min((brush.const_coordVal(x,y2-1)),(brush.const_coordVal(x,y0))))
+								  <1 ) )
 								result.insert(pos);
 						}
-						else if((brush.const_coordVal(x,y2))==(brush.const_coordVal(x,y0))) {
+//						else if((brush.const_coordVal(x,y2))==(brush.const_coordVal(x,y0))) {
+						else if( ((std::max((brush.const_coordVal(x,y2)),(brush.const_coordVal(x,y0)))
+								-std::min((brush.const_coordVal(x,y2)),(brush.const_coordVal(x,y0)))))
+								 <1) {
 							result.insert(pos);
 						}
 					}
@@ -221,11 +232,24 @@ public:
 						) {
 					pos_t pos(x1,y);
 					if(freespace.find(pos)!=freespace.end()) {
-						if((brush.const_coordVal(x2,y))==(brush.const_coordVal(x1,y))) {
-							if((brush.const_coordVal(x2-1,y))==(brush.const_coordVal(x0,y)))
+						//						if((brush.const_coordVal(x2,y))==(brush.const_coordVal(x1,y))) {
+						//							if((brush.const_coordVal(x2-1,y))==(brush.const_coordVal(x0,y)))
+						//								result.insert(pos);
+						//						}
+						//						else if((brush.const_coordVal(x2,y))==(brush.const_coordVal(x0,y))) {
+						//							result.insert(pos);
+						//						}
+						if( (( std::max((brush.const_coordVal(x2,y)),(brush.const_coordVal(x1,y)))
+							   -std::min((brush.const_coordVal(x2,y)),(brush.const_coordVal(x1,y))))
+							 <1) ) {
+							if( ( (std::max((brush.const_coordVal(x2-1,y)),(brush.const_coordVal(x0,y)))
+								   -std::min((brush.const_coordVal(x2-1,y)),(brush.const_coordVal(x0,y))))
+								  <1 ) )
 								result.insert(pos);
 						}
-						else if((brush.const_coordVal(x2,y))==(brush.const_coordVal(x0,y))) {
+						else if( ((std::max((brush.const_coordVal(x2,y)),(brush.const_coordVal(x0,y)))
+								   -std::min((brush.const_coordVal(x2,y)),(brush.const_coordVal(x0,y)))))
+								 <1) {
 							result.insert(pos);
 						}
 					}
@@ -236,6 +260,14 @@ public:
 			}
 		}
 		return move(result);
+	}
+
+	static void chooseLocalMaxima(const unordered_set<pos_t> &localMaxima,
+								  unordered_set<pos_t> &coordSet,
+								  size_t radius=ROBOT_DYNAMICS_RADIUS) {
+		for(auto c:localMaxima)
+			if(isRemainder(c,coordSet,radius))
+				coordSet.insert(c);
 	}
 
 	static bool isRemainder(pos_t center, const unordered_set<pos_t> &coords, unsigned int radius)
@@ -293,19 +325,28 @@ public:
 		pixelshadeMap theImg(img), configurationSpace(img);
 
 
-		//brushfireMap brush(theImg,start);
-		norm2BrushfireMap brush(theImg);
 
+		brushfireMap brush(theImg,start);
 
-		pad(configurationSpace,brush,ROBOT_DYNAMICS_RADIUS);
+		{ //If n2Brush is only used here, scope is a good idea.
+			norm2BrushfireMap n2Brush(theImg);
+			pad(configurationSpace,n2Brush,ROBOT_DYNAMICS_RADIUS);
+		}
+
+		doorDetector mydetective;
+		cout << "Finding The Doors... " << flush;
+		vector<pos_t> The_Doors = mydetective.detect_doorways(img, brush);
+		cout << "Done.\nFinding Door Steps... " << flush;
+		pixelshade_map door_steps_map = mydetective.door_step(img, brush, The_Doors);
+		The_Doors.clear();
+		cout << "Done.\nCreating brushfire map from door steps... " << flush;
+		norm2BrushfireMap doorBrush(door_steps_map);
+		cout << "Done." << endl;
 
 		//unordered_set<pos_t> coords = getBrushEdges(brush,ROBOT_DYNAMICS_RADIUS);
 		unordered_set<pos_t> free = theImg.findFreespace(start);
-		unordered_set<pos_t> coords = getBrushEdges(free,brush,ROBOT_DYNAMICS_RADIUS);
-
-
-
-
+//		unordered_set<pos_t> coords = getBrushEdges(free,n2Brush,ROBOT_DYNAMICS_RADIUS);
+		unordered_set<pos_t> coords = getBrushEdges(free,doorBrush,ROBOT_DYNAMICS_RADIUS);
 
 		if(banim) {
 			cout << "Saving configuration space as \"test_configuration_space.pgm\"... " << flush;
@@ -324,27 +365,34 @@ public:
 			cout << "Done" << endl;
 		}
 
-//		//Local maxima are thrown into coords here:
-//		unordered_set<pos_t> loMa = getLocalMaxima(configurationSpace,brush,start,true);
-//		if(banim) {
-//			cout << "Saving local maxima as \"test_local_maxima.pgm\"... " << flush;
-//			for(auto c:loMa)
-//				img->setPixel8U(c.cx(),c.cy(),20);
-//			img->saveAsPGM("test_local_maxima.pgm");
-//			theImg.shade(img);
-//			cout << "Done." << endl;
-//		}
-//		coords.insert(loMa.begin(),loMa.end());
-//		if(banim) {
-//			cout << "Saving brushfire edges and local maxima as \"test_full_coordinate_set.pgm\"... " << flush;
-//			for(auto c:coords)
-//				img->setPixel8U(c.cx(),c.cy(),20);
-//			img->saveAsPGM("test_full_coordinate_set.pgm");
-//			theImg.shade(img);
-//			cout << "Done." << endl;
-//		}
+		//Local maxima are thrown into coords here:
+		//unordered_set<pos_t> loMa = getLocalMaxima<brushfireMap>(configurationSpace,brush,start,true);
+		//unordered_set<pos_t> loMa = getLocalMaxima<norm2BrushfireMap>(configurationSpace,n2Brush,start,true);
+		unordered_set<pos_t> loMa = getLocalMaxima<norm2BrushfireMap>(configurationSpace,doorBrush,start,true);
+
+		if(banim) {
+			cout << "Saving local maxima as \"test_local_maxima.pgm\"... " << flush;
+			for(auto c:loMa)
+				img->setPixel8U(c.cx(),c.cy(),20);
+			img->saveAsPGM("test_local_maxima.pgm");
+			theImg.shade(img);
+			cout << "Done." << endl;
+		}
+		chooseLocalMaxima(loMa,coords,ROBOT_DYNAMICS_RADIUS);
+		//coords.insert(loMa.begin(),loMa.end());
+		if(banim) {
+			cout << "Saving brushfire edges and local maxima as \"test_full_coordinate_set.pgm\"... " << flush;
+			for(auto c:coords)
+				img->setPixel8U(c.cx(),c.cy(),20);
+			img->saveAsPGM("test_full_coordinate_set.pgm");
+			theImg.shade(img);
+			cout << "Done." << endl;
+		}
 
 		getRemainders(configurationSpace,coords,start);
+
+
+
 		if(banim) {
 			cout << "Saving brushfire edges and remainders as \"test_full_be_and_remainders.pgm\"... " << flush;
 			for(auto c:coords)

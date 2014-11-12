@@ -8,6 +8,9 @@ Animation
 
 [See robot 2 animation](https://raw.githubusercontent.com/niive12/CupCollector/master/robot_2.gif)
 
+[See robot 3 animation (door detection)](https://raw.githubusercontent.com/niive12/CupCollector/master/robot_3.gif)
+
+
 Awesome contributors
 --------------------
 Lukas, Michael, Nikolaj, Mikkel & Mikael
