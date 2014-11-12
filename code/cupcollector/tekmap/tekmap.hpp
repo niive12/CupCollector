@@ -109,6 +109,8 @@ public:
 						cerr << "No image passed to map ctor" << endl;
 		}
 
+		tekMap() {}
+
 		/**
 	 * @brief coordVal Returns a reference to the coordinate value.
 	 * coordVal can take a pos_t or a x and y coord.
@@ -722,7 +724,7 @@ protected:
 												if( isInImage( img, w ) ) {
 														//if the neighbour is not an obstacle:
 														if( !WSPACE_IS_OBSTACLE( img->getPixelValuei(w.cx(),w.cy(),0) ) ) {
-																resulting_coords.insert(w);
+																resulting_coords.emplace(x,y);
 																break;
 														}
 												}
@@ -750,7 +752,7 @@ protected:
 												if( img.isInMap(w) ) {
 														//if the neighbour is not an obstacle:
 														if( !WSPACE_IS_OBSTACLE( img.const_coordVal(w) ) ) {
-																resulting_coords.insert(w);
+																resulting_coords.emplace(x,y);
 																break;
 														}
 												}
