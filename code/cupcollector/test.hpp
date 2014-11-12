@@ -124,7 +124,7 @@ public:
 		for(coordIndexType x = 0; x<(coordIndexType)brush.getWidth(); ++x) {
 			for(coordIndexType y = 0; y<(coordIndexType)brush.getHeight(); ++y) {
 				if(freespace.find(pos_t(x,y))!=freespace.end())
-					if((((size_t)(brush.const_coordVal(x,y)-1))%(2*radius))==radius)
+					if((((size_t)(brush.const_coordVal(x,y)-1))%(2*radius))==radius) //round?
 					{
 						result.emplace(x,y);
 					}
