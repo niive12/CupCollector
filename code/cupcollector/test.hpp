@@ -14,6 +14,10 @@
 
 using namespace std;
 
+class norm2BrushfireMap;
+class mapWrap;
+class tester;
+
 /**
  * @brief The norm2BrushfireMap class Brushfire map using norm2 potential function.
  */
@@ -128,6 +132,56 @@ public:
  * entire assignment.
  */
 class tester {
+protected:
+	class mapWrap {
+	protected:
+		shared_ptr<pixelshadeMap> originalMap;
+		shared_ptr<pixelshadeMap> configurationSpaceMap;
+		shared_ptr<pixelshadeMap> doorStepsMap;
+		shared_ptr<norm2BrushfireMap> m_norm2BrushfireMap;
+		shared_ptr<norm2BrushfireMap> m_norm2BrushfireDoorsMap;
+
+
+		unordered_set<pos_t> freespaceSet;
+	public:
+		mapWrap(shared_ptr<Image> img):
+			originalMap(make_shared<pixelshadeMap>(img))
+		{ }
+
+		mapWrap(shared_ptr<Image> img, const pos_t &reachableCoordinate):
+			mapWrap(img)
+		{
+			freespaceSet =originalMap->findFreespace(reachableCoordinate);
+			m_norm2BrushfireMap = make_shared<norm2BrushfireMap>((*originalMap));
+		}
+
+		mapWrap(shared_ptr<Image> img, const pos_t &reachableCoordinate,
+				size_t robot_dynamics_radius):
+			mapWrap(img,reachableCoordinate)
+		{
+			configurationSpaceMap = make_shared<pixelshadeMap>(img);
+			pad<norm2BrushfireMap>((*configurationSpaceMap),(*m_norm2BrushfireMap),robot_dynamics_radius);
+			for(coordIndexType x=0; x<coordIndexType(configurationSpaceMap->getWidth()); ++x)
+				for(coordIndexType y=0; y<coordIndexType(configurationSpaceMap->getHeight()); ++y)
+					if(freespaceSet.find(pos_t(x,y)) == freespaceSet.end())
+						configurationSpaceMap->coordVal(x,y)=WSPACE_OBSTACLE;
+			brushfireMap brush((*originalMap),reachableCoordinate);
+			doorDetector mydetective;
+			vector<pos_t> The_Doors = mydetective.detect_doorways(img, brush);
+			doorStepsMap = make_shared<pixelshadeMap>(mydetective.door_step(img, brush, The_Doors));
+			m_norm2BrushfireDoorsMap = make_shared<norm2BrushfireMap>((*doorStepsMap));
+		}
+
+		shared_ptr<pixelshadeMap> getOriginal() const { return originalMap; }
+		shared_ptr<pixelshadeMap> getConfigurationSpace() const { return configurationSpaceMap; }
+		shared_ptr<pixelshadeMap> getDoorStepsMap() const { return doorStepsMap; }
+		shared_ptr<norm2BrushfireMap> getNorm2Brushfire() const { return m_norm2BrushfireMap; }
+		shared_ptr<norm2BrushfireMap> getNorm2BrushfireDoors() const { return m_norm2BrushfireDoorsMap; }
+		const unordered_set<pos_t> & getFreespace() const {return freespaceSet; }
+	};
+
+
+
 public:
 	template<typename BrushmapT>
 	/**
@@ -375,88 +429,78 @@ public:
 				coordSet.insert(c);
 	}
 
+
 	/**
-	 * @brief test Performs the experiment
-	 * @param img The original image
-	 * @param banim True if you want a lot of .pgm file output. False if you don't.
+	 * @brief getFloorSweepCoordinates Generates complete set of coordinates the floor sweeper robot must visit.
+	 *
+	 * How it works:
+	 * 1. Create an empty coordinate set, called coords.
+	 * 2. Get brushfire edges in norm2BrushfireDoors, accepting only freespace coordinates.
+	 * 3. Add all edges from step 2 to coords.
+	 * 4. Find brushfire local maxima (in norm2BrushfireDoors), located in configuration space.
+	 * 5. Add the minimum necessary amount of coordinates from step 4. to coords.
+	 * 6. Scan the freespace for coordinates that are not touched by the robot if it stood
+	 *		exactly on all the coordinates of coords.
+	 * 7. Add the coordinates from 6. (the "remainders") to coords.
+	 * 8. Return coords.
+	 *
+	 * @param img Image
+	 * @param original Original
+	 * @param freespace Freespace
+	 * @param configurationSpace Configuration space
+	 * @param norm2BrushfireDoors Norm2 brushfire map generated from a map with doors seen as obstacles
+	 * @param reachable_coordinate A reachable coordinate (the starting coordinate, for example)
+	 * @param robot_dynamics_radius The radius of the robot
+	 * @param makePGMs True if you want a lot of .pgm file output. False if you don't.
+	 * @return Complete set of coordinates the floor sweeper robot must visit.
 	 */
-	static void test(shared_ptr<Image> img, bool banim=true)
+	static unordered_set<pos_t> getFloorSweepCoordinates(shared_ptr<Image> img,
+														 const pixelshadeMap &original,
+														 const unordered_set<pos_t> &freespace,
+														 const pixelshadeMap &configurationSpace,
+														 const norm2BrushfireMap &norm2BrushfireDoors,
+														 const pos_t &reachable_coordinate,
+														 size_t robot_dynamics_radius=ROBOT_DYNAMICS_RADIUS,
+														 bool makePGMs=false)
 	{
-		//A reachable freespace coordinate is the starting coordinate
-		const pos_t start = {ROBOT_START_X,ROBOT_START_Y};
-		//Creating internal representaion (and backup) named theImg,
-		// and a map to represent the configuration space named configurationSpace
-		pixelshadeMap theImg(img), configurationSpace(img);
-		//Standard integer brushfire map
-		brushfireMap brush(theImg,start);
-
-		//Create the configuration space by padding
-		{
-			norm2BrushfireMap n2Brush(theImg);
-			pad<norm2BrushfireMap>(configurationSpace,n2Brush,ROBOT_DYNAMICS_RADIUS);
-		}
-
-		if(banim) {
-			cout << "Saving configuration space as \"test_configuration_space.pgm\"... " << flush;
-			configurationSpace.shade(img);
-			img->saveAsPGM("test_configuration_space.pgm");
-			theImg.shade(img);
-			cout << "Done." << endl;
-		}
-
-		//Detect the door steps (in the integer brushfire map)
-		doorDetector mydetective;
-		cout << "Finding The Doors... " << flush;
-		vector<pos_t> The_Doors = mydetective.detect_doorways(img, brush);
-		cout << "Done.\nFinding Door Steps... " << flush;
-		pixelshade_map door_steps_map = mydetective.door_step(img, brush, The_Doors);
-		The_Doors.clear();
-
-		//Create a norm2 brushfire map, counting door steps as obstacles
-		cout << "Done.\nCreating brushfire map from door steps... " << flush;
-		norm2BrushfireMap doorBrush(door_steps_map);
-		cout << "Done." << endl;
-
-		//Find the freespace
-		unordered_set<pos_t> free = theImg.findFreespace(start);
 		//Go through the brushfire map and generate a set, coords, of all the coordinates
 		// with brushfire values equal to certain multiples of robot
 		// diameter/radius combinations.
 		// This set will be called the brushfire "edges".
-		unordered_set<pos_t> coords = getBrushEdges(free,doorBrush,ROBOT_DYNAMICS_RADIUS);
-
-		if(banim) {
-			cout << "Saving brushfire edges as \"test_brushfire_edges.pgm\"... " << flush;
+		unordered_set<pos_t> coords = getBrushEdges(freespace,norm2BrushfireDoors,robot_dynamics_radius);
+		if(makePGMs) {
+			cout << "Saving brushfire edges as \"floor_sweep_brushfire_edges.pgm\"... " << flush;
 			for(auto c:coords)
 				img->setPixel8U(c.cx(),c.cy(),20);
-			img->saveAsPGM("test_brushfire_edges.pgm");
-			theImg.shade(img);
+			img->saveAsPGM("floor_sweep_brushfire_edges.pgm");
+			original.shade(img);
 			cout << "Done" << endl;
 		}
 
 		//Generate a set of brushfire local maxima, loMa,
 		// from the brushfire map with doors being obstacles
-		unordered_set<pos_t> loMa = getLocalMaxima<norm2BrushfireMap>(configurationSpace,doorBrush,start,true);
+		unordered_set<pos_t> loMa = getLocalMaxima<norm2BrushfireMap>
+				(configurationSpace,norm2BrushfireDoors,reachable_coordinate,true);
 
-		if(banim) {
-			cout << "Saving local maxima as \"test_local_maxima.pgm\"... " << flush;
+		if(makePGMs) {
+			cout << "Saving local maxima as \"floor_sweep_local_maxima.pgm\"... " << flush;
 			for(auto c:loMa)
 				img->setPixel8U(c.cx(),c.cy(),20);
-			img->saveAsPGM("test_local_maxima.pgm");
-			theImg.shade(img);
+			img->saveAsPGM("floor_sweep_local_maxima.pgm");
+			original.shade(img);
 			cout << "Done." << endl;
 		}
 
 		//Insert some of the brushfire local maxima into the
 		// set named coords (currently holding the brushfire "edges")
-		chooseLocalMaxima(loMa,coords,ROBOT_DYNAMICS_RADIUS);
+		chooseLocalMaxima(loMa,coords,robot_dynamics_radius);
 
-		if(banim) {
-			cout << "Saving brushfire edges and local maxima as \"test_be_and_loma.pgm\"... " << flush;
+		if(makePGMs) {
+			cout << "Saving brushfire edges and local maxima as \"floor_sweep_be_and_loma.pgm\"... " << flush;
 			for(auto c:coords)
 				img->setPixel8U(c.cx(),c.cy(),20);
-			img->saveAsPGM("test_be_and_loma.pgm");
-			theImg.shade(img);
+			img->saveAsPGM("floor_sweep_be_and_loma.pgm");
+			original.shade(img);
 			cout << "Done." << endl;
 		}
 
@@ -465,24 +509,59 @@ public:
 		// if it visited all points in coords,
 		// and add these coordinates to coords on the way.
 		// These remaining coordinates are called remainders.
-		getRemainders(configurationSpace,coords,start,ROBOT_DYNAMICS_RADIUS);
+		getRemainders(configurationSpace,coords,reachable_coordinate,robot_dynamics_radius);
 
-		if(banim) {
-			cout << "Saving brushfire edges, local maxima and remainders as \"test_full_coordinate_set.pgm\"... " << flush;
+		if(makePGMs) {
+			ostringstream filename;
+			filename << "floor_sweep_coordinate_set_"
+					 << (coords.size()) << ".pgm";
+			cout << "Saving floor sweeping coordinates as \"" << (filename.str()) << "\"... " << flush;
 			for(auto c:coords)
 				img->setPixel8U(c.cx(),c.cy(),20);
-			img->saveAsPGM("test_full_coordinate_set.pgm");
-			theImg.shade(img);
+			img->saveAsPGM(filename.str());
+			original.shade(img);
 			cout << "Done." << endl;
 		}
+
+		return move(coords);
+	}
+
+	/**
+	 * @brief sweep_floor Sweeps the floor
+	 * @param img The original image
+	 * @param makePGMs True if you want a lot of .pgm file output. False if you don't.
+	 */
+	static void sweep_floor(shared_ptr<Image> img, bool makePGMs=false)
+	{
+		//A reachable freespace coordinate is the starting coordinate
+		const pos_t start = {ROBOT_START_X,ROBOT_START_Y};
+		mapWrap maps(img,start,ROBOT_DYNAMICS_RADIUS);
+
+		if(makePGMs) {
+			cout << "Saving configuration space as \"floor_sweep_configuration_space.pgm\"... " << flush;
+			(maps.getConfigurationSpace())->shade(img);
+			img->saveAsPGM("floor_sweep_configuration_space.pgm");
+			(maps.getOriginal())->shade(img);
+			cout << "Done." << endl;
+		}
+
+		unordered_set<pos_t> coords =
+				getFloorSweepCoordinates(img,
+										 *(maps.getOriginal()),
+										 maps.getFreespace(),
+										 *(maps.getConfigurationSpace()),
+										 *(maps.getNorm2BrushfireDoors()),
+										 start,
+										 ROBOT_DYNAMICS_RADIUS,
+										 makePGMs);
 
 		//The full path traveled by the robot is robotPath
 		list<pos_t> robotPath;
 		//The robot path starts with start.
 		robotPath.push_back(start);
 
-		//n is the number of coordinates the robot MUST visit.
 		auto n = coords.size();
+
 		//The progress variable will be a measure (in percent) of
 		// how many of the coordinates in coords (of size n)
 		// the robot has visited.
@@ -490,7 +569,7 @@ public:
 		// (the reason is easy to see in the following code).
 		size_t progress = 1;
 
-		cout << "Starting robot movement. Points to visit (C): " << n << "." << endl;
+		cout << "Starting robot movement. Points to visit: " << n << "." << endl;
 		while(!(coords.empty())) {
 			//First thing we do is output the progress to the console.
 			auto lastProgress = progress;
@@ -499,9 +578,9 @@ public:
 				cout << "\rPoints left in C: " << coords.size() << ", Traveled length: " << robotPath.size()
 					 << ", Progress: " << progress << " %        " << flush;
 
-				if(banim) {
+				if(makePGMs) {
 					ostringstream anim;
-					anim << "test_robot_path_"
+					anim << "floor_sweep_robot_path_"
 						 << setw(3) << setfill('0')
 						 << progress << ".pgm";
 					img->saveAsPGM(anim.str());
@@ -514,17 +593,17 @@ public:
 			// The optimal algorithm is Dijkstra's, but Wavefront is used
 			// because it's faster/easier and almost as good.
 			// The found coordinate is called "next".
-			pos_t next = getClosestCoord(configurationSpace,coords,robotPath.back());
+			pos_t next = getClosestCoord(*(maps.getConfigurationSpace()),coords,robotPath.back());
 			//getClosestCoord returns the input coordinate
 			// if no coordinate was found in coords.
 			// This should NOT happen if the preprocessing was done correctly.
 			if(next==robotPath.back()) {
-				cout << "\nError encountered. Saving remaining coordinates as \"test_unreachable_coordinates.pgm\"..." << endl;
-				theImg.shade(img);
+				cout << "\nError encountered. Saving remaining coordinates as \"floor_sweep_unreachable_coordinates.pgm\"..." << endl;
+				(maps.getOriginal())->shade(img);
 				for(auto c:coords)
 					img->setPixel8U(c.cx(),c.cy(),87);
-				img->saveAsPGM("test_unreachable_coordinates.pgm");
-				theImg.shade(img);
+				img->saveAsPGM("floor_sweep_unreachable_coordinates.pgm");
+				(maps.getOriginal())->shade(img);
 				cout << "Done.\nTest has ended because of error." << endl;
 				return;
 			}
@@ -536,14 +615,14 @@ public:
 
 			//Using Dijkstra's algorithm, find all the coordinates between
 			// the robot's current position and the closest coordinate in coords
-			list<pos_t> pathToNext = configurationSpace.getDijkstraPath(robotPath.back(),next);
+			list<pos_t> pathToNext = (maps.getConfigurationSpace())->getDijkstraPath(robotPath.back(),next);
 
 			//Add all the coordinates between the robot's current position
 			// and the closest coordinate in coords
 			// to the robot path and remove them from coords.
 			for(auto c:pathToNext) {
 				robotPath.push_back(c);
-				if(banim) {
+				if(makePGMs) {
 					img->setPixel8U(c.cx(),c.cy(),20);
 				}
 				coords.erase(c);
@@ -553,7 +632,7 @@ public:
 			// add the closest coordinate in coords to the path.
 			robotPath.push_back(next);
 
-			if(banim) {
+			if(makePGMs) {
 				img->setPixel8U(next.cx(),next.cy(),20);
 			}
 		}
@@ -563,15 +642,15 @@ public:
 		//Remove the progress bar
 		cout << "\r                                                                " << endl;
 
-		if(banim) {
-			cout << "Saving robot path as \"test_robot_path_IDX.pgm\"... " << flush;
+		if(makePGMs) {
+			cout << "Saving robot path as \"floor_sweep_robot_path_IDX.pgm\"... " << flush;
 			ostringstream anim;
-			anim << "test_robot_path_full_" << setw(6) << setfill('0')
+			anim << "floor_sweep_robot_path_full_" << setw(6) << setfill('0')
 				 << robotPath.size() << "_" << n << ".pgm";
 			for(auto v:robotPath)
 				img->setPixel8U(v.cx(),v.cy(),20);
 			img->saveAsPGM(anim.str());
-			theImg.shade(img);
+			(maps.getOriginal())->shade(img);
 			cout << "Done." << endl;
 		}
 

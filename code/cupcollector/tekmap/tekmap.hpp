@@ -144,7 +144,7 @@ public:
 	 * @brief shade Shades an image according to the map's coordinate values.
 	 * @param img Image to paint in.
 	 */
-		void shade(shared_ptr<Image> img)
+		void shade(shared_ptr<Image> img) const
 		{
 				coordValType mymin=numeric_limits<coordValType>::max();
 				coordValType mymax=numeric_limits<coordValType>::min();
