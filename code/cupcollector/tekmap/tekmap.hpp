@@ -946,4 +946,30 @@ public:
 						}
 				}
 		}
+
+		virtual list<pos_t> getShortestPath(const pos_t &from) {
+			list<pos_t> resultPath;
+
+			const array<array<int,2>,8> neighbours =
+			{{ {-1,0}, /* W */ {1,0}, /* E */
+			   {0,-1}, /* N */ {0,1}, /* S */
+			   {-1,-1},/* NW */{1,-1}, /* NE */
+			   {1,1}, /* SE */{-1,1} /* SW */
+			 }};
+
+			pos_t nextPos=from;
+			while(const_coordVal(nextPos)>(myValType(WAVE_VAL_GOAL)+0.1)) {
+				set<edgeType,edgeComp> nebs;
+				for(auto n : neighbours) {
+					pos_t w = nextPos+pos_t(n.at(0),n.at(1));
+					//If neighbour is within image borders:
+					if( isInMap(w) ) {
+						nebs.emplace(w,const_coordVal(w));
+					}
+				}
+				nextPos=(*(nebs.rbegin())).first; //The one closest to goal.
+				resultPath.push_back(nextPos);
+			}
+			return move(resultPath);
+		}
 };

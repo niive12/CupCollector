@@ -10,6 +10,7 @@
 #include <sstream>
 #include <forward_list>
 #include "doordetector/doordetector.h"
+#include "scanner/scanner.h"
 
 
 using namespace std;
@@ -347,15 +348,17 @@ public:
 	}
 
 	/**
-	 * @brief chooseLocalMaxima Adds some of the coordinates from the local maxima to the coordSet.
-	 * @param localMaxima The local maxima
+	 * @brief chooseSubset Adds some of the coordinates from the set to choose from to the coordSet.
+	 * Works like getRemainders, except that only coordinates from the set to choose from
+	 * get added to the resulting set.
+	 * @param chooseFrom The set to choose from (for example, brushfire local maxima).
 	 * @param coordSet The coordinate set we want to expand to include some more (unscanned) coordinates.
 	 * @param radius The radius to scan around each local maximum.
 	 */
-	static void chooseLocalMaxima(const unordered_set<pos_t> &localMaxima,
+	static void chooseSubset(const unordered_set<pos_t> &chooseFrom,
 								  unordered_set<pos_t> &coordSet,
 								  size_t radius=ROBOT_DYNAMICS_RADIUS) {
-		for(auto c:localMaxima)
+		for(auto c:chooseFrom)
 			if(isRemainder(c,coordSet,radius))
 				coordSet.insert(c);
 	}
@@ -493,7 +496,7 @@ public:
 
 		//Insert some of the brushfire local maxima into the
 		// set named coords (currently holding the brushfire "edges")
-		chooseLocalMaxima(loMa,coords,robot_dynamics_radius);
+		chooseSubset(loMa,coords,robot_dynamics_radius);
 
 		if(makePGMs) {
 			cout << "Saving brushfire edges and local maxima as \"floor_sweep_be_and_loma.pgm\"... " << flush;
@@ -657,4 +660,282 @@ public:
 		//Output the robot path length
 		cout << "Total traveled length: " << robotPath.size() << endl;
 	}
+
+
+	static unordered_set<pos_t> getCupScanCoordinates(shared_ptr<Image> img,
+														 const pixelshadeMap &original,
+														 const unordered_set<pos_t> &freespace,
+														 const pixelshadeMap &configurationSpace,
+														 const norm2BrushfireMap &norm2BrushfireDoors,
+														 const pos_t &reachable_coordinate,
+														 size_t robot_scanner_radius=ROBOT_SCANNER_RADIUS)
+	{
+		return move(getFloorSweepCoordinates(img,original,freespace,configurationSpace,
+										norm2BrushfireDoors,reachable_coordinate,robot_scanner_radius,
+										false));
+	}
+
+	static void cup_scan(shared_ptr<Image> img, bool makePGMs=false)
+	{
+		//A reachable freespace coordinate is the starting coordinate
+		const pos_t start = {ROBOT_START_X,ROBOT_START_Y};
+		mapWrap maps(img,start,ROBOT_DYNAMICS_RADIUS);
+		pixelshadeMap cupspace(img);
+
+//		for(coordIndexType x=0; x<coordIndexType(cupspace.getWidth()); ++x)
+//			for(coordIndexType x=0; x<coordIndexType(cupspace.getWidth()); ++x)
+//				cupspace.coordVal(x,y)=WSPACE_OBSTACLE;
+//		for(auto v:(maps.getFreespace())) {
+//			cupspace.coordVal(v)=(maps.originalMap->const_coordVal(v));
+//		}
+
+		unordered_set<pos_t> cupsToCollect;
+		for(auto c:maps.getFreespace())
+			if(WSPACE_IS_CUP(cupspace.const_coordVal(c)))
+				cupsToCollect.insert(c);
+
+		unordered_set<pos_t> cupsCollected;
+
+
+		if(makePGMs) {
+			cout << "Saving configuration space as \"cup_scan_configuration_space.pgm\"... " << flush;
+			(maps.getConfigurationSpace())->shade(img);
+			img->saveAsPGM("cup_scan_configuration_space.pgm");
+			(maps.getOriginal())->shade(img);
+			cout << "Done." << endl;
+		}
+
+		unordered_set<pos_t> coords =
+				getCupScanCoordinates(img,
+										 *(maps.getOriginal()),
+										 maps.getFreespace(),
+										 *(maps.getConfigurationSpace()),
+										 *(maps.getNorm2BrushfireDoors()),
+										 start,
+										 ROBOT_SCANNER_RADIUS);
+
+		if(makePGMs) {
+			ostringstream filename;
+			filename << "cup_scan_coordinate_set_"
+					 << (coords.size()) << ".pgm";
+			cout << "Saving cup scanner coordinate set as \"" << (filename.str()) << "\"... " << flush;
+			for(auto c:coords)
+				img->setPixel8U(c.cx(),c.cy(),20);
+			img->saveAsPGM(filename.str());
+			maps.getOriginal()->shade(img);
+			cout << "Done." << endl;
+		}		
+
+
+		scanner cupscanner(ROBOT_SCANNER_RADIUS);
+		scanner cuppicker(ROBOT_ARM_RADIUS);
+		size_t number_of_cups=0;
+
+		set<pos_t> missed_cups;
+		unordered_set<pos_t> reachableCSpace = maps.getConfigurationSpace()->findFreespace(start);
+
+		auto pickupCups = [&cupspace,&cupscanner,&cuppicker,&coords,
+				&missed_cups,&number_of_cups,&reachableCSpace,
+				&img,&makePGMs,&maps,&cupsCollected](const pos_t &c) {
+			list<pos_t> visibleCups=
+					cupscanner.scanlist(c,
+										cupspace,
+										ROBOT_SCANNER_RADIUS);
+			list<pos_t> rc =
+					cuppicker.scanlist(c,
+									   cupspace,
+									   ROBOT_ARM_RADIUS);
+			unordered_set<pos_t> reachableCups(rc.begin(),rc.end());
+			for(auto cup:visibleCups) {
+				if(number_of_cups<ROBOT_CUP_CAPACITY) {
+					if(reachableCups.find(cup)!=reachableCups.end()) {
+						++number_of_cups;
+						cupspace.coordVal(cup)=WSPACE_FREE;
+						cupsCollected.insert(cup);
+						if(makePGMs) {
+							img->setPixel8U(cup.cx(),cup.cy(),WSPACE_FREE);
+						}
+					}
+					else
+					{
+						missed_cups.insert(cup);
+						pos_t closest = cup;
+						if(WSPACE_IS_OBSTACLE(maps.getConfigurationSpace()->const_coordVal(cup))) {
+							closest=getClosestCoord(cupspace,reachableCSpace,cup);
+							if(closest==cup)
+								cout << "Unreachable cup at ( " << cup.cx() << " , " << cup.cy() << " )!" << endl;
+						}
+						coords.insert(closest);
+					}
+				}
+				else {
+					missed_cups.insert(cup);
+					pos_t closest = cup;
+					if(WSPACE_IS_OBSTACLE(maps.getConfigurationSpace()->const_coordVal(cup))) {
+						closest=getClosestCoord(cupspace,reachableCSpace,cup);
+						if(closest==cup)
+							cout << "Unreachable cup at ( " << cup.cx() << " , " << cup.cy() << " )!" << endl;
+					}
+					coords.insert(closest);
+				}
+			}
+		};
+
+		cout << "Creating Dijkstra map from Offloading Stations... " << flush;
+		dijkstraMap OLstations(img,dijkstraMap::getOffloadingStations(img));
+		cout << "Done." << endl;
+
+
+		//The full path traveled by the robot is robotPath
+		list<pos_t> robotPath;
+		//The robot path starts with start.
+		robotPath.push_back(start);
+		pickupCups(start);
+		auto n = coords.size();
+
+
+		//The progress variable will be a measure (in percent) of
+		// how many of the coordinates in coords (of size n)
+		// the robot has visited.
+		// The initial value must not be 0
+		// (the reason is easy to see in the following code).
+		size_t progress = 1;
+		cout << "Starting robot movement. Points to visit: " << n << "." << endl;
+		while(!(coords.empty())) {
+			//First thing we do is output the progress to the console.
+			auto lastProgress = progress;
+			progress =(100*(n-coords.size()))/n;
+			if(lastProgress!=progress) {
+				cout << "\rPoints left in C: " << coords.size() << ", Traveled length: " << robotPath.size()
+					 << ", Progress: " << progress << " %        " << flush;
+
+				if(makePGMs) {
+					ostringstream anim;
+					anim << "cup_scan_robot_path_"
+						 << setw(3) << setfill('0')
+						 << progress << ".pgm";
+					img->saveAsPGM(anim.str());
+				}
+			}
+			//The progress has now been output to the console.
+
+			//Using a fast algorithm, we find the coordinate in coords,
+			// that is closest to the robot's position ( robotPath.back() ) .
+			// The optimal algorithm is Dijkstra's, but Wavefront is used
+			// because it's faster/easier and almost as good.
+			// The found coordinate is called "next".
+			pos_t next = getClosestCoord(*(maps.getConfigurationSpace()),coords,robotPath.back());
+			//getClosestCoord returns the input coordinate
+			// if no path was found to any coordinate in coords.
+			// This should NOT happen if the preprocessing was done correctly.
+			if(next==robotPath.back()) {
+				cout << "\nError encountered. Saving remaining coordinates as \"cup_scan_unreachable_coordinates.pgm\"..." << endl;
+				(maps.getOriginal())->shade(img);
+				for(auto c:coords)
+					img->setPixel8U(c.cx(),c.cy(),87);
+				img->saveAsPGM("cup_scan_unreachable_coordinates.pgm");
+				(maps.getOriginal())->shade(img);
+				cout << "Done." << endl;
+				cout << "There were " << (coords.size()) << " remaining coordinates." << endl;
+				if(coords.size()>10)
+					cout << "One of them was at ( " << ((*(coords.begin())).cx())
+						<< " , " << ((*(coords.begin())).cy()) << " )." << endl;
+				else {
+					cout << "They are: " << endl;
+					for(auto c:coords)
+						cout << "( " << c.cx() << " , " << c.cy() << " ), ";
+				}
+				cout << "Test has ended because of error." << endl;
+				return;
+			}
+
+			//Remove the robot's current position from coords
+			coords.erase(robotPath.back());
+			//Remove the closest coordinate from coords
+			coords.erase(next);
+
+			//Using Dijkstra's algorithm, find all the coordinates between
+			// the robot's current position and the closest coordinate in coords
+			list<pos_t> pathToNext = (maps.getConfigurationSpace())->getDijkstraPath(robotPath.back(),next);
+
+			//Add all the coordinates between the robot's current position
+			// and the closest coordinate in coords
+			// to the robot path and remove them from coords.
+
+			for(auto c:pathToNext) {
+				robotPath.push_back(c);
+				if(makePGMs) {
+					img->setPixel8U(c.cx(),c.cy(),20);
+				}
+				coords.erase(c);
+
+				pickupCups(c);
+			}
+			//Now that all the coordinates between the robot's current position
+			// and the closest coordinate in coords have been added to the robot path,
+			// add the closest coordinate in coords to the path.
+			robotPath.push_back(next);
+			if(makePGMs) {
+				img->setPixel8U(next.cx(),next.cy(),20);
+			}
+			pickupCups(next);
+			if(number_of_cups==ROBOT_CUP_CAPACITY) {
+				list<pos_t> homepath = OLstations.getShortestPath(robotPath.back());
+				for(auto c:homepath) {
+					robotPath.push_back(c); //move one step towards home
+					if(makePGMs) {
+						img->setPixel8U(c.cx(),c.cy(),20);
+					}
+					coords.erase(c);
+					pickupCups(c);
+				}
+				for(auto cup:missed_cups) {
+					pos_t closest = cup;
+					if(WSPACE_IS_OBSTACLE(maps.getConfigurationSpace()->const_coordVal(cup))) {
+						closest=getClosestCoord(cupspace,reachableCSpace,cup);
+						if(closest==cup)
+							cout << "Unreachable cup at ( " << cup.cx() << " , " << cup.cy() << " )!" << endl;
+					}
+					coords.insert(closest);
+				}
+				missed_cups.clear();
+				number_of_cups=0;
+			}
+		}
+		//The robot has now visited all coordinates in coords.
+		// It's job is done.
+
+		//Remove the progress bar
+		cout << "\r                                                                " << endl;
+
+		if(makePGMs) {
+			cout << "Saving robot path as \"cup_scan_robot_path_IDX.pgm\"... " << flush;
+			ostringstream anim;
+			anim << "cup_scan_robot_path_full_" << setw(6) << setfill('0')
+				 << robotPath.size() << "_" << n << ".pgm";
+			for(auto v:robotPath)
+				img->setPixel8U(v.cx(),v.cy(),20);
+			img->saveAsPGM(anim.str());
+			(maps.getOriginal())->shade(img);
+			cout << "Done." << endl;
+		}
+
+
+		//Output the cup results
+		cout << "Collected " << (cupsCollected.size())
+			 << " out of " << (cupsToCollect.size())
+			 << " cups." << endl;
+		if(cupsToCollect.size() != cupsCollected.size()) {
+			cout << "The remaining " << (cupsToCollect.size() - cupsCollected.size())
+				 << " cups have the following coordinates:" << endl;
+			for(auto cup:cupsToCollect)
+				if(cupsCollected.find(cup)!=cupsCollected.end())
+					cout << "( " << cup.cx() << " , " << cup.cy() << " )  ";
+			cout << endl;
+		}
+		//Output the robot path length
+		cout << "Total traveled length: " << robotPath.size() << endl;
+
+	}
+
 };

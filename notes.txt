@@ -1,4 +1,4 @@
-First meeting:
+﻿First meeting:
 Attendants: Mikkel, Nikolaj, Mikael
 Summary:
 	- We need a time schedule.
@@ -165,9 +165,12 @@ Summary:
 	- We got a new idea which is described in “description of new solution.txt”	
 
 	- Work for next time:
-		- Michael changes the brushfire algorithm. He is only allowed to change 		one that takes a coordinate in the constructor.
+		- Michael changes the brushfire algorithm. He is only allowed to change
+ 		one that takes a coordinate in the constructor.
 		
-		- Nikolaj documents his work with graphs and other cool stuff. He 			remembers to not go into too much detail about the code, but describe the 		algorithms and so on.
+		- Nikolaj documents his work with graphs and other cool stuff. He
+ 		remembers to not go into too much detail about the code, but describe the
+ 		algorithms and so on.
 
 		- Lukas finishes part 3
 		
