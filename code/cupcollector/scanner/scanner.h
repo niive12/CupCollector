@@ -8,7 +8,7 @@
 #pragma once
 
 #include <iostream>
-#include "../tekmap/tekmap.hpp"
+#include "../tekmap/pixelshade.h"
 #include <forward_list>
 
 using namespace std;

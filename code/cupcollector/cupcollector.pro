@@ -9,7 +9,10 @@ SOURCES += main.cpp \
     libraries/PPMLoader.cpp \
     scanner/scanner.cpp \
     doordetector/doordetector.cpp \
-    robot/robot.cpp
+    robot/robot.cpp \
+    tekmap/brushfire.cpp \
+    tekmap/pixelshade.cpp \
+    tekmap/wavefront.cpp
 
 HEADERS += \
     libraries/Image.hpp \
@@ -20,4 +23,7 @@ HEADERS += \
     robot/robot.h \
     tekmap/tekmap.hpp \
     doordetector/doordetector.h \
-    test.hpp
+    test.hpp \
+    tekmap/brushfire.h \
+    tekmap/pixelshade.h \
+    tekmap/wavefront.h

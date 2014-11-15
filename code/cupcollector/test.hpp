@@ -3,7 +3,9 @@
  * @author Mikael Westermann
  */
 #pragma once
-#include "tekmap/tekmap.hpp"
+#include "tekmap/pixelshade.h"
+#include "tekmap/brushfire.h"
+#include "tekmap/wavefront.h"
 #include <cmath>
 #include <algorithm> //merge
 #include <iomanip>
@@ -15,7 +17,6 @@
 
 using namespace std;
 
-class norm2BrushfireMap;
 class mapWrap;
 class tester;
 class simpleRobot;
@@ -65,112 +66,6 @@ public:
 
 	list<pos_t>::iterator begin() { return this->list<pos_t>::begin(); }
 	list<pos_t>::iterator end() { return this->list<pos_t>::end(); }
-};
-
-/**
- * @brief The norm2BrushfireMap class Brushfire map using norm2 potential function.
- */
-class norm2BrushfireMap : public tekMap<double> {
-protected:
-	/**
-	 * @brief findObstacleBorders Finds all obstacle borders
-	 * @param img Image to find obstacle borders in
-	 * @return List of borders. No duplicates (MW-guaranteed)
-	 */
-	virtual list< pos_t > findObstacleBorders(const pixelshadeMap &img) const
-	{
-		unordered_set<pos_t> resulting_coords;
-		const array<array<int,2>,8> neighbours =
-		{{ {-1,0}, /* W */ {1,0}, /* E */
-		   {0,-1}, /* N */ {0,1}, /* S */
-		   {-1,-1},/* NW */{1,-1}, /* NE */
-		   {1,1}, /* SE */{-1,1} /* SW */
-		 }};
-		for( int x = 0; x < (int)(img.getWidth()); ++x) {
-			for( int y = 0; y < (int)(img.getHeight()); ++y) {
-				if( WSPACE_IS_OBSTACLE( img.const_coordVal(x,y) ) ) {
-					for(auto n : neighbours) {
-						pos_t w = pos_t(x+n.at(0),y+n.at(1));
-						//If neighbour is within image borders:
-						if( img.isInMap(w) ) {
-							//if the neighbour is not an obstacle:
-							if( !WSPACE_IS_OBSTACLE( img.const_coordVal(w) ) ) {
-								resulting_coords.emplace(x,y);
-								break;
-							}
-						}
-					}
-				}
-			}
-		}
-		return move(list<pos_t>(resulting_coords.begin(),resulting_coords.end()));
-	}
-
-	/**
-	 * @brief wave Norm2 Dijkstra's algorithm propagation
-	 * @param img Image to propagate wave in
-	 * @param goals The goals to propagate from (the obstacle borders!)
-	 */
-	virtual void wave(const pixelshadeMap &img, const list<pos_t> &goals)
-	{
-			const double sqrt2 =1.4142135623730950488016887242097;
-			const array<array<int,2>,8> neighbours =
-			{{ {-1,0}, /* W */ {1,0}, /* E */
-			   {0,-1}, /* N */ {0,1}, /* S */
-			   {-1,-1},/* NW */{1,-1}, /* NE */
-			   {1,1}, /* SE */{-1,1} /* SW */
-			 }};
-			myMap.clear();
-			//4000 looks nicer when printed, but any high value (INF) works:
-			myMap.resize( img.getWidth(), vector<myValType>( img.getHeight() , 4000));
-			//myMp.resize( img->getWidth(), vector<myValType>( img->getHeight() , numeric_limits<myValType>::max()));
-			vector<vector<bool> > visited(img.getWidth(),vector<bool>(img.getHeight(),false));
-			priority_queue<edgeType,deque<edgeType>,edgeComp > q;
-			for(auto i : goals) {
-					(myMap[i.cx()])[i.cy()] = WAVE_VAL_GOAL;
-					q.emplace(i,(myMap[i.cx()])[i.cy()]);
-			}
-			while(!q.empty()) {
-					edgeType cur = q.top();
-					q.pop();
-					visited[cur.first.cx()][cur.first.cy()]=true;
-					for(auto n : neighbours) {
-							pos_t w = cur.first+pos_t(n.at(0),n.at(1));
-							//If neighbour is within image borders:
-							if( img.isInMap(w) ) {
-									//if the neighbour is an unvisited non-obstacle:
-									if( ( !WSPACE_IS_OBSTACLE( img.const_coordVal(w) ) )
-													&& ( !( (visited[w.cx()])[w.cy()] ) )
-													&& ((myMap[w.cx()])[w.cy()] != WAVE_VAL_GOAL)
-													) {
-											if(
-															((myMap[cur.first.cx()])[cur.first.cy()]
-															 +(((n.at(0)==0) || (n.at(1)==0))?1.0:sqrt2))
-															<((myMap[w.cx()])[w.cy()])
-															) {
-													//increment:
-													(myMap[w.cx()])[w.cy()]
-																	= (myMap[cur.first.cx()])[cur.first.cy()]
-																	+(((n.at(0)==0) || (n.at(1)==0))?1.0:sqrt2);
-													//Add it to the wavefront
-													q.emplace(w,(myMap[w.cx()])[w.cy()]);
-											}
-									}
-							}
-					}
-			}
-	}
-
-public:
-	/**
-	 * @brief norm2BrushfireMap Constructor. Just pass a pixelshadeMap.
-	 * @param img A pixelshadeMap.
-	 */
-	norm2BrushfireMap(const pixelshadeMap &img) {
-		list<pos_t> borders = findObstacleBorders(img);
-		wave(img,borders);
-	}
-
 };
 
 /**
@@ -848,10 +743,6 @@ public:
 		pickupCups(robot.currentPosition());
 		auto n = coords.size();
 
-		cout << "debug " << ((unsigned long)(std::ceil(robot.path_length()))) << endl;
-
-		for(auto v:robot)
-			cout << "debug ( " << v.cx() << " , " << v.cy() << " )" << endl;
 
 		//The progress variable will be a measure (in percent) of
 		// how many of the coordinates in coords (of size n)
@@ -968,11 +859,10 @@ public:
 		cout << "\r                                                                " << endl;
 
 		if(makePGMs) {
-			cout << "Saving robot path as \"cup_scan_robot_path_IDX.pgm\".." << flush;
+			cout << "Saving robot path as \"cup_scan_robot_path_IDX.pgm\"... " << flush;
 			ostringstream anim;
-			anim << "cup_scan_robot_path_full_" << setw(8) << setfill('0')
+			anim << "cup_scan_robot_path_full_" << setw(6) << setfill('0')
 				 << ((unsigned long)(std::ceil(robot.path_length()))) << "_" << n << ".pgm";
-			cout << ". " << flush;
 			for(auto v:robot)
 				img->setPixel8U(v.cx(),v.cy(),20);
 			img->saveAsPGM(anim.str());
