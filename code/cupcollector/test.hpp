@@ -884,8 +884,11 @@ public:
 			cout << endl;
 		}
 		//Output the robot path length
-		cout << "Total traveled length: " << robot.path_length() << endl;
-		cout << "Total travel time: " << robot.path_time_hours() << " hours" << endl;
+		cout << "Total traveled length: " << robot.path_length()/10.0 << "meters" << endl;
+		cout << "Total travel time: "
+			 << ((unsigned int)(std::floor(robot.path_time_hours()))) << " hours "
+			 << ((unsigned int)(std::ceil( ( robot.path_time_hours() - (std::floor(robot.path_time_hours())) )*60 )))
+			 << " minutes." << endl;
 
 	}
 
