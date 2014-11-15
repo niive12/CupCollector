@@ -51,4 +51,7 @@ public:
 	 * @return All coordinates, including withinFreespace, within freespace.
 	 */
 	virtual unordered_set< pos_t > findFreespace(const pos_t &withinFreeSpace) const;
+
+
+	list<pos_t> getReachables(const unordered_set<pos_t> &coordsToSearch, const pos_t &center) const;
 };

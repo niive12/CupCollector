@@ -185,3 +185,34 @@ unordered_set< pos_t > pixelshadeMap::findFreespace(const pos_t &withinFreeSpace
 	}
 	return move(resulting_coords);
 }
+
+
+list<pos_t> pixelshadeMap::getReachables(const unordered_set<pos_t> &coordsToSearch, const pos_t &center) const
+{
+	list<pos_t> result;
+	if(coordsToSearch.find(center)!=coordsToSearch.end()) {
+		const array<array<int,2>,8> neighbours =
+		{{ {-1,0}, /* W */ {1,0}, /* E */
+		   {0,-1}, /* N */ {0,1}, /* S */
+		   {-1,-1},/* NW */{1,-1}, /* NE */
+		   {1,1}, /* SE */{-1,1} /* SW */
+		 }} ;
+		unordered_set<pos_t> visited;
+		visited.insert(center);
+		queue<pos_t> q;
+		q.push(center);
+		while(!q.empty()) {
+			pos_t v = q.front();
+			q.pop();
+			result.push_back(v);
+			for(auto n : neighbours) {
+				pos_t w = v+pos_t(n.at(0),n.at(1));
+				if(isInMap(w))
+					if( (visited.insert(w).second) && (!(WSPACE_IS_OBSTACLE(const_coordVal(w)))) )
+						if( (coordsToSearch.find(w)!=coordsToSearch.end()) )
+							q.push(w);
+			}
+		}
+	}
+	return move(result);
+}

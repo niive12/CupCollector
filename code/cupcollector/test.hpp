@@ -687,11 +687,12 @@ public:
 				&missed_cups,&number_of_cups,&reachableCSpace,
 				&img,&makePGMs,&maps,&cupsCollected,&robot](const pos_t &c) {
 			list<pos_t> visibleCups=
-					cupscanner.scanlist(c,
+					//cupscanner.scanlistAroundWalls(c,
+					cupscanner.scanlistLineOfSight(c,
 										cupspace,
 										robot.scanner_radius());
 			list<pos_t> rc =
-					cuppicker.scanlist(c,
+					cuppicker.scanlistAroundWalls(c,
 									   cupspace,
 									   robot.arm_radius());
 			unordered_set<pos_t> reachableCups(rc.begin(),rc.end());
@@ -884,7 +885,7 @@ public:
 			cout << endl;
 		}
 		//Output the robot path length
-		cout << "Total traveled length: " << robot.path_length()/10.0 << "meters" << endl;
+		cout << "Total traveled length: " << robot.path_length()/10.0 << " meters" << endl;
 		cout << "Total travel time: "
 			 << ((unsigned int)(std::floor(robot.path_time_hours()))) << " hours "
 			 << ((unsigned int)(std::ceil( ( robot.path_time_hours() - (std::floor(robot.path_time_hours())) )*60 )))
