@@ -85,15 +85,12 @@ protected:
 		shared_ptr<norm2BrushfireMap> m_norm2BrushfireMap;
 		shared_ptr<norm2BrushfireMap> m_norm2BrushfireDoorsMap;
 
-
 		unordered_set<pos_t> freespaceSet;
 	public:
-		mapWrap(shared_ptr<Image> img):
-			originalMap(make_shared<pixelshadeMap>(img))
+		mapWrap(shared_ptr<Image> img):originalMap(make_shared<pixelshadeMap>(img))
 		{ }
 
-		mapWrap(shared_ptr<Image> img, const pos_t &reachableCoordinate):
-			mapWrap(img)
+		mapWrap(shared_ptr<Image> img, const pos_t &reachableCoordinate):mapWrap(img)
 		{
 			freespaceSet =originalMap->findFreespace(reachableCoordinate);
 			m_norm2BrushfireMap = make_shared<norm2BrushfireMap>((*originalMap));
@@ -604,7 +601,9 @@ public:
 		cout << "Total traveled length: " << robotPath.size() << endl;
 	}
 
-
+	/**
+	 * @brief getCupScanCoordinates Calls getFloorSweepCoordinates(), with a different radius.
+	 */
 	static unordered_set<pos_t> getCupScanCoordinates(shared_ptr<Image> img,
 														 const pixelshadeMap &original,
 														 const unordered_set<pos_t> &freespace,
@@ -618,6 +617,25 @@ public:
 										false));
 	}
 
+	/**
+	 * @brief cup_scan Moves through the map, collecting all cups found
+	 *
+	 * 1.	Generate preprocessing maps (configuration space and other maps).
+	 * 2.	Generate list C of coordinates to visit to ensure that all
+	 *		of the map gets scanned (all cups will be detected).
+	 * 3.	Move the robot to the nearest coordinate in C and remove it from C.
+	 *	3a.	If the robot detects a cup, the nearest-to-the-cup
+	 *		configuration space coordinate gets added to C.
+	 *	3b.	If the robot is within arm-reach of a cup, the cup is picked up.
+	 *		3ba.	If 20 cups have been picked up, move the robot to an offloading station.
+	 *				On the way, add all found cups to C.
+	 *				When at offloading station, deliver cups and continue.
+	 * 4.	If there are still coordinates in C, go to step 3.
+	 * 5.	Output traveled length in meters and travel time in hours and minutes.
+	 *
+	 * @param img Original image
+	 * @param makePGMs True if you want a lot of pgm output. False if you don't.
+	 */
 	static void cup_scan(shared_ptr<Image> img, bool makePGMs=false)
 	{
 		simpleRobot robot(ROBOT_DYNAMICS_RADIUS, ROBOT_ARM_RADIUS,
@@ -687,7 +705,6 @@ public:
 				&missed_cups,&number_of_cups,&reachableCSpace,
 				&img,&makePGMs,&maps,&cupsCollected,&robot](const pos_t &c) {
 			list<pos_t> visibleCups=
-					//cupscanner.scanlistAroundWalls(c,
 					cupscanner.scanlistLineOfSight(c,
 										cupspace,
 										robot.scanner_radius());
