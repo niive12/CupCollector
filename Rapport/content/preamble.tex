@@ -3,7 +3,7 @@
 %%%%%%% Standard settings %%%%%%%
 \usepackage{amsmath}
 \usepackage{amssymb}
-%\usepackage[nottoc, numbib, notlot, notlof]{tocbibind}
+% \usepackage[nottoc, numbib, notlot, notlof]{tocbibind}
 \usepackage{fancyhdr}
 \usepackage[utf8]{inputenc} 
 %\usepackage{mathtools}
@@ -13,7 +13,6 @@
 %\usepackage{newclude}
 \usepackage{siunitx}
 %\usepackage{booktabs}
-\usepackage{subfig}
 \usepackage{wrapfig} 
 \usepackage[subfigure]{tocloft}
 \usepackage{todonotes}
@@ -63,8 +62,17 @@
 \bibliographystyle{plainnat}
 
 %%%%%%% captions settings %%%%%%%
-\usepackage{caption}
-\captionsetup{font=footnotesize}
+\usepackage[margin=1cm]{caption}
+\captionsetup{
+  font=footnotesize,
+  width=0.75\textwidth
+}
+\captionsetup[subfigure]{
+  font=footnotesize,
+  width=0.8\textwidth
+}
+\usepackage{subcaption} %subfigures
+
 
 %%%%%%% implementering af code %%%%%%%
 \usepackage{listings}

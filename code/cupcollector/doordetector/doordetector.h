@@ -1,6 +1,6 @@
 /** @file */
 #pragma once
-#include "../tekmap/tekmap.hpp"
+#include "../tekmap/brushfire.h"
 #include <vector>
 class doorDetector {
 protected:

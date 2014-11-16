@@ -12,11 +12,12 @@
 \include{./content/frontpage}
 %\clearpage
 \fancyfoot{}
-\fancyfoot[CO,CE]{\thepage}
+\fancyfoot[C]{\thepage}
 \pagenumbering{Roman}
 %\include{./content/templates} % Kan bruges til copy paste ind i rapport for forskellige outputs.....
 %\include{./content/ansvarsomraader}
 \tableofcontents
+\clearpage
 
 % 
 % \pagestyle{fancy}
@@ -29,11 +30,12 @@
 \fancyfoot{}
 \pagenumbering{arabic}
 \setcounter{page}{1}
-\fancyfoot[LO,RE]{\thepage}
+\fancyfoot[R]{\thepage}
 
 \include{./content/intro}
 % Planning
 \include{./content/planning/method}
+\include{./content/planning/door_detection}
 \include{./content/planning/results}
 \include{./content/planning/conclusion}
 \include{./content/planning/future_work}

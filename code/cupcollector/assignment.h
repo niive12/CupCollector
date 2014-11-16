@@ -8,6 +8,7 @@
 #define ROBOT_CUP_CAPACITY          20  // Robot can hold no more than 20 cups
 #define ROBOT_SPEED_PIX_PER_S       13.8888888888888888888888888888888888889    // 125/9
 //#define ROBOT_SPEED_PIX_PER_S       ( ( (long double)(125) ) / ( (long double)(9.0)) ) )
+#define ROBOT_SPEED_PIX_PER_H       50000
 
 
 #define WSPACE_FREE                 255
