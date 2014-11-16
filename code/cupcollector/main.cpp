@@ -58,7 +58,7 @@ void testRobot(shared_ptr<Image> img)
 	cout << "testing robot..." << endl;
 
 	// move to test location
-	JanEgeland.setRobotPos (pos_t(669,911));
+	JanEgeland.setRobotPos (pos_t(5043,1204));
 	// 640,465 = perfect square
 	// 889,827 = complex squares = deffect room (brush)
 	// 5043,1204 = "hexagon" = deffect room (brush)
@@ -113,40 +113,40 @@ int main(int argc, char** argv) {
 		shared_ptr<Image> img(PPMLoader::load(filename));
 		cout << "Image size: " << img->getWidth() << " x " << img->getHeight() << endl;
 
-//		testRobot (img);
+		testRobot (img);
 
-		testShortestPath(img);
-		testTekMapConstructors(filename);
-
-
-		pixelshade_map original(img );
-		cout << "Giving start position for brushfire..." << endl;
-		pos_t robot_start = {ROBOT_START_X,ROBOT_START_Y};
-
-		cout << "Creating brushfire..." << endl;
-		brushfire_map brush(img , robot_start);
-
-		cout << "brushfire done..." << endl;
-
-		doorDetector mydetective;
-		cout << "Finding The Doors " << endl;
-		vector<pos_t> The_Doors = mydetective.detect_doorways(img, brush);
-
-		cout << "Finding Door Steps" << endl;
-		pixelshade_map door_steps_map = mydetective.door_step(img, brush, The_Doors);
-
-		brush.shade(img);
+//		testShortestPath(img);
+//		testTekMapConstructors(filename);
 
 
-		cout << "Painting Door Steps" << endl;
-		door_steps_map.shade(img);
-		img->saveAsPGM("door_step.pgm");
+//		pixelshade_map original(img );
+//		cout << "Giving start position for brushfire..." << endl;
+//		pos_t robot_start = {ROBOT_START_X,ROBOT_START_Y};
 
-		original.shade(img);
-		for ( auto n : The_Doors ) {
-				img->setPixel8U( n.x(), n.y() , 0);
-		}
-		img->saveAsPGM("The_Doors.pgm");
+//		cout << "Creating brushfire..." << endl;
+//		brushfire_map brush(img , robot_start);
+
+//		cout << "brushfire done..." << endl;
+
+//		doorDetector mydetective;
+//		cout << "Finding The Doors " << endl;
+//		vector<pos_t> The_Doors = mydetective.detect_doorways(img, brush);
+
+//		cout << "Finding Door Steps" << endl;
+//		pixelshade_map door_steps_map = mydetective.door_step(img, brush, The_Doors);
+
+//		brush.shade(img);
+
+
+//		cout << "Painting Door Steps" << endl;
+//		door_steps_map.shade(img);
+//		img->saveAsPGM("door_step.pgm");
+
+//		original.shade(img);
+//		for ( auto n : The_Doors ) {
+//				img->setPixel8U( n.x(), n.y() , 0);
+//		}
+//		img->saveAsPGM("The_Doors.pgm");
 
 		return 0;
 }
