@@ -59,7 +59,7 @@ void testRobot(shared_ptr<Image> img)
 	cout << "testing robot..." << endl;
 
 	// move to test location
-	JanEgeland.setRobotPos (pos_t(5043,1204));
+	JanEgeland.setRobotPos (pos_t(669,911));
 	// 640,465 = perfect square
 	// 889,827 = complex squares = deffect room (brush)
 	// 5043,1204 = "hexagon" = deffect room (brush)
@@ -113,7 +113,6 @@ int main(int argc, char** argv) {
 	cout << "Loading image..." << endl;
 	shared_ptr<Image> img(PPMLoader::load(filename));
 	cout << "Image size: " << img->getWidth() << " x " << img->getHeight() << endl;
-
 
 	//		testRobot (img);
 	cout << "MW-test starting..." << endl;
