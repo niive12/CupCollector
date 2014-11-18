@@ -617,6 +617,7 @@ public:
 										false));
 	}
 
+
 	/**
 	 * @brief cup_scan Moves through the map, collecting all cups found
 	 *

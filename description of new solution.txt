@@ -6,8 +6,8 @@ Grupper alle sammenhængende punkter.
 1: Generate brushfire BF0 from original image.
 2: Paint doors, pixelshademap PXD, using BF0.
 3: Generate brushfire BFD from PXD. 
-4: Generate set SD from BFD, so that BFd-value%diameter == Radius
-5: Generate set SL from BF0, of local maxima. 
+4: Generate set SD from BFD, so that BFd-value%diameter == RadiusDynamics
+5: Generate set SL from BF0, of local maxima. 		//Or from BFD!
 5.5: Remove unnecessary local maxima from SL.
 6: Generate set Sm = merge(Sd,Sl)
 7: 
@@ -17,4 +17,37 @@ while(!(Sm.empty()))
 	s = shortest_path_to(c);
 	s_temp = merge(c,s);
 	Sm = Sm - s_temp; // Unmark
+}
+
+
+
+Cup collector
+
+1: Generate brushfire BF0 from original image.
+2: Paint doors, pixelshademap PXD, using BF0.
+3: Generate brushfire (norm2) BFD from PXD. 
+4: Generate set SD from BFD, so that BFd-value%diameter == RadiusScanner
+5: Generate set SL from BFD, of local maxima. 
+5.5: Remove unnecessary local maxima from SL.
+6: Generate set Sm = merge(Sd,Sl)
+7: 
+while(!(Sm.empty()))
+{
+	c = nearest_coordinate_in(Sm);
+	s = shortest_path_to(c);
+	s_temp = merge(c,s);
+	
+	for(all coordinates k in s_temp)
+	{
+		pickupCups(k);
+		if(cup != reachable)
+			add cup to Sm;
+		if(cup != pickupable)
+			add cup to Sm;
+	}
+	if(full_of_cups)
+	{
+		move_home_to_offloading_station();	//Add cups found on the way to Sm
+		reset_cup_counter;
+	}
 }
