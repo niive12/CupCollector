@@ -177,3 +177,27 @@ Summary:
 		- Mikkel finishes cup scanner.
 
 		- Mikael finishes the floor sweeper.
+
+Meeting (18th of November):
+Attendants: Entire group
+Summary:
+	- Part 1 + 2 is done. Needs to be documented. 
+
+	- Part 3: 
+		We decided to use a laserrange scanner for localization. 
+		We should extract lines. 
+		UMB mark is used for testing. 
+		The kalman filter is implemented on a laptop (C++), 
+		using data (Serial over USB) from wheel encoders and laserrange scanner. 
+	
+
+	- Work for next time:
+		- Michael: Interfaces laser range. Extract features with lukas
+		
+		- Nikolaj: Setup new project. Document part 1 + 2. 
+
+		- Lukas: Extract features with michael. 
+		
+		- Mikkel: Look into arduino library.
+
+		- Mikael: Document part 1 + 2.
