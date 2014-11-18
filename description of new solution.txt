@@ -10,6 +10,9 @@ Grupper alle sammenhængende punkter.
 5: Generate set SL from BF0, of local maxima. 		//Or from BFD!
 5.5: Remove unnecessary local maxima from SL.
 6: Generate set Sm = merge(Sd,Sl)
+6.5: Add any remaining coordinates K to Sm, that don't
+     have a coordinate of Sm within a circle (centered at K)
+     with r = RadiusDynamics
 7: 
 while(!(Sm.empty()))
 {
@@ -30,6 +33,9 @@ Cup collector
 5: Generate set SL from BFD, of local maxima. 
 5.5: Remove unnecessary local maxima from SL.
 6: Generate set Sm = merge(Sd,Sl)
+6.5: Add any remaining coordinates K to Sm, that don't
+     have a coordinate of Sm within a circle (centered at K)
+     with r = RadiusScanner
 7: 
 while(!(Sm.empty()))
 {
