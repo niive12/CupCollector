@@ -57,3 +57,4 @@ build-cupcollector-Clone_of_Desktop_Qt_5_3_MSVC2013_64bit-Release
 code/build-cupcollector-Desktop_Qt_5_3_clang_64bit-Debug/dijkstra.pgm
 code/build-cupcollector-Desktop_Qt_5_3_clang_64bit-Debug/door_step.pgm
 code/build-cupcollector-Desktop_Qt_5_3_clang_64bit-Debug/robot.o
+/code/R2D2/*.user
