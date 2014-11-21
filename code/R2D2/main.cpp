@@ -6,10 +6,15 @@ using namespace std;
 
 #define PI 3.141592
 
+#define DEGREE_TO_RAD(DEGREES) ((DEGREES*PI/180))
+
 #define ANGLE_START 0.0
-#define ANGLE_STEP (1*PI/180) // 1 deg in rad
+#define ANGLE_STEP DEGREE_TO_RAD(1) // 1 deg in rad
 
 #define MAKELINE_TRESHHOLD_DISTANCE 10
+
+#define MERGELINE_TRESHHOLD_DISTANCE 1
+#define MERGELINE_TRESHHOLD_ANGLE DEGREE_TO_RAD(2)
 
 
 
@@ -47,24 +52,27 @@ void findLine(vector<point>::iterator first, vector<point>::iterator last, line 
  */
 double findGreatesDeviation(vector<point>::iterator first, vector<point>::iterator last, line * lineFit, vector<point>::iterator *thisPoint);
 
-
+/**
+ * @brief makeToPoints takes the list from the sensor and converts it into points (rho [dist], theta [angle])
+ * @param dataFromSensor a refrence to the list from sensor
+ * @param dataPoints a refrence to where to put the new list, prev list will be cleared on call
+ */
 void makeToPoints(vector<int> * dataFromSensor, vector<point> * dataPoints);
 
 
 int main()
 {
-	vector<int> dataaaaa = {170, 100, 100, 130, 100, 100};
-	vector<line> resullllllllt;
+	vector<int> simulatedDataFromSensor = {170, 100, 100, 130, 100, 100};
+	vector<line> testOutputLines;
 
 
-	findFeatures (&dataaaaa, &resullllllllt);
+	findFeatures (&simulatedDataFromSensor, &testOutputLines);
 
-	vector<line>::iterator haha = resullllllllt.begin ();
+	vector<line>::iterator itForOutput = testOutputLines.begin ();
 
-	while (haha != resullllllllt.end())
+	for(int i = 0; i < testOutputLines.size (); i++)
 	{
-		cout << (*haha).rho << ", " << haha->theta << endl;
-		haha++;
+		cout << (testOutputLines[i]).rho << ", " << (testOutputLines[i]).theta << endl;
 	}
 
 	return false;
@@ -73,59 +81,46 @@ int main()
 
 void findLine(vector<point>::iterator start, vector<point>::iterator end, line * lineInData)
 {
-	int size = distance(start,end);
-	// calc onr line
-	line daLine;
+	int sizeOfVector = distance(start,end);
+	line bestFitLine;
 
+	// the equation is divided into four part spliting at the sums, uniformly weigted datapoints assumed
+	// I, II, III and IV are for the angle and X for the distance
 	double I = 0.0, II = 0.0, III = 0.0, IV = 0.0, X = 0.0;
 
-	// calc first part
-	for(int i = 0; i < size; i++)
+	// calc first and third part
+	for(int i = 0; i < sizeOfVector; i++)
 	{
 		I += (pow((start + i)->rho,2) * sin(2*((start + i)->theta)));
-	}
-
-	// calc second part
-	for(int i = 0; i < size; i++)
-	{
-		for(int j = 0; j < size; j++)
-		{
-			II += ((start + i)->rho)*((start + j)->rho)*(cos((start + i)->theta) * sin((start + j)->theta));
-		}
-	}
-	II *= 2/size;
-
-	// calc third part
-	for(int i = 0; i < size; i++)
-	{
 		III += (pow((start + i)->rho,2) * cos(2*((start + i)->theta)));
 	}
 
-	// calc fourth part
-	for(int i = 0; i < size; i++)
+	// calc second and fourth part
+	for(int i = 0; i < sizeOfVector; i++)
 	{
-		for(int j = 0; j < size; j++)
+		for(int j = 0; j < sizeOfVector; j++)
 		{
+			II += ((start + i)->rho)*((start + j)->rho)*(cos((start + i)->theta) * sin((start + j)->theta));
 			IV += ((start + i)->rho)*((start + j)->rho)*(cos(((start + i)->theta) + ((start + j)->theta)));
 		}
 	}
-	IV *= 1/size;
-
+	II *= 2/sizeOfVector;
+	IV *= 1/sizeOfVector;
 
 	// calc total angle
-	daLine.theta = (0.5)*atan((I-II)/(III-IV));
+	bestFitLine.theta = (0.5)*atan((I-II)/(III-IV));
 
 	// calc summation of r
-	for(int i = 0; i < size; i++)
+	for(int i = 0; i < sizeOfVector; i++)
 	{
-		X += ((start + i)->rho)*(cos(((start + i)->theta) - daLine.theta));
+		X += ((start + i)->rho)*(cos(((start + i)->theta) - bestFitLine.theta));
 	}
 
-	// calc totatl distance
-	daLine.rho = X/size;
+	// calc total distance
+	bestFitLine.rho = X/sizeOfVector;
 
-	// outpur
-	*lineInData = daLine;
+	// output
+	*lineInData = bestFitLine;
 }
 
 
@@ -133,40 +128,42 @@ void findFeatures(vector<int> * dataFromSensor, vector<line> * linesInData)
 {
 	linesInData->clear ();
 
-	// make vector of vectors to divide data into and keep a second to store the line for the corresponding dataset (linesInData)
+	// make vector of vectors to divide data into and keep a second to store the line for the corresponding dataset (linesInData = already created)
 
 	vector< vector<point> > dataSetDevisions;
-	line trol;
-	vector<point>::iterator swag;
-	double dev;
+	line newLine;
+	vector<point>::iterator pointFurthestAway;
+	double deviationOfPoint;
 	bool changeHappened;
 
 	// set all points in array
 	dataSetDevisions.emplace_back(vector<point>());
 	makeToPoints (dataFromSensor,&(dataSetDevisions[0]));
 	// find the first line
-	findLine ((dataSetDevisions[0]).begin (), (dataSetDevisions[0]).end ()-- , &trol);
+	findLine ((dataSetDevisions[0]).begin (), (dataSetDevisions[0]).end ()-- , &newLine);
 	// put line in array
-	linesInData->emplace_back(trol);
+	linesInData->emplace_back(newLine);
 
+	// devide dataset
 	do
 	{
 		changeHappened = false;
 		int sizeOfVector = dataSetDevisions.size ();
+
 		for(int i = 0; i < sizeOfVector; i++)
 		{
 			// test deviation
-			dev = findGreatesDeviation ((dataSetDevisions[i]).begin (), ((dataSetDevisions[i]).end ()) , &(linesInData->at (i)), &swag);
+			deviationOfPoint = findGreatesDeviation ((dataSetDevisions[i]).begin (), ((dataSetDevisions[i]).end ()) , &(linesInData->at (i)), &pointFurthestAway);
 
 			// if deviation too great, split
-			if(dev >= MAKELINE_TRESHHOLD_DISTANCE)
+			if(deviationOfPoint >= MAKELINE_TRESHHOLD_DISTANCE)
 			{
 				// repeat loop once more when done
 				changeHappened = true;
 				// own expansion, if max distance point is at the edge of the dataset, remove it.
-				if(((dataSetDevisions[i]).begin ()) == swag || (((dataSetDevisions[i]).end())-1) == swag)
+				if(((dataSetDevisions[i]).begin ()) == pointFurthestAway || (((dataSetDevisions[i]).end())-1) == pointFurthestAway)
 				{
-					(dataSetDevisions[i]).erase(swag);
+					(dataSetDevisions[i]).erase(pointFurthestAway);
 				}
 				else
 				{
@@ -174,36 +171,68 @@ void findFeatures(vector<int> * dataFromSensor, vector<line> * linesInData)
 					dataSetDevisions.emplace_back(vector<point>());
 
 					// fill from division point (including)
-					for(int j = 0; j < distance(swag, (dataSetDevisions[i]).end ()--); j++)
+					for(int j = 0; j < distance(pointFurthestAway, (dataSetDevisions[i]).end ()--); j++)
 					{
 						// fill last vector (prev made) in vector
-						(dataSetDevisions[(dataSetDevisions.size ()-1)]).emplace_back(*(swag + j));
+						(dataSetDevisions[(dataSetDevisions.size ()-1)]).emplace_back(*(pointFurthestAway + j));
 					}
 					// remove the end of the list (excluding division point)
-					advance(swag,1);
-					(dataSetDevisions[i]).erase((swag), (dataSetDevisions[i]).end ());
+					advance(pointFurthestAway,1);
+					(dataSetDevisions[i]).erase((pointFurthestAway), (dataSetDevisions[i]).end ());
 					// find line for vector which was split
-					findLine ((dataSetDevisions[i]).begin (), (dataSetDevisions[i]).end ()-- , &trol);
+					findLine ((dataSetDevisions[i]).begin (), (dataSetDevisions[i]).end ()-- , &newLine);
 					// input line to vector
-					(*linesInData)[i] = trol;
+					(*linesInData)[i] = newLine;
 					// find line for vector at end of vector (new one)
-					findLine ((dataSetDevisions[(dataSetDevisions.size ()-1)]).begin (), (dataSetDevisions[(dataSetDevisions.size ()-1)]).end ()-- , &trol);
+					findLine ((dataSetDevisions[(dataSetDevisions.size ()-1)]).begin (), (dataSetDevisions[(dataSetDevisions.size ()-1)]).end ()-- , &newLine);
 					// input line to vector
-					(*linesInData).emplace_back(trol);
+					(*linesInData).emplace_back(newLine);
 				}
 			}
 		}
 	}while (changeHappened);
+
+	// merge lines
+	do
+	{
+		changeHappened = false;
+		int numberOfLines = linesInData->size ();
+		for(int i = 0; i < numberOfLines; i++)
+		{
+			for(int j = (i + 1); j < numberOfLines; j++)
+			{
+				double deviationOfDistance = abs((*linesInData)[i].rho - (*linesInData)[j].rho);
+				double deviationOfAngle = abs((*linesInData)[i].theta - (*linesInData)[j].theta);
+				if(deviationOfAngle < MERGELINE_TRESHHOLD_ANGLE && deviationOfDistance < MERGELINE_TRESHHOLD_DISTANCE)
+				{
+					changeHappened = true;
+					// merge datasets
+					for(int k = 0; k < dataSetDevisions[j].size(); k++)
+					{
+						dataSetDevisions[i].emplace_back(dataSetDevisions[j][k]);
+					}
+					// find new line (update the one)
+					findLine ((dataSetDevisions[i]).begin (), (dataSetDevisions[i]).end ()-- , &newLine);
+					(*linesInData)[i] = newLine;
+					// remove old dataset and line
+					dataSetDevisions.erase (dataSetDevisions.begin () + j);
+					(*linesInData).erase ((*linesInData).begin () + j);
+					numberOfLines--;
+				}
+			}
+		}
+	}while(changeHappened);
+
 }
 
 
 double findGreatesDeviation(vector<point>::iterator first, vector<point>::iterator last, line * lineFit, vector<point>::iterator * thisPoint)
 {
-	int size = distance(first,last);
+	int sizeOfDataset = distance(first,last);
 	double deviation = 0;
 	double di; // deviation for current point (d_i)
 
-	for(int i = 0; i < size; i++)
+	for(int i = 0; i < sizeOfDataset; i++)
 	{
 		di = ((((first + i)->rho)*cos(((first + i)->theta)-(lineFit->theta))) - lineFit->rho);
 		if(di >= deviation)
@@ -218,13 +247,13 @@ double findGreatesDeviation(vector<point>::iterator first, vector<point>::iterat
 void makeToPoints(vector<int> * dataFromSensor, vector<point> * dataPoints)
 {
 	dataPoints->clear ();
-	int size = dataFromSensor->size ();
-	point wakeUp;
-	for(int i = 0; i < size; i++)
+	int sizeOfDataset = dataFromSensor->size ();
+	point newPoint;
+	for(int i = 0; i < sizeOfDataset; i++)
 	{
-		wakeUp.rho = dataFromSensor->at (i);
-		wakeUp.theta = (i*ANGLE_STEP + ANGLE_START);
-		dataPoints->emplace_back(wakeUp);
+		newPoint.rho = dataFromSensor->at (i);
+		newPoint.theta = (i*ANGLE_STEP + ANGLE_START);
+		dataPoints->emplace_back(newPoint);
 	}
 
 }
