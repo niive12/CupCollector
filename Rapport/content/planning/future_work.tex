@@ -1,1 +1,10 @@
 \subsection{Future work}
+\label{sec:planning_future}
+It is likely that the generated set of coordinates, \(S_{M}\), that the robot must scan,
+is not optimally generated. Future work could look into alternatives to the coverage method used here.
+For example, it might be logical to make the robot stick to areas such as hallways until all the cups
+in those areas are collected. This way, the robot wouldn't have to return to the same hallway as many times.
+
+The robot movement solves a Traveling Salesman Problem suboptimally, using the nearest-neighbour strategy.
+This strategy is used because of it's computational efficiency. However, if more computational power
+is available, another, more optimal, strategy may be applied to solving the problem better.
