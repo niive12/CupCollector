@@ -1,5 +1,10 @@
 \section{Planning}
 \subsection{Method}
+The robot is modeled as a point robot by letting the configuration space be the freespace padded with obstacles,
+with padding length equal to the robot dynamics radius.
+This padding is obtained using the brushfire algorithm with a Norm-2 potential function (rounded corners),
+and then simply applying a threshold in the map for the padding.
+
 \subsubsection{Offline processing}
 
 As all information about the map (excluding the location of the cups) is known to the robot prior to movement,
