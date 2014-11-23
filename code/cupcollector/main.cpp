@@ -117,7 +117,7 @@ int main(int argc, char** argv) {
 	//		testRobot (img);
 	cout << "MW-test starting..." << endl;
 	tester::cup_scan(img);
-	//tester::sweep_floor(img,true);
+	tester::sweep_floor(img,true);
 	//tester::sweep_floor(img,true);
 	cout << "MW-test done!" << endl;
 
