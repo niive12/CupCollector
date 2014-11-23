@@ -88,18 +88,14 @@ void findLine(vector<point>::iterator start, vector<point>::iterator end, line *
 	// I, II, III and IV are for the angle and X for the distance
 	double I = 0.0, II = 0.0, III = 0.0, IV = 0.0, X = 0.0;
 
-	// calc first and third part
 	for(int i = 0; i < sizeOfVector; i++)
 	{
+		// calc first and third part
 		I += (pow((start + i)->rho,2) * sin(2*((start + i)->theta)));
 		III += (pow((start + i)->rho,2) * cos(2*((start + i)->theta)));
-	}
-
-	// calc second and fourth part
-	for(int i = 0; i < sizeOfVector; i++)
-	{
 		for(int j = 0; j < sizeOfVector; j++)
 		{
+			// calc second and fourth part
 			II += ((start + i)->rho)*((start + j)->rho)*(cos((start + i)->theta) * sin((start + j)->theta));
 			IV += ((start + i)->rho)*((start + j)->rho)*(cos(((start + i)->theta) + ((start + j)->theta)));
 		}
@@ -197,12 +193,15 @@ void findFeatures(vector<int> * dataFromSensor, vector<line> * linesInData)
 	{
 		changeHappened = false;
 		int numberOfLines = linesInData->size ();
+		// iterate through the whole vector and compare all (start over if two were combined)
 		for(int i = 0; i < numberOfLines; i++)
 		{
 			for(int j = (i + 1); j < numberOfLines; j++)
 			{
+				// get deviation of the two lines
 				double deviationOfDistance = abs((*linesInData)[i].rho - (*linesInData)[j].rho);
 				double deviationOfAngle = abs((*linesInData)[i].theta - (*linesInData)[j].theta);
+				// if appropiate to merge, do so
 				if(deviationOfAngle < MERGELINE_TRESHHOLD_ANGLE && deviationOfDistance < MERGELINE_TRESHHOLD_DISTANCE)
 				{
 					changeHappened = true;
