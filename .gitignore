@@ -58,3 +58,5 @@ code/build-cupcollector-Desktop_Qt_5_3_clang_64bit-Debug/dijkstra.pgm
 code/build-cupcollector-Desktop_Qt_5_3_clang_64bit-Debug/door_step.pgm
 code/build-cupcollector-Desktop_Qt_5_3_clang_64bit-Debug/robot.o
 /code/R2D2/*.user
+code/Arduino/MotorWheel/Omni4WDAction.cpp.bak
+code/Arduino/MotorWheel/Omni4WDAction.h.bak
