@@ -1,2 +1,27 @@
 \section{Coverage}
 \subsection{Method}
+\subsubsection{Offline processing}
+It was chosen to apply the offline processing strategy of the cup collection
+to the floor sweeping, as it's essentially a coverage problem.
+The only change is in the radius used in the generation of the coordinate set;
+Here, the robot dynamics radius is used instead of the robot scanner radius.
+The set of coordinates to sweep is denoted \(S_{F}\).
+
+
+\subsubsection{Online processing}
+The floor sweeping problem is simpler than the cup collection problem,
+and the chosen solution is similiar to what is discussed for the cup collection.
+The pseudo-code below shows the floor sweeping algorithm.
+
+\begin{verbatim}
+while( \(S_{F}\) is not empty ){
+   c = Nearest coordinate in \(S_{F}\);
+   s = Shortest path to c;
+   for( each coordinate i in s ){
+      Move robot to i;
+      Remove i from \(S_{F}\);
+   }
+}
+\end{verbatim}
+
+Clearly, this code is highly reliant upon an intelligent offline selection of coordinates for \(S_{F}\).
