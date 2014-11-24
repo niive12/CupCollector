@@ -13,6 +13,7 @@
 #include <forward_list>
 #include "doordetector/doordetector.h"
 #include "scanner/scanner.h"
+#include <chrono>
 
 
 using namespace std;
@@ -122,8 +123,6 @@ protected:
 	};
 
 
-
-public:
 	template<typename BrushmapT>
 	/**
 	 * @brief getBrushEdges Finds the set of coordinates (edges) with certain brushfire values.
@@ -469,6 +468,26 @@ public:
 		return move(coords);
 	}
 
+
+
+	/**
+	 * @brief getCupScanCoordinates Calls getFloorSweepCoordinates(), with a different radius.
+	 */
+	static unordered_set<pos_t> getCupScanCoordinates(shared_ptr<Image> img,
+														 const pixelshadeMap &original,
+														 const unordered_set<pos_t> &freespace,
+														 const pixelshadeMap &configurationSpace,
+														 const norm2BrushfireMap &norm2BrushfireDoors,
+														 const pos_t &reachable_coordinate,
+														 size_t robot_scanner_radius=ROBOT_SCANNER_RADIUS)
+	{
+		return move(getFloorSweepCoordinates(img,original,freespace,configurationSpace,
+										norm2BrushfireDoors,reachable_coordinate,robot_scanner_radius,
+										false));
+	}
+
+public:
+
 	/**
 	 * @brief sweep_floor Sweeps the floor
 	 * @param img The original image
@@ -476,9 +495,26 @@ public:
 	 */
 	static void sweep_floor(shared_ptr<Image> img, bool makePGMs=false)
 	{
-		//A reachable freespace coordinate is the starting coordinate
-		const pos_t start = {ROBOT_START_X,ROBOT_START_Y};
-		mapWrap maps(img,start,ROBOT_DYNAMICS_RADIUS);
+		simpleRobot robot(ROBOT_DYNAMICS_RADIUS,ROBOT_ARM_RADIUS,
+						  ROBOT_SCANNER_RADIUS,ROBOT_CUP_CAPACITY,
+						  ROBOT_SPEED_PIX_PER_H,
+						  pos_t(ROBOT_START_X,ROBOT_START_Y));
+
+
+
+
+		auto startT = std::chrono::system_clock::now();
+
+		mapWrap maps(img,robot.start(),robot.dynamics_radius());
+
+		auto duraT = (chrono::duration_cast<chrono::milliseconds>
+				(chrono::system_clock::now()-startT)).count();
+		cout << "mapWrap generation took " << duraT << " ms." << endl;
+
+
+
+
+
 
 		if(makePGMs) {
 			cout << "Saving configuration space as \"floor_sweep_configuration_space.pgm\"... " << flush;
@@ -488,20 +524,36 @@ public:
 			cout << "Done." << endl;
 		}
 
+
+
+
+
+
+		startT = std::chrono::system_clock::now();
+
 		unordered_set<pos_t> coords =
 				getFloorSweepCoordinates(img,
 										 *(maps.getOriginal()),
 										 maps.getFreespace(),
 										 *(maps.getConfigurationSpace()),
 										 *(maps.getNorm2BrushfireDoors()),
-										 start,
-										 ROBOT_DYNAMICS_RADIUS,
+										 robot.start(),
+										 robot.dynamics_radius(),
 										 makePGMs);
 
-		//The full path traveled by the robot is robotPath
-		list<pos_t> robotPath;
-		//The robot path starts with start.
-		robotPath.push_back(start);
+		duraT = (chrono::duration_cast<chrono::milliseconds>
+				(chrono::system_clock::now()-startT)).count();
+		cout << "getFloorSweepCoordinates took " << duraT << " ms." << endl;
+
+
+
+
+
+
+//		//The full path traveled by the robot is robotPath
+//		list<pos_t> robotPath;
+//		//The robot path starts with start.
+//		robotPath.push_back(start);
 
 		auto n = coords.size();
 
@@ -512,13 +564,18 @@ public:
 		// (the reason is easy to see in the following code).
 		size_t progress = 1;
 
+
+
+		startT = std::chrono::system_clock::now();
+
+
 		cout << "Starting robot movement. Points to visit: " << n << "." << endl;
 		while(!(coords.empty())) {
 			//First thing we do is output the progress to the console.
 			auto lastProgress = progress;
 			progress =(100*(n-coords.size()))/n;
 			if(lastProgress!=progress) {
-				cout << "\rPoints left in C: " << coords.size() << ", Traveled length: " << robotPath.size()
+				cout << "\rPoints left in C: " << coords.size() << ", Traveled length: " << (robot.path_length()/10.0)// robotPath.size()
 					 << ", Progress: " << progress << " %        " << flush;
 
 				if(makePGMs) {
@@ -536,11 +593,11 @@ public:
 			// The optimal algorithm is Dijkstra's, but Wavefront is used
 			// because it's faster/easier and almost as good.
 			// The found coordinate is called "next".
-			pos_t next = getClosestCoord(*(maps.getConfigurationSpace()),coords,robotPath.back());
+			pos_t next = getClosestCoord(*(maps.getConfigurationSpace()),coords,robot.currentPosition());
 			//getClosestCoord returns the input coordinate
 			// if no coordinate was found in coords.
 			// This should NOT happen if the preprocessing was done correctly.
-			if(next==robotPath.back()) {
+			if(next==robot.currentPosition()) {
 				cout << "\nError encountered. Saving remaining coordinates as \"floor_sweep_unreachable_coordinates.pgm\"..." << endl;
 				(maps.getOriginal())->shade(img);
 				for(auto c:coords)
@@ -552,19 +609,20 @@ public:
 			}
 
 			//Remove the robot's current position from coords
-			coords.erase(robotPath.back());
+			coords.erase(robot.currentPosition());
 			//Remove the closest coordinate from coords
 			coords.erase(next);
 
 			//Using Dijkstra's algorithm, find all the coordinates between
 			// the robot's current position and the closest coordinate in coords
-			list<pos_t> pathToNext = (maps.getConfigurationSpace())->getDijkstraPath(robotPath.back(),next);
+			list<pos_t> pathToNext = (maps.getConfigurationSpace())->getDijkstraPath(robot.currentPosition(),next);
 
 			//Add all the coordinates between the robot's current position
 			// and the closest coordinate in coords
 			// to the robot path and remove them from coords.
 			for(auto c:pathToNext) {
-				robotPath.push_back(c);
+				//robotPath.push_back(c);
+				robot.move(c);
 				if(makePGMs) {
 					img->setPixel8U(c.cx(),c.cy(),20);
 				}
@@ -573,11 +631,19 @@ public:
 			//Now that all the coordinates between the robot's current position
 			// and the closest coordinate in coords have been added to the robot path,
 			// add the closest coordinate in coords to the path.
-			robotPath.push_back(next);
+			//robotPath.push_back(next);
+			robot.move(next);
 
 			if(makePGMs) {
 				img->setPixel8U(next.cx(),next.cy(),20);
 			}
+
+
+			//Make sure it returns to starting position
+			if(coords.empty() && ( robot.currentPosition() != robot.start() ) )
+				coords.insert(robot.start());
+
+
 		}
 		//The robot has now visited all coordinates in coords.
 		// It's job is done.
@@ -585,12 +651,23 @@ public:
 		//Remove the progress bar
 		cout << "\r                                                                " << endl;
 
+
+
+		duraT = (chrono::duration_cast<chrono::milliseconds>
+				(chrono::system_clock::now()-startT)).count();
+		cout << "Robot traveling took " << duraT << " ms." << endl;
+
+
+
+
+
+
 		if(makePGMs) {
 			cout << "Saving robot path as \"floor_sweep_robot_path_IDX.pgm\"... " << flush;
 			ostringstream anim;
 			anim << "floor_sweep_robot_path_full_" << setw(6) << setfill('0')
-				 << robotPath.size() << "_" << n << ".pgm";
-			for(auto v:robotPath)
+				 << ((size_t)std::ceil(robot.path_length())) << "_" << n << ".pgm";
+			for(auto v:robot)
 				img->setPixel8U(v.cx(),v.cy(),20);
 			img->saveAsPGM(anim.str());
 			(maps.getOriginal())->shade(img);
@@ -598,23 +675,7 @@ public:
 		}
 
 		//Output the robot path length
-		cout << "Total traveled length: " << robotPath.size() << endl;
-	}
-
-	/**
-	 * @brief getCupScanCoordinates Calls getFloorSweepCoordinates(), with a different radius.
-	 */
-	static unordered_set<pos_t> getCupScanCoordinates(shared_ptr<Image> img,
-														 const pixelshadeMap &original,
-														 const unordered_set<pos_t> &freespace,
-														 const pixelshadeMap &configurationSpace,
-														 const norm2BrushfireMap &norm2BrushfireDoors,
-														 const pos_t &reachable_coordinate,
-														 size_t robot_scanner_radius=ROBOT_SCANNER_RADIUS)
-	{
-		return move(getFloorSweepCoordinates(img,original,freespace,configurationSpace,
-										norm2BrushfireDoors,reachable_coordinate,robot_scanner_radius,
-										false));
+		cout << "Total traveled length: " << (robot.path_length()/10.0) << " meters." << endl;
 	}
 
 
@@ -645,7 +706,23 @@ public:
 						  pos_t(ROBOT_START_X,ROBOT_START_Y));
 		//A reachable freespace coordinate is the starting coordinate
 		//const pos_t start = {ROBOT_START_X,ROBOT_START_Y};
+
+
+
+
+
+		auto startT = std::chrono::system_clock::now();
+
 		mapWrap maps(img,robot.start(),robot.dynamics_radius());
+
+		auto duraT = (chrono::duration_cast<chrono::milliseconds>
+				(chrono::system_clock::now()-startT)).count();
+		cout << "mapWrap generation took " << duraT << " ms." << endl;
+
+
+
+
+
 		pixelshadeMap cupspace(img);
 
 
@@ -673,6 +750,13 @@ public:
 			cout << "Done." << endl;
 		}
 
+
+
+
+
+
+		startT = std::chrono::system_clock::now();
+
 		unordered_set<pos_t> coords =
 				getCupScanCoordinates(img,
 										 *(maps.getOriginal()),
@@ -681,6 +765,15 @@ public:
 										 *(maps.getNorm2BrushfireDoors()),
 										 robot.start(),
 										 robot.scanner_radius());
+
+		duraT = (chrono::duration_cast<chrono::milliseconds>
+						(chrono::system_clock::now()-startT)).count();
+				cout << "getCupScanCoordinates took " << duraT << " ms." << endl;
+
+
+
+
+
 
 		if(makePGMs) {
 			ostringstream filename;
@@ -763,6 +856,13 @@ public:
 		auto n = coords.size();
 
 
+
+
+
+		startT = std::chrono::system_clock::now();
+
+
+
 		//The progress variable will be a measure (in percent) of
 		// how many of the coordinates in coords (of size n)
 		// the robot has visited.
@@ -775,7 +875,7 @@ public:
 			auto lastProgress = progress;
 			progress =(100*(n-coords.size()))/n;
 			if(lastProgress!=progress) {
-				cout << "\rPoints left in C: " << coords.size() << ", Traveled length: " << (robot.path_length()) //robotPath.size()
+				cout << "\rPoints left in C: " << coords.size() << ", Traveled length: " << (robot.path_length()/10.0) //robotPath.size()
 					 << ", Progress: " << progress << " %        " << flush;
 
 				if(makePGMs) {
@@ -870,12 +970,33 @@ public:
 				missed_cups.clear();
 				number_of_cups=0;
 			}
+
+
+			//Make sure robot returns to starting position when finished
+			if( coords.empty() && (robot.currentPosition() != robot.start()) )
+				coords.insert(robot.start());
+
+
 		}
 		//The robot has now visited all coordinates in coords.
-		// It's job is done.
+		// It's job is almost done.
+
+
+
+
+
 
 		//Remove the progress bar
 		cout << "\r                                                                " << endl;
+
+
+		duraT = (chrono::duration_cast<chrono::milliseconds>
+						(chrono::system_clock::now()-startT)).count();
+				cout << "Robot traveling took " << duraT << " ms." << endl;
+
+
+
+
 
 		if(makePGMs) {
 			cout << "Saving robot path as \"cup_scan_robot_path_IDX.pgm\"... " << flush;
@@ -903,7 +1024,7 @@ public:
 			cout << endl;
 		}
 		//Output the robot path length
-		cout << "Total traveled length: " << robot.path_length()/10.0 << " meters" << endl;
+		cout << "Total traveled length: " << (robot.path_length()/10.0) << " meters" << endl;
 		cout << "Total travel time: "
 			 << ((unsigned int)(std::floor(robot.path_time_hours()))) << " hours "
 			 << ((unsigned int)(std::ceil( ( robot.path_time_hours() - (std::floor(robot.path_time_hours())) )*60 )))
