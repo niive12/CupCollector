@@ -13,8 +13,8 @@
 #include <memory>
 #include "doordetector/doordetector.h"
 #include "scanner/scanner.h"
-#include "test.hpp"
 #include "robot/robot.h"
+#include "robot_old/robot_old.h"
 using namespace rw::sensor;
 using namespace rw::loaders;
 using namespace std;
@@ -116,8 +116,9 @@ int main(int argc, char** argv) {
 
 	//		testRobot (img);
 	cout << "MW-test starting..." << endl;
-	tester::sweep_floor(img,true);
-	tester::cup_scan(img,true);
+	Robot myRobot(img,ROBOT_DYNAMICS_RADIUS,ROBOT_ARM_RADIUS,ROBOT_SCANNER_RADIUS,ROBOT_CUP_CAPACITY,ROBOT_SPEED_PIX_PER_H,pos_t(ROBOT_START_X,ROBOT_START_Y));
+	myRobot.sweep_floor(img,true);
+	myRobot.cup_scan(img,true);
 	//tester::sweep_floor(img,true);
 	cout << "MW-test done!" << endl;
 

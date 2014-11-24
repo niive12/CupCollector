@@ -9,10 +9,11 @@ SOURCES += main.cpp \
     libraries/PPMLoader.cpp \
     scanner/scanner.cpp \
     doordetector/doordetector.cpp \
-    robot/robot.cpp \
     tekmap/brushfire.cpp \
     tekmap/pixelshade.cpp \
-    tekmap/wavefront.cpp
+    tekmap/wavefront.cpp \
+    robot/robot.cpp \
+    robot_old/robot_old.cpp
 
 HEADERS += \
     libraries/Image.hpp \
@@ -20,10 +21,11 @@ HEADERS += \
     libraries/PPMLoader.hpp \
     assignment.h \
     scanner/scanner.h \
-    robot/robot.h \
     tekmap/tekmap.hpp \
     doordetector/doordetector.h \
     test.hpp \
     tekmap/brushfire.h \
     tekmap/pixelshade.h \
-    tekmap/wavefront.h
+    tekmap/wavefront.h \
+    robot/robot.h \
+    robot_old/robot_old.h
