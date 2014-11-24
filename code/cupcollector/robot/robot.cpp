@@ -1,402 +1,812 @@
-/** @file */
+/**
+ * @file robot.cpp
+ * @author Mikael Westermann
+ */
 #include "robot.h"
+#include <forward_list>
+#include <iomanip>
 #include <cmath>
+#include <sstream>
+#include <chrono>
 
 
-#define NORMAL 0
-#define TESTROOM 1
-
-#define RUNMODE TESTROOM
 
 
-#define WALK_DOWN 0
-#define WALK_UP 1
-#define WALK_AROUND 2
-
-// used for walking in a room
-int walk(pos_t currentPos, shared_ptr<brushfire_map> map, int direction);
+using namespace std;
 
 
-robot::robot(shared_ptr<Image> map):cupsHolding(0), mapBrush(map, pos_t(ROBOT_START_X,ROBOT_START_Y)), mapNormal(map), mapTrack(map)
+template<typename BrushmapT>
+unordered_set<pos_t> Robot::getBrushEdges(const unordered_set<pos_t> &freespace, const BrushmapT &brush, size_t radius)
 {
-	setCupPickRadius (ROBOT_ARM_RADIUS);
-	setCupSearchRadius (ROBOT_SCANNER_RADIUS);
-	setDistanceWalked (0);
-	setRobotWidth (ROBOT_DYNAMICS_RADIUS);
-	setRobotPos (pos_t(ROBOT_START_X,ROBOT_START_Y));
-
-	// Create a vector of door coordinates
-	doorDetector mydetective;
-	vector<pos_t> The_Doors = mydetective.detect_doorways(map, mapBrush);
-
-	// Create a map with every room sealed off.
-	mapRooms = make_shared<pixelshade_map> (mydetective.door_step(map, mapBrush, The_Doors)); // only works if brush was called with coordinate!
-	mapRoomBrush = make_shared<brushfire_map> ((const pixelshadeMap &) *mapRooms); // defect?
-}
-
-
-void robot::saveNormalMap(shared_ptr<Image> map, std::string name)
-{
-	mapTrack.shade (map);
-	map->saveAsPGM (name);
-}
-
-
-bool robot::move(int direction)
-{
-	pos_t newPosition = getRobotPos();
-	double walked = getDistanceWalked();
-	bool result = false;
-	// determine new value
-	switch (direction) {
-		case MOVE_N:
-			newPosition = pos_t(newPosition.x(), newPosition.y() + 1);
-			walked += 1;
-			break;
-		case MOVE_NE:
-			newPosition = pos_t(newPosition.x() + 1, newPosition.y() + 1);
-			walked += SQRT_2;
-			break;
-		case MOVE_E:
-			newPosition = pos_t(newPosition.x() + 1, newPosition.y());
-			walked += 1;
-			break;
-		case MOVE_SE:
-			newPosition = pos_t(newPosition.x() + 1, newPosition.y() - 1);
-			walked += SQRT_2;
-			break;
-		case MOVE_S:
-			newPosition = pos_t(newPosition.x(), newPosition.y() - 1);
-			walked += 1;
-			break;
-		case MOVE_SW:
-			newPosition = pos_t(newPosition.x() - 1, newPosition.y() - 1);
-			walked += SQRT_2;
-			break;
-		case MOVE_W:
-			newPosition = pos_t(newPosition.x() - 1, newPosition.y());
-			walked += 1;
-			break;
-		case MOVE_NW:
-			newPosition = pos_t(newPosition.x() - 1, newPosition.y() + 1);
-			walked += SQRT_2;
-			break;
-		default:
-			break;
-	}
-
-	// if newPosition is valid
-	if(WSPACE_IS_FREE (mapNormal.coordVal (newPosition)) || WSPACE_IS_CUP(mapNormal.coordVal (newPosition)) || WSPACE_IS_OL_STATION(mapNormal.coordVal (newPosition)))
-	{
-		setRobotPos(newPosition);
-		setDistanceWalked(walked);
-		result = true;
-
-#if RUNMODE == TESTROOM
-		// track movement
-		mapTrack.coordVal (newPosition) = mapTrack.coordVal (newPosition) + 40;
-#endif
-	}
-
-	return result;
-}
-
-
-bool robot::pickupCup(pos_t cupPosition)
-{
-	double cupDistanceSquared;
-	pos_t robotPos = getRobotPos();
-	bool result = false;
-
-	// get distance
-	cupDistanceSquared = pow((robotPos.x() + cupPosition.x()),2) + pow((robotPos.y() + cupPosition.y()),2);
-
-	// if within reach
-	if(cupDistanceSquared <= pow(getCupPickRadius(),2))
-	{
-		if(getCupsHolding() < ROBOT_CUP_CAPACITY)
-		{
-			result = true;
-			setCups(getCupsHolding() + 1);
-			// remove cup from map
-			mapNormal.coordVal (cupPosition) = WSPACE_FREE;
-		}
-	}
-	return result;
-}
-
-bool robot::pickupCupsInRange(std::vector<pos_t> * cups)
-{
-	// loop through the vector to remove all the cups within range, without moving
-	// return false if cup holder runs full
-	bool result = true;
-
-	// pick up cups in range
-	for(size_t i = 0; i < cups->size(); i++)
-	{
-		if(pickupCup(cups->at (i)))
-		{
-			// remove cup from vector
-			cups->erase(cups->begin() + i);
-		}
-	}
-
-	// check if has no space left
-	if(getCupsHolding() == ROBOT_CUP_CAPACITY)
-	{
-		result = false;
-	}
-
-	return result;
-}
-
-
-bool robot::startCupScan()
-{
-	// start cupscan through other class (pass pointer to map and cup vector?)
-	bool result = false;
-	// call with shared_ptr<vector <pos_t>> cups
-	return result;
-}
-
-
-bool robot::emptyCupCarrier()
-{
-	bool result = false;
-
-	// if standing on valid spot
-	if(WSPACE_IS_OL_STATION(mapNormal.coordVal (getRobotPos ())))
-	{
-		result = true;
-		setCups(0);
-	}
-	return result;
-}
-
-
-void robot::cleanRoom(void (*doOnCoverage)(), void (*doAfterCoverage)(), int coverageWidth)
-{
-	int dir;
-	char maxLvl = mapRoomBrush->coordVal (getRobotPos ());
-	char currentLvl = coverageWidth;
-	pos_t history[2] = {pos_t(-1,-1),pos_t(-2,-2)};
-
-	// go to edge of a room (the value of coverage range)
-	while (mapBrush.coordVal (getRobotPos ()) > currentLvl)
-	{
-		// get walking direction
-		dir = walk(getRobotPos(),mapRoomBrush, WALK_DOWN);
-		// move
-		move(dir);
-		// execute this on evrey move (eg scan)
-		doOnCoverage();
-	}
-
-	// walk around in circles and when returned to "start" walk towards center
-	bool roomDone = false;
-	pos_t startPos;
-
-	while (!roomDone) {
-		startPos = getRobotPos ();
-		// walk around on the lvl till back on original spot
-		do{
-			// get walking direction
-			dir = walk(getRobotPos (),mapRoomBrush, WALK_AROUND);
-			// move
-			move (dir);
-			// execute this on evrey move (eg scan)
-			doOnCoverage();
-			// if looping in same area or stuck, stop
-			if((history[0] == getRobotPos ()) || (history[1] == getRobotPos ()) || (history[0] == history[1]))
-			{
-				roomDone = true;
-			}
-			// create history
-			history[1] = history[0];
-			history[0] = getRobotPos ();
-
-		} while (getRobotPos() != startPos && !roomDone);
-
-		// check if room done
-		if(mapRoomBrush->coordVal (getRobotPos ()) == maxLvl || roomDone)
-		{
-			roomDone = true;
-		}
-		else
-		{
-			// calc next lvl
-			currentLvl += 2*(coverageWidth);
-			if(currentLvl > maxLvl)
-			{
-				currentLvl = maxLvl;
-
-			}
-
-			// move up to next lvl
-			while (mapRoomBrush->coordVal (getRobotPos ()) < currentLvl && !roomDone)
-			{
-				dir = walk(getRobotPos (),mapRoomBrush, WALK_UP);
-				if(dir == -1)
+	unordered_set<pos_t> result;
+	for(coordIndexType x = 0; x<(coordIndexType)brush.getWidth(); ++x) {
+		for(coordIndexType y = 0; y<(coordIndexType)brush.getHeight(); ++y) {
+			if(freespace.find(pos_t(x,y))!=freespace.end())
+				if((((size_t)(brush.const_coordVal(x,y)-1))%(2*radius))==radius) //round?
 				{
-					roomDone = true;
+					result.emplace(x,y);
 				}
-				else {
-					move(dir);
-					doOnCoverage();
+		}
+	}
+	return move(result);
+}
+
+pos_t Robot::getClosestCoord(const pixelshadeMap &img,
+									const unordered_set<pos_t> &coordinatesToSearch, const pos_t &currentPos)
+{
+	pos_t result=currentPos;
+	const array<array<int,2>,8> neighbours =
+	{{ {-1,0}, /* W */ {1,0}, /* E */
+	   {0,-1}, /* N */ {0,1}, /* S */
+	   {-1,-1},/* NW */{1,-1}, /* NE */
+	   {1,1}, /* SE */{-1,1} /* SW */
+	 }} ;
+	unordered_set<pos_t> visited;
+	visited.insert(currentPos);
+	queue<pos_t> q;
+	q.push(currentPos);
+	while((!q.empty())&&(result==currentPos)) {
+		pos_t v = q.front();
+		q.pop();
+		for(auto n : neighbours) {
+			pos_t w = v+pos_t(n.at(0),n.at(1));
+			if( (visited.insert(w).second)
+					&& (!(WSPACE_IS_OBSTACLE(img.const_coordVal(w)))) )
+			{
+				if( (coordinatesToSearch.find(w)!=coordinatesToSearch.end()) ) {
+					result=w;
+					break;
 				}
+				else
+					q.push(w);
 			}
 		}
 	}
-
-	doAfterCoverage();
+	return move(result);
 }
 
-// comp: a < b => down, a > b => up and a == b => around
-int walk(pos_t currentPos, shared_ptr<brushfire_map> map, int direc)
+template<typename BrushmapT>
+void Robot::pad(pixelshadeMap &imgToPad, const BrushmapT &brush, const size_t padValue) {
+	for(coordIndexType x=0; x<(coordIndexType)imgToPad.getWidth(); ++x)
+		for(coordIndexType y=0; y<(coordIndexType)imgToPad.getHeight(); ++y)
+			if(brush.const_coordVal(x,y) <= (typename BrushmapT::myValType)(padValue))
+				imgToPad.coordVal(x,y) = WSPACE_OBSTACLE;
+}
+
+template<typename BrushmapT>
+unordered_set<pos_t> Robot::getLocalMaxima(const pixelshadeMap &img,
+												  const BrushmapT &brush,
+												  const pos_t &validFreespaceCoord,
+												  bool twoPointMaxima)
 {
-	// returns direction (N/S/NW...)
-	pos_t dir(0,1);
-	pos_t position = pos_t(currentPos.x()-1,currentPos.y()-1);
-	char last = map->coordVal (pos_t(currentPos.x(),currentPos.y()-1));
-	char current = map->coordVal (currentPos);
-
-	int result[8] = {MOVE_SW, MOVE_W, MOVE_NW, MOVE_N, MOVE_NE, MOVE_E, MOVE_SE, MOVE_S};
-
-	// walk CW around currentpos
-	for(int i = 1; i < 9; i++)
-	{
-		switch (direc) {
-			case WALK_DOWN:
-				// return the first direction that leads down
-				if (map->coordVal (position) < current)
-				{
-					return result[(i-1)];
+	unordered_set<pos_t> result;
+	unordered_set<pos_t> freespace = img.findFreespace(validFreespaceCoord);
+	for(coordIndexType x=0;x<(coordIndexType)(img.getWidth());++x) {
+		coordIndexType y0=2, y1=1, y2=0;
+		while(y0<(coordIndexType)(img.getHeight())) {
+			if(		((brush.const_coordVal(x,y0))<(brush.const_coordVal(x,y1)))
+					&&(twoPointMaxima?
+					   ((brush.const_coordVal(x,y2))<=(brush.const_coordVal(x,y1)))
+					   :	((brush.const_coordVal(x,y2))<(brush.const_coordVal(x,y1))) )
+					) {
+				pos_t pos(x,y1);
+				if(freespace.find(pos)!=freespace.end()) {
+					if( (( std::max((brush.const_coordVal(x,y2)),(brush.const_coordVal(x,y1)))
+						   -std::min((brush.const_coordVal(x,y2)),(brush.const_coordVal(x,y1))))
+						 <1) ) {
+						if( ( (std::max((brush.const_coordVal(x,y2-1)),(brush.const_coordVal(x,y0)))
+							   -std::min((brush.const_coordVal(x,y2-1)),(brush.const_coordVal(x,y0))))
+							  <1 ) )
+							result.insert(pos);
+					}
+					else if( ((std::max((brush.const_coordVal(x,y2)),(brush.const_coordVal(x,y0)))
+							   -std::min((brush.const_coordVal(x,y2)),(brush.const_coordVal(x,y0)))))
+							 <1) {
+						result.insert(pos);
+					}
 				}
-				break;
-			case WALK_UP:
-				// return the first direction that leads up
-				if (map->coordVal (position) > current)
-				{
-					return result[(i-1)];
-				}
-				break;
-			case WALK_AROUND:
-				// return the first direction that leads around (stalk the circle one closer to the wall)
-				if ((map->coordVal (position) == current) && (last == (current-1)))
-				{
-					return result[(i-1)];
-				}
-				last = map->coordVal (position);
-				break;
-			default:
-				break;
-		}
-
-		position = position + dir;
-
-		// turn right at every corner
-		if(i % 2 == 0)
-		{
-			pos_t temp(dir.y(),dir.x());
-			dir = temp;
-		}
-
-		// invert dir every 4 steps
-		if(i % 4 == 0)
-		{
-			dir.x() = -(dir.x());
-			dir.y() = -(dir.y());
+			}
+			++y0;
+			++y1;
+			++y2;
 		}
 	}
-	// only to surpress warning :D there will always be a way down on a brush unless you are next to the wall!
-	return -1;
+	for(coordIndexType y=0;y<(coordIndexType)(img.getHeight());++y) {
+		coordIndexType x0=2, x1=1, x2=0;
+		while(x0<(coordIndexType)(img.getWidth())) {
+			if(		((brush.const_coordVal(x0,y))<(brush.const_coordVal(x1,y)))
+					&&(twoPointMaxima?
+					   ((brush.const_coordVal(x2,y))<=(brush.const_coordVal(x1,y)))
+					   :	((brush.const_coordVal(x2,y))<(brush.const_coordVal(x1,y))) )
+					) {
+				pos_t pos(x1,y);
+				if(freespace.find(pos)!=freespace.end()) {
+					if( (( std::max((brush.const_coordVal(x2,y)),(brush.const_coordVal(x1,y)))
+						   -std::min((brush.const_coordVal(x2,y)),(brush.const_coordVal(x1,y))))
+						 <1) ) {
+						if( ( (std::max((brush.const_coordVal(x2-1,y)),(brush.const_coordVal(x0,y)))
+							   -std::min((brush.const_coordVal(x2-1,y)),(brush.const_coordVal(x0,y))))
+							  <1 ) )
+							result.insert(pos);
+					}
+					else if( ((std::max((brush.const_coordVal(x2,y)),(brush.const_coordVal(x0,y)))
+							   -std::min((brush.const_coordVal(x2,y)),(brush.const_coordVal(x0,y)))))
+							 <1) {
+						result.insert(pos);
+					}
+				}
+			}
+			++x0;
+			++x1;
+			++x2;
+		}
+	}
+	return move(result);
+}
+
+void Robot::chooseSubset(const unordered_set<pos_t> &chooseFrom,
+								unordered_set<pos_t> &coordSet,
+								size_t radius) {
+	for(auto c:chooseFrom)
+		if(isRemainder(c,coordSet,radius))
+			coordSet.insert(c);
+}
+
+bool Robot::isRemainder(pos_t center, const unordered_set<pos_t> &coords, unsigned int radius)
+{
+	static unsigned int r=0;
+	static forward_list<pos_t> circle;
+	bool remainder=true;
+	if(r!=radius) {
+		circle.clear();
+		const array<array<int,2>,8> neighbours =
+		{{  {-1,0}, /* W */ {1,0},  /* E */
+			{0,-1}, /* N */ {0,1},  /* S */
+			{-1,-1},/* NW */{1,-1}, /* NE */
+			{1,1},  /* SE */{-1,1}  /* SW */
+		 }};
+		r=radius;
+		int rsquared = r*r;
+		queue<pos_t> q;
+		q.emplace(0,0);
+		unordered_set<pos_t> visited;
+		while(!q.empty()) {
+			pos_t cur = q.front();
+			q.pop();
+			circle.push_front(cur);
+			for(auto n:neighbours)
+				if( ((cur.cx()+n[0])*(cur.cx()+n[0])
+					 +(cur.cy()+n[1])*(cur.cy()+n[1]))<=rsquared )
+					if((visited.emplace(cur.cx()+n[0], cur.cy()+n[1])).second)
+						q.emplace(cur.cx()+n[0], cur.cy()+n[1]);
+		}
+	}
+	for(auto i:circle) {
+		try {
+			if(coords.find(center+i)!=coords.end()) {
+				remainder=false;
+				break;
+			}
+		} catch (const std::out_of_range& oor) {(void)oor;}
+	}
+	return remainder;
+}
+
+void Robot::getRemainders(const pixelshadeMap &img,
+								 unordered_set<pos_t> &coordSet,
+								 const pos_t &freespaceCoord,
+								 size_t radius) {
+	unordered_set<pos_t> freespace = img.findFreespace(freespaceCoord);
+	for(auto c:freespace)
+		if(isRemainder(c,coordSet,radius))
+			coordSet.insert(c);
 }
 
 
-void robot::cupClean()
+unordered_set<pos_t> Robot::getFloorSweepCoordinates(shared_ptr<Image> img,
+															const pixelshadeMap &original,
+															const unordered_set<pos_t> &freespace,
+															const pixelshadeMap &configurationSpace,
+															const norm2BrushfireMap &norm2BrushfireDoors,
+															const pos_t &reachable_coordinate,
+															size_t robot_dynamics_radius,
+															bool makePGMs)
 {
-	// scan
-	startCupScan();
-	pickupCupsInRange(&cupsToPickUp);
+	//Go through the brushfire map and generate a set, coords, of all the coordinates
+	// with brushfire values equal to certain multiples of robot
+	// diameter/radius combinations.
+	// This set will be called the brushfire "edges".
+	unordered_set<pos_t> coords = getBrushEdges(freespace,norm2BrushfireDoors,robot_dynamics_radius);
+	if(makePGMs) {
+		cout << "Saving brushfire edges as \"floor_sweep_brushfire_edges.pgm\"... " << flush;
+		for(auto c:coords)
+			img->setPixel8U(c.cx(),c.cy(),20);
+		img->saveAsPGM("floor_sweep_brushfire_edges.pgm");
+		original.shade(img);
+		cout << "Done" << endl;
+	}
+
+	//Generate a set of brushfire local maxima, loMa,
+	// from the brushfire map with doors being obstacles
+	unordered_set<pos_t> loMa = getLocalMaxima<norm2BrushfireMap>
+			(configurationSpace,norm2BrushfireDoors,reachable_coordinate,true);
+
+	if(makePGMs) {
+		cout << "Saving local maxima as \"floor_sweep_local_maxima.pgm\"... " << flush;
+		for(auto c:loMa)
+			img->setPixel8U(c.cx(),c.cy(),20);
+		img->saveAsPGM("floor_sweep_local_maxima.pgm");
+		original.shade(img);
+		cout << "Done." << endl;
+	}
+
+	//Insert some of the brushfire local maxima into the
+	// set named coords (currently holding the brushfire "edges")
+	chooseSubset(loMa,coords,robot_dynamics_radius);
+
+	if(makePGMs) {
+		cout << "Saving brushfire edges and local maxima as \"floor_sweep_be_and_loma.pgm\"... " << flush;
+		for(auto c:coords)
+			img->setPixel8U(c.cx(),c.cy(),20);
+		img->saveAsPGM("floor_sweep_be_and_loma.pgm");
+		original.shade(img);
+		cout << "Done." << endl;
+	}
+
+	//Iterating through the reachable coordinates (the configuration space),
+	// find all the coordinates that would not be scanned by the robot
+	// if it visited all points in coords,
+	// and add these coordinates to coords on the way.
+	// These remaining coordinates are called remainders.
+	getRemainders(configurationSpace,coords,reachable_coordinate,robot_dynamics_radius);
+
+	if(makePGMs) {
+		ostringstream filename;
+		filename << "floor_sweep_coordinate_set_"
+				 << (coords.size()) << ".pgm";
+		cout << "Saving floor sweeping coordinates as \"" << (filename.str()) << "\"... " << flush;
+		for(auto c:coords)
+			img->setPixel8U(c.cx(),c.cy(),20);
+		img->saveAsPGM(filename.str());
+		original.shade(img);
+		cout << "Done." << endl;
+	}
+
+	return move(coords);
 }
 
 
-void robot::cleanMapForCups()
-{
-	// run around map :)
-}
 
-void robot::cleanFloorOnMap()
+unordered_set<pos_t> Robot::getCupScanCoordinates(shared_ptr<Image> img,
+														 const pixelshadeMap &original,
+														 const unordered_set<pos_t> &freespace,
+														 const pixelshadeMap &configurationSpace,
+														 const norm2BrushfireMap &norm2BrushfireDoors,
+														 const pos_t &reachable_coordinate,
+														 size_t robot_scanner_radius)
 {
-	// run, baby run!
-}
-
-int robot::getCupsHolding()
-{
-	return cupsHolding;
-}
-
-
-int robot::getRobotWidth()
-{
-	return robotWidth;
-}
-
-int robot::getCupSearchRadius()
-{
-	return cupSearchRadius;
+	return move(getFloorSweepCoordinates(img,original,freespace,configurationSpace,
+										 norm2BrushfireDoors,reachable_coordinate,robot_scanner_radius,
+										 false));
 }
 
 
-int robot::getCupPickRadius()
+void Robot::pickupCups(pixelshadeMap &cupspace, unordered_set<pos_t> &coordSet,
+					   set<pos_t> &missed_cups, const unordered_set<pos_t> &reachableCSpace,
+					   shared_ptr<Image> img, bool makePGMs,
+					   unordered_set<pos_t> &cupsCollected, const pos_t &c)
 {
-	return cupPickRadius;
-}
-
-
-pos_t robot::getRobotPos()
-{
-	return robotPosition;
-}
-
-double robot::getDistanceWalked()
-{
-	return distanceWalked;
-}
-
-void robot::setCups(int cups)
-{
-	if(cups <= ROBOT_CUP_CAPACITY)
-	{
-		cupsHolding = cups;
+	list<pos_t> visibleCups=
+			cupscanner.scanlistLineOfSight(c,
+										   cupspace,
+										   r_scanner);
+	list<pos_t> rc =
+			cuppicker.scanlistAroundWalls(c,
+										  cupspace,
+										  r_arm);
+	unordered_set<pos_t> reachableCups(rc.begin(),rc.end());
+	for(auto cup:visibleCups) {
+		if(number_of_cups<cupCap) {
+			if(reachableCups.find(cup)!=reachableCups.end()) {
+				++number_of_cups;
+				cupspace.coordVal(cup)=WSPACE_FREE;
+				cupsCollected.insert(cup);
+				if(makePGMs) {
+					img->setPixel8U(cup.cx(),cup.cy(),WSPACE_FREE);
+				}
+			}
+			else
+			{
+				missed_cups.insert(cup);
+				pos_t closest = cup;
+				if(WSPACE_IS_OBSTACLE(myMaps.getConfigurationSpace()->const_coordVal(cup))) {
+					closest=getClosestCoord(cupspace,reachableCSpace,cup);
+					if(closest==cup)
+						cout << "Unreachable cup at ( " << cup.cx() << " , " << cup.cy() << " )!" << endl;
+				}
+				coordSet.insert(closest);
+			}
+		}
+		else {
+			missed_cups.insert(cup);
+			pos_t closest = cup;
+			if(WSPACE_IS_OBSTACLE(myMaps.getConfigurationSpace()->const_coordVal(cup))) {
+				closest=getClosestCoord(cupspace,reachableCSpace,cup);
+				if(closest==cup)
+					cout << "Unreachable cup at ( " << cup.cx() << " , " << cup.cy() << " )!" << endl;
+			}
+			coordSet.insert(closest);
+		}
 	}
 }
 
 
-void robot::setRobotWidth(int width)
+
+
+Robot::Robot(shared_ptr<Image> img,
+			 size_t radius_dynamics, size_t radius_arm, size_t radius_scanner,
+			 size_t cup_capacity, double speed_pix_pr_h, pos_t starting_position)
+	:r_dynamics(radius_dynamics),r_arm(radius_arm),r_scanner(radius_scanner),
+	  cupCap(cup_capacity),
+	  cupscanner(scanner(radius_scanner)),cuppicker(scanner(radius_arm)),
+	  number_of_cups(0),
+	  myMoves(movement(speed_pix_pr_h,starting_position))
 {
-	robotWidth = width;
+	auto startT = std::chrono::system_clock::now();
+	myMaps=mapWrap(img,starting_position,radius_dynamics);
+	auto duraT = (chrono::duration_cast<chrono::milliseconds>
+				  (chrono::system_clock::now()-startT)).count();
+	cout << "mapWrap generation took " << duraT << " ms." << endl;
 }
 
 
-void robot::setCupSearchRadius(int searchRadius)
+
+void Robot::sweep_floor(shared_ptr<Image> img, bool makePGMs)
 {
-	cupSearchRadius = searchRadius;
+	myMoves.clearPath(myMoves.start());
+	auto startT = std::chrono::system_clock::now();
+	auto duraT = (chrono::duration_cast<chrono::milliseconds>
+				  (chrono::system_clock::now()-startT)).count();
+
+
+	if(makePGMs) {
+		cout << "Saving configuration space as \"floor_sweep_configuration_space.pgm\"... " << flush;
+		(myMaps.getConfigurationSpace())->shade(img);
+		img->saveAsPGM("floor_sweep_configuration_space.pgm");
+		(myMaps.getOriginal())->shade(img);
+		cout << "Done." << endl;
+	}
+
+
+
+
+
+
+	startT = std::chrono::system_clock::now();
+
+	unordered_set<pos_t> coords =
+			getFloorSweepCoordinates(img,
+									 *(myMaps.getOriginal()),
+									 myMaps.getFreespace(),
+									 *(myMaps.getConfigurationSpace()),
+									 *(myMaps.getNorm2BrushfireDoors()),
+									 myMoves.start(),
+									 r_dynamics,
+									 makePGMs);
+
+	duraT = (chrono::duration_cast<chrono::milliseconds>
+			 (chrono::system_clock::now()-startT)).count();
+	cout << "getFloorSweepCoordinates took " << duraT << " ms." << endl;
+
+
+
+
+
+
+	//		//The full path traveled by the robot is robotPath
+	//		list<pos_t> robotPath;
+	//		//The robot path starts with start.
+	//		robotPath.push_back(start);
+
+	auto n = coords.size();
+
+	//The progress variable will be a measure (in percent) of
+	// how many of the coordinates in coords (of size n)
+	// the robot has visited.
+	// The initial value must not be 0
+	// (the reason is easy to see in the following code).
+	size_t progress = 1;
+
+
+
+	startT = std::chrono::system_clock::now();
+
+
+	cout << "Starting robot movement. Points to visit: " << n << "." << endl;
+	while(!(coords.empty())) {
+		//First thing we do is output the progress to the console.
+		auto lastProgress = progress;
+		progress =(100*(n-coords.size()))/n;
+		if(lastProgress!=progress) {
+			cout << "\rPoints left in C: " << coords.size() << ", Traveled length: " << (myMoves.path_length()/10.0)// robotPath.size()
+				 << ", Progress: " << progress << " %        " << flush;
+
+			if(makePGMs) {
+				ostringstream anim;
+				anim << "floor_sweep_robot_path_"
+					 << setw(3) << setfill('0')
+					 << progress << ".pgm";
+				img->saveAsPGM(anim.str());
+			}
+		}
+		//The progress has now been output to the console.
+
+		//Using a fast algorithm, we find the coordinate in coords,
+		// that is closest to the robot's position ( robotPath.back() ) .
+		// The optimal algorithm is Dijkstra's, but Wavefront is used
+		// because it's faster/easier and almost as good.
+		// The found coordinate is called "next".
+		pos_t next = getClosestCoord(*(myMaps.getConfigurationSpace()),coords,myMoves.currentPosition());
+		//getClosestCoord returns the input coordinate
+		// if no coordinate was found in coords.
+		// This should NOT happen if the preprocessing was done correctly.
+		if(next==myMoves.currentPosition()) {
+			cout << "\nError encountered. Saving remaining coordinates as \"floor_sweep_unreachable_coordinates.pgm\"..." << endl;
+			(myMaps.getOriginal())->shade(img);
+			for(auto c:coords)
+				img->setPixel8U(c.cx(),c.cy(),87);
+			img->saveAsPGM("floor_sweep_unreachable_coordinates.pgm");
+			(myMaps.getOriginal())->shade(img);
+			cout << "Done.\nTest has ended because of error." << endl;
+			return;
+		}
+
+		//Remove the robot's current position from coords
+		coords.erase(myMoves.currentPosition());
+		//Remove the closest coordinate from coords
+		coords.erase(next);
+
+		//Using Dijkstra's algorithm, find all the coordinates between
+		// the robot's current position and the closest coordinate in coords
+		list<pos_t> pathToNext = (myMaps.getConfigurationSpace())->getDijkstraPath(myMoves.currentPosition(),next);
+
+		//Add all the coordinates between the robot's current position
+		// and the closest coordinate in coords
+		// to the robot path and remove them from coords.
+		for(auto c:pathToNext) {
+			//robotPath.push_back(c);
+			myMoves.move(c);
+			if(makePGMs) {
+				img->setPixel8U(c.cx(),c.cy(),20);
+			}
+			coords.erase(c);
+		}
+		//Now that all the coordinates between the robot's current position
+		// and the closest coordinate in coords have been added to the robot path,
+		// add the closest coordinate in coords to the path.
+		//robotPath.push_back(next);
+		myMoves.move(next);
+
+		if(makePGMs) {
+			img->setPixel8U(next.cx(),next.cy(),20);
+		}
+
+
+		//Make sure it returns to starting position
+		if(coords.empty() && ( myMoves.currentPosition() != myMoves.start() ) )
+			coords.insert(myMoves.start());
+
+
+	}
+	//The robot has now visited all coordinates in coords.
+	// It's job is done.
+
+	//Remove the progress bar
+	cout << "\r                                                                " << endl;
+
+
+
+	duraT = (chrono::duration_cast<chrono::milliseconds>
+			 (chrono::system_clock::now()-startT)).count();
+	cout << "Robot traveling took " << duraT << " ms." << endl;
+
+
+
+
+
+
+	if(makePGMs) {
+		cout << "Saving robot path as \"floor_sweep_robot_path_IDX.pgm\"... " << flush;
+		ostringstream anim;
+		anim << "floor_sweep_robot_path_full_" << setw(6) << setfill('0')
+			 << ((size_t)std::ceil(myMoves.path_length())) << "_" << n << ".pgm";
+		for(auto v:myMoves)
+			img->setPixel8U(v.cx(),v.cy(),20);
+		img->saveAsPGM(anim.str());
+		(myMaps.getOriginal())->shade(img);
+		cout << "Done." << endl;
+	}
+
+	//Output the robot path length
+	cout << "Total traveled length: " << (myMoves.path_length()/10.0) << " meters." << endl;
 }
 
 
-void robot::setCupPickRadius(int pickRadius)
+void Robot::cup_scan(shared_ptr<Image> img, bool makePGMs)
 {
-	cupPickRadius = pickRadius;
-}
+	myMoves.clearPath(myMoves.start());
+
+	auto startT = std::chrono::system_clock::now();
+	auto duraT = (chrono::duration_cast<chrono::milliseconds>
+				  (chrono::system_clock::now()-startT)).count();
+
+	pixelshadeMap cupspace(img);
 
 
-void robot::setDistanceWalked(double distance)
-{
-	distanceWalked = distance;
-}
 
-void robot::setRobotPos(pos_t position)
-{
-	robotPosition = position;
+	//		for(coordIndexType x=0; x<coordIndexType(cupspace.getWidth()); ++x)
+	//			for(coordIndexType x=0; x<coordIndexType(cupspace.getWidth()); ++x)
+	//				cupspace.coordVal(x,y)=WSPACE_OBSTACLE;
+	//		for(auto v:(maps.getFreespace())) {
+	//			cupspace.coordVal(v)=(maps.originalMap->const_coordVal(v));
+	//		}
+
+	unordered_set<pos_t> cupsToCollect;
+	for(auto c:myMaps.getFreespace())
+		if(WSPACE_IS_CUP(cupspace.const_coordVal(c)))
+			cupsToCollect.insert(c);
+
+	unordered_set<pos_t> cupsCollected;
+
+
+	if(makePGMs) {
+		cout << "Saving configuration space as \"cup_scan_configuration_space.pgm\"... " << flush;
+		(myMaps.getConfigurationSpace())->shade(img);
+		img->saveAsPGM("cup_scan_configuration_space.pgm");
+		(myMaps.getOriginal())->shade(img);
+		cout << "Done." << endl;
+	}
+
+
+
+
+
+
+	startT = std::chrono::system_clock::now();
+
+	unordered_set<pos_t> coords =
+			getCupScanCoordinates(img,
+								  *(myMaps.getOriginal()),
+								  myMaps.getFreespace(),
+								  *(myMaps.getConfigurationSpace()),
+								  *(myMaps.getNorm2BrushfireDoors()),
+								  myMoves.start(),
+								  r_scanner);
+
+	duraT = (chrono::duration_cast<chrono::milliseconds>
+			 (chrono::system_clock::now()-startT)).count();
+	cout << "getCupScanCoordinates took " << duraT << " ms." << endl;
+
+
+
+
+
+
+	if(makePGMs) {
+		ostringstream filename;
+		filename << "cup_scan_coordinate_set_"
+				 << (coords.size()) << ".pgm";
+		cout << "Saving cup scanner coordinate set as \"" << (filename.str()) << "\"... " << flush;
+		for(auto c:coords)
+			img->setPixel8U(c.cx(),c.cy(),20);
+		img->saveAsPGM(filename.str());
+		myMaps.getOriginal()->shade(img);
+		cout << "Done." << endl;
+	}
+
+
+
+	number_of_cups=0;
+
+	set<pos_t> missed_cups;
+	unordered_set<pos_t> reachableCSpace = myMaps.getConfigurationSpace()->findFreespace(myMoves.start());
+
+
+
+
+
+	auto pickupCupz = [&cupspace,&coords,
+			&missed_cups,&reachableCSpace,
+			&img,&makePGMs,&cupsCollected,this](const pos_t &c) {
+		pickupCups(cupspace,coords,missed_cups,reachableCSpace,img,makePGMs,cupsCollected,c);
+	};
+
+	cout << "Creating Dijkstra map from Offloading Stations... " << flush;
+	dijkstraMap OLstations(img,dijkstraMap::getOffloadingStations(img));
+	cout << "Done." << endl;
+
+
+	//		//The full path traveled by the robot is robotPath
+	//		list<pos_t> robotPath;
+	//		//The robot path starts with start.
+	//		robotPath.push_back(start);
+
+	pickupCupz(myMoves.currentPosition());
+	auto n = coords.size();
+
+
+
+
+
+	startT = std::chrono::system_clock::now();
+
+
+
+	//The progress variable will be a measure (in percent) of
+	// how many of the coordinates in coords (of size n)
+	// the robot has visited.
+	// The initial value must not be 0
+	// (the reason is easy to see in the following code).
+	size_t progress = 1;
+	cout << "Starting robot movement. Points to visit: " << n << "." << endl;
+	while(!(coords.empty())) {
+		//First thing we do is output the progress to the console.
+		auto lastProgress = progress;
+		progress =(100*(n-coords.size()))/n;
+		if(lastProgress!=progress) {
+			cout << "\rPoints left in C: " << coords.size() << ", Traveled length: " << (myMoves.path_length()/10.0) //robotPath.size()
+				 << ", Progress: " << progress << " %        " << flush;
+
+			if(makePGMs) {
+				ostringstream anim;
+				anim << "cup_scan_robot_path_"
+					 << setw(3) << setfill('0')
+					 << progress << ".pgm";
+				img->saveAsPGM(anim.str());
+			}
+		}
+		//The progress has now been output to the console.
+
+		//Using a fast algorithm, we find the coordinate in coords,
+		// that is closest to the robot's position ( robotPath.back() ) .
+		// The optimal algorithm is Dijkstra's, but Wavefront is used
+		// because it's faster/easier and almost as good.
+		// The found coordinate is called "next".
+		pos_t next = getClosestCoord(*(myMaps.getConfigurationSpace()),coords,myMoves.currentPosition());
+		//getClosestCoord returns the input coordinate
+		// if no path was found to any coordinate in coords.
+		// This should NOT happen if the preprocessing was done correctly.
+		if(next==myMoves.currentPosition()) {
+			cout << "\nError encountered. Saving remaining coordinates as \"cup_scan_unreachable_coordinates.pgm\"..." << endl;
+			(myMaps.getOriginal())->shade(img);
+			for(auto c:coords)
+				img->setPixel8U(c.cx(),c.cy(),87);
+			img->saveAsPGM("cup_scan_unreachable_coordinates.pgm");
+			(myMaps.getOriginal())->shade(img);
+			cout << "Done." << endl;
+			cout << "There were " << (coords.size()) << " remaining coordinates." << endl;
+			if(coords.size()>10)
+				cout << "One of them was at ( " << ((*(coords.begin())).cx())
+					 << " , " << ((*(coords.begin())).cy()) << " )." << endl;
+			else {
+				cout << "They are: " << endl;
+				for(auto c:coords)
+					cout << "( " << c.cx() << " , " << c.cy() << " ), ";
+			}
+			cout << "Test has ended because of error." << endl;
+			return;
+		}
+
+		//Remove the robot's current position from coords
+		coords.erase(myMoves.currentPosition());
+		//Remove the closest coordinate from coords
+		coords.erase(next);
+
+		//Using Dijkstra's algorithm, find all the coordinates between
+		// the robot's current position and the closest coordinate in coords
+		list<pos_t> pathToNext = (myMaps.getConfigurationSpace())->getDijkstraPath(myMoves.currentPosition(),next);
+
+		//Add all the coordinates between the robot's current position
+		// and the closest coordinate in coords
+		// to the robot path and remove them from coords.
+
+		for(auto c:pathToNext) {
+			myMoves.move(c);//robotPath.push_back(c);
+			if(makePGMs) {
+				img->setPixel8U(c.cx(),c.cy(),20);
+			}
+			coords.erase(c);
+
+			pickupCupz(c);
+		}
+		//Now that all the coordinates between the robot's current position
+		// and the closest coordinate in coords have been added to the robot path,
+		// add the closest coordinate in coords to the path.
+		myMoves.move(next);//robotPath.push_back(next);
+		if(makePGMs) {
+			img->setPixel8U(next.cx(),next.cy(),20);
+		}
+		pickupCupz(next);
+		if(number_of_cups==cupCap) {
+			list<pos_t> homepath = OLstations.getShortestPath(myMoves.currentPosition());
+			for(auto c:homepath) {
+				myMoves.move(c);//robotPath.push_back(c); //move one step towards home
+				if(makePGMs) {
+					img->setPixel8U(c.cx(),c.cy(),20);
+				}
+				coords.erase(c);
+				pickupCupz(c);
+			}
+			for(auto cup:missed_cups) {
+				pos_t closest = cup;
+				if(WSPACE_IS_OBSTACLE(myMaps.getConfigurationSpace()->const_coordVal(cup))) {
+					closest=getClosestCoord(cupspace,reachableCSpace,cup);
+					if(closest==cup)
+						cout << "Unreachable cup at ( " << cup.cx() << " , " << cup.cy() << " )!" << endl;
+				}
+				coords.insert(closest);
+			}
+			missed_cups.clear();
+			number_of_cups=0;
+		}
+
+
+		//Make sure robot returns to starting position when finished
+		if( coords.empty() && (myMoves.currentPosition() != myMoves.start()) )
+			coords.insert(myMoves.start());
+
+
+	}
+	//The robot has now visited all coordinates in coords.
+	// It's job is almost done.
+
+
+
+
+
+
+	//Remove the progress bar
+	cout << "\r                                                                " << endl;
+
+
+	duraT = (chrono::duration_cast<chrono::milliseconds>
+			 (chrono::system_clock::now()-startT)).count();
+	cout << "Robot traveling took " << duraT << " ms." << endl;
+
+
+
+
+
+	if(makePGMs) {
+		cout << "Saving robot path as \"cup_scan_robot_path_IDX.pgm\"... " << flush;
+		ostringstream anim;
+		anim << "cup_scan_robot_path_full_" << setw(6) << setfill('0')
+			 << ((unsigned long)(std::ceil(myMoves.path_length()))) << "_" << n << ".pgm";
+		for(auto v:myMoves)
+			img->setPixel8U(v.cx(),v.cy(),20);
+		img->saveAsPGM(anim.str());
+		(myMaps.getOriginal())->shade(img);
+		cout << "Done." << endl;
+	}
+
+
+	//Output the cup results
+	cout << "Collected " << (cupsCollected.size())
+		 << " out of " << (cupsToCollect.size())
+		 << " cups." << endl;
+	if(cupsToCollect.size() != cupsCollected.size()) {
+		cout << "The remaining " << (cupsToCollect.size() - cupsCollected.size())
+			 << " cups have the following coordinates:" << endl;
+		for(auto cup:cupsToCollect)
+			if(cupsCollected.find(cup)!=cupsCollected.end())
+				cout << "( " << cup.cx() << " , " << cup.cy() << " )  ";
+		cout << endl;
+	}
+	//Output the robot path length
+	cout << "Total traveled length: " << (myMoves.path_length()/10.0) << " meters" << endl;
+	cout << "Total travel time: "
+		 << ((unsigned int)(std::floor(myMoves.path_time_hours()))) << " hours "
+		 << ((unsigned int)(std::ceil( ( myMoves.path_time_hours() - (std::floor(myMoves.path_time_hours())) )*60 )))
+		 << " minutes." << endl;
+
 }
