@@ -8,20 +8,20 @@ using namespace std;
 
 #define DEGREE_TO_RAD(DEGREES) ((DEGREES*PI/180))
 
-#define ANGLE_START 0.0
-#define ANGLE_STEP DEGREE_TO_RAD(1) // 1 deg in rad
+#define ANGLE_START DEGREE_TO_RAD(0) // total coverage 240*, hence 120* = in front of robot
+#define ANGLE_STEP DEGREE_TO_RAD(0.35) // assung 386 coordinates
 
 #define MAKELINE_TRESHHOLD_DISTANCE 10
 
 #define MERGELINE_TRESHHOLD_DISTANCE 1
-#define MERGELINE_TRESHHOLD_ANGLE DEGREE_TO_RAD(2)
+#define MERGELINE_TRESHHOLD_ANGLE DEGREE_TO_RAD(1)
 
 
 
 struct line
 {
-	double rho; // distance
-	double theta; // angle
+	long double rho; // distance
+	long double theta; // angle
 };
 
 using point = line;
@@ -65,10 +65,7 @@ int main()
 	vector<int> simulatedDataFromSensor = {170, 100, 100, 130, 100, 100};
 	vector<line> testOutputLines;
 
-
 	findFeatures (&simulatedDataFromSensor, &testOutputLines);
-
-	vector<line>::iterator itForOutput = testOutputLines.begin ();
 
 	for(int i = 0; i < testOutputLines.size (); i++)
 	{
@@ -86,7 +83,7 @@ void findLine(vector<point>::iterator start, vector<point>::iterator end, line *
 
 	// the equation is divided into four part spliting at the sums, uniformly weigted datapoints assumed
 	// I, II, III and IV are for the angle and X for the distance
-	double I = 0.0, II = 0.0, III = 0.0, IV = 0.0, X = 0.0;
+	long double I = 0.0, II = 0.0, III = 0.0, IV = 0.0, X = 0.0;
 
 	for(int i = 0; i < sizeOfVector; i++)
 	{
@@ -129,7 +126,7 @@ void findFeatures(vector<int> * dataFromSensor, vector<line> * linesInData)
 	vector< vector<point> > dataSetDevisions;
 	line newLine;
 	vector<point>::iterator pointFurthestAway;
-	double deviationOfPoint;
+	long double deviationOfPoint;
 	bool changeHappened;
 
 	// set all points in array
@@ -228,8 +225,8 @@ void findFeatures(vector<int> * dataFromSensor, vector<line> * linesInData)
 double findGreatesDeviation(vector<point>::iterator first, vector<point>::iterator last, line * lineFit, vector<point>::iterator * thisPoint)
 {
 	int sizeOfDataset = distance(first,last);
-	double deviation = 0;
-	double di; // deviation for current point (d_i)
+	long double deviation = 0;
+	long double di; // deviation for current point (d_i)
 
 	for(int i = 0; i < sizeOfDataset; i++)
 	{
@@ -251,7 +248,7 @@ void makeToPoints(vector<int> * dataFromSensor, vector<point> * dataPoints)
 	for(int i = 0; i < sizeOfDataset; i++)
 	{
 		newPoint.rho = dataFromSensor->at (i);
-		newPoint.theta = (i*ANGLE_STEP + ANGLE_START);
+		newPoint.theta = ((i*ANGLE_STEP) + ANGLE_START);
 		dataPoints->emplace_back(newPoint);
 	}
 
