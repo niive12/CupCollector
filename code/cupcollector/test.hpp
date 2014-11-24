@@ -617,6 +617,13 @@ public:
 			if(makePGMs) {
 				img->setPixel8U(next.cx(),next.cy(),20);
 			}
+
+
+			//Make sure it returns to starting position
+			if(coords.empty() && ( robotPath.back() != start ) )
+				coords.insert(start);
+
+
 		}
 		//The robot has now visited all coordinates in coords.
 		// It's job is done.
@@ -959,9 +966,21 @@ public:
 				missed_cups.clear();
 				number_of_cups=0;
 			}
+
+
+			//Make sure robot returns to starting position when finished
+			if( coords.empty() && (robot.currentPosition() != robot.start()) )
+				coords.insert(robot.start());
+
+
 		}
 		//The robot has now visited all coordinates in coords.
-		// It's job is done.
+		// It's job is almost done.
+
+
+
+
+
 
 		//Remove the progress bar
 		cout << "\r                                                                " << endl;
