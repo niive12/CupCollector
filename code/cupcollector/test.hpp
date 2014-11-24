@@ -13,6 +13,7 @@
 #include <forward_list>
 #include "doordetector/doordetector.h"
 #include "scanner/scanner.h"
+#include <chrono>
 
 
 using namespace std;
@@ -478,7 +479,24 @@ public:
 	{
 		//A reachable freespace coordinate is the starting coordinate
 		const pos_t start = {ROBOT_START_X,ROBOT_START_Y};
+
+
+
+
+
+
+		auto startT = std::chrono::system_clock::now();
+
 		mapWrap maps(img,start,ROBOT_DYNAMICS_RADIUS);
+
+		auto duraT = (chrono::duration_cast<chrono::milliseconds>
+				(chrono::system_clock::now()-startT)).count();
+		cout << "mapWrap generation took " << duraT << " ms." << endl;
+
+
+
+
+
 
 		if(makePGMs) {
 			cout << "Saving configuration space as \"floor_sweep_configuration_space.pgm\"... " << flush;
@@ -487,6 +505,13 @@ public:
 			(maps.getOriginal())->shade(img);
 			cout << "Done." << endl;
 		}
+
+
+
+
+
+
+		startT = std::chrono::system_clock::now();
 
 		unordered_set<pos_t> coords =
 				getFloorSweepCoordinates(img,
@@ -497,6 +522,15 @@ public:
 										 start,
 										 ROBOT_DYNAMICS_RADIUS,
 										 makePGMs);
+
+		duraT = (chrono::duration_cast<chrono::milliseconds>
+				(chrono::system_clock::now()-startT)).count();
+		cout << "getFloorSweepCoordinates took " << duraT << " ms." << endl;
+
+
+
+
+
 
 		//The full path traveled by the robot is robotPath
 		list<pos_t> robotPath;
@@ -511,6 +545,11 @@ public:
 		// The initial value must not be 0
 		// (the reason is easy to see in the following code).
 		size_t progress = 1;
+
+
+
+		startT = std::chrono::system_clock::now();
+
 
 		cout << "Starting robot movement. Points to visit: " << n << "." << endl;
 		while(!(coords.empty())) {
@@ -585,6 +624,17 @@ public:
 		//Remove the progress bar
 		cout << "\r                                                                " << endl;
 
+
+
+		duraT = (chrono::duration_cast<chrono::milliseconds>
+				(chrono::system_clock::now()-startT)).count();
+		cout << "Robot traveling took " << duraT << " ms." << endl;
+
+
+
+
+
+
 		if(makePGMs) {
 			cout << "Saving robot path as \"floor_sweep_robot_path_IDX.pgm\"... " << flush;
 			ostringstream anim;
@@ -645,7 +695,23 @@ public:
 						  pos_t(ROBOT_START_X,ROBOT_START_Y));
 		//A reachable freespace coordinate is the starting coordinate
 		//const pos_t start = {ROBOT_START_X,ROBOT_START_Y};
+
+
+
+
+
+		auto startT = std::chrono::system_clock::now();
+
 		mapWrap maps(img,robot.start(),robot.dynamics_radius());
+
+		auto duraT = (chrono::duration_cast<chrono::milliseconds>
+				(chrono::system_clock::now()-startT)).count();
+		cout << "mapWrap generation took " << duraT << " ms." << endl;
+
+
+
+
+
 		pixelshadeMap cupspace(img);
 
 
@@ -673,6 +739,13 @@ public:
 			cout << "Done." << endl;
 		}
 
+
+
+
+
+
+		startT = std::chrono::system_clock::now();
+
 		unordered_set<pos_t> coords =
 				getCupScanCoordinates(img,
 										 *(maps.getOriginal()),
@@ -681,6 +754,15 @@ public:
 										 *(maps.getNorm2BrushfireDoors()),
 										 robot.start(),
 										 robot.scanner_radius());
+
+		duraT = (chrono::duration_cast<chrono::milliseconds>
+						(chrono::system_clock::now()-startT)).count();
+				cout << "getCupScanCoordinates took " << duraT << " ms." << endl;
+
+
+
+
+
 
 		if(makePGMs) {
 			ostringstream filename;
@@ -761,6 +843,13 @@ public:
 
 		pickupCups(robot.currentPosition());
 		auto n = coords.size();
+
+
+
+
+
+		startT = std::chrono::system_clock::now();
+
 
 
 		//The progress variable will be a measure (in percent) of
@@ -876,6 +965,15 @@ public:
 
 		//Remove the progress bar
 		cout << "\r                                                                " << endl;
+
+
+		duraT = (chrono::duration_cast<chrono::milliseconds>
+						(chrono::system_clock::now()-startT)).count();
+				cout << "Robot traveling took " << duraT << " ms." << endl;
+
+
+
+
 
 		if(makePGMs) {
 			cout << "Saving robot path as \"cup_scan_robot_path_IDX.pgm\"... " << flush;
