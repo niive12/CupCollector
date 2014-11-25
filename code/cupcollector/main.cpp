@@ -14,7 +14,6 @@
 #include "doordetector/doordetector.h"
 #include "scanner/scanner.h"
 #include "robot/robot.h"
-#include "robot_old/robot_old.h"
 using namespace rw::sensor;
 using namespace rw::loaders;
 using namespace std;
@@ -50,31 +49,6 @@ void testTekMapConstructors(const string &filename)
 	canvas->saveAsPGM("dijkstra.pgm");
 }
 
-void nothing(){}
-
-void testRobot(shared_ptr<Image> img)
-{
-	cout << "creating robot..." << endl;
-	robot JanEgeland(img);
-	cout << "testing robot..." << endl;
-
-	// move to test location
-	JanEgeland.setRobotPos (pos_t(669,911));
-	// 640,465 = perfect square
-	// 889,827 = complex squares = deffect room (brush)
-	// 5043,1204 = "hexagon" = deffect room (brush)
-	// 669,911 = complex
-
-	cout << " Cleaning" << endl;
-	// test coverage of room
-	JanEgeland.cleanRoom (&nothing,&nothing,5);
-
-	cout << " Saving image" << endl;
-	// output
-	JanEgeland.saveNormalMap (img,"walked_clean_test.pgm");
-
-}
-
 void testShortestPath(shared_ptr<Image> img)
 {
 	pos_t start = {ROBOT_START_X,ROBOT_START_Y};
@@ -102,6 +76,28 @@ void testShortestPath(shared_ptr<Image> img)
 	cout << "Dijkstra length: " << path4.size() << (path3==path4?":-)":":-(") << endl;
 }
 
+
+void test_doors(shared_ptr<Image> img, const pos_t &robot_start) {
+	pixelshade_map original(img );
+	cout << "Creating brushfire with start position..." << endl;
+	brushfire_map brush(img , robot_start);
+	cout << "brushfire done..." << endl;
+	doorDetector mydetective;
+	cout << "Finding The Doors " << endl;
+	vector<pos_t> The_Doors = mydetective.detect_doorways(img, brush);
+	cout << "Finding Door Steps" << endl;
+	pixelshade_map door_steps_map = mydetective.door_step(img, brush, The_Doors);
+	brush.shade(img);
+	cout << "Painting Door Steps" << endl;
+	door_steps_map.shade(img);
+	img->saveAsPGM("door_step.pgm");
+	original.shade(img);
+	for ( auto n : The_Doors ) {
+		img->setPixel8U( n.x(), n.y() , 0);
+	}
+	img->saveAsPGM("The_Doors.pgm");
+}
+
 /** Main entry point
 * @param argc Number of arguments. Should be 1!
 * @param argv Name of .pgm file to open. Should be complete_map_project.pgm!
@@ -114,42 +110,23 @@ int main(int argc, char** argv) {
 	shared_ptr<Image> img(PPMLoader::load(filename));
 	cout << "Image size: " << img->getWidth() << " x " << img->getHeight() << endl;
 
-	//		testRobot (img);
-	cout << "MW-test starting..." << endl;
-	Robot myRobot(img,ROBOT_DYNAMICS_RADIUS,ROBOT_ARM_RADIUS,ROBOT_SCANNER_RADIUS,ROBOT_CUP_CAPACITY,ROBOT_SPEED_PIX_PER_H,pos_t(ROBOT_START_X,ROBOT_START_Y));
-	myRobot.sweep_floor(img,true);
-	myRobot.cup_scan(img,true);
-	//tester::sweep_floor(img,true);
-	cout << "MW-test done!" << endl;
-
-	pixelshade_map original(img );
-	cout << "Giving start position for brushfire..." << endl;
 	pos_t robot_start = {ROBOT_START_X,ROBOT_START_Y};
 
-	cout << "Creating brushfire..." << endl;
-	brushfire_map brush(img , robot_start);
-
-	cout << "brushfire done..." << endl;
-
-	doorDetector mydetective;
-	cout << "Finding The Doors " << endl;
-	vector<pos_t> The_Doors = mydetective.detect_doorways(img, brush);
-
-	cout << "Finding Door Steps" << endl;
-	pixelshade_map door_steps_map = mydetective.door_step(img, brush, The_Doors);
-
-	brush.shade(img);
-
-
-	cout << "Painting Door Steps" << endl;
-	door_steps_map.shade(img);
-	img->saveAsPGM("door_step.pgm");
-
-	original.shade(img);
-	for ( auto n : The_Doors ) {
-		img->setPixel8U( n.x(), n.y() , 0);
-	}
-	img->saveAsPGM("The_Doors.pgm");
+	cout << "Robot test starting." << endl;
+	cout << "Creating robot at " << robot_start << ".\n" << endl;
+	robot myRobot(img,
+				  ROBOT_DYNAMICS_RADIUS,
+				  ROBOT_ARM_RADIUS,
+				  ROBOT_SCANNER_RADIUS,
+				  ROBOT_CUP_CAPACITY,
+				  ROBOT_SPEED_PIX_PER_H,
+				  robot_start);
+	cout << "\nRobot created.\n\nSweeping floor.\n" << endl;
+	myRobot.sweep_floor(img,true);
+	cout << "\nFloor sweeped.\n\nCollecting cups.\n" << endl;
+	myRobot.cup_scan(img,true);
+	cout << "\nCups have been collected.\n" << endl;
+	cout << "Robot test done!" << endl;
 
 	return 0;
 }
