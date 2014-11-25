@@ -14,8 +14,6 @@
 using namespace std;
 using namespace rw::sensor;
 
-class pixelshadeMap;
-using pixelshade_map = pixelshadeMap;
 
 /**
  * @brief The pixelshadeMap class tekMap representation of Image.
@@ -55,3 +53,5 @@ public:
 
 	list<pos_t> getReachables(const unordered_set<pos_t> &coordsToSearch, const pos_t &center) const;
 };
+
+using pixelshade_map = pixelshadeMap;

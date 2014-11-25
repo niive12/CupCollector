@@ -9,6 +9,8 @@
 #include <unordered_map>
 #include <queue>
 
+using namespace std;
+using namespace rw::sensor;
 
 pixelshadeMap::pixelshadeMap(shared_ptr< Image > img)
 	:tekMap(img)

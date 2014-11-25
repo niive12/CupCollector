@@ -11,6 +11,8 @@
 #include "libraries/Image.hpp"
 #include "libraries/PPMLoader.hpp"
 #include <memory>
+#include "tekmap/tekmap.hpp"
+#include "tekmap/pixelshade.h"
 #include "doordetector/doordetector.h"
 #include "scanner/scanner.h"
 #include "robot/robot.h"
@@ -55,7 +57,7 @@ void testShortestPath(shared_ptr<Image> img)
 	pos_t goal = {2710,1292};
 	cout << "Constructing tekmaps" << endl;
 	wavefront_map wave(img,wavefront_map::getOffloadingStations(img));
-	pixelshade_map pix(img);
+	pixelshadeMap pix(img);
 
 	cout << "Getting shortest path..." << endl;
 	list<pos_t> path1 = wave.getWavefrontPath(img,start,goal);
@@ -99,11 +101,15 @@ void test_doors(shared_ptr<Image> img, const pos_t &robot_start) {
 }
 
 /** Main entry point
-* @param argc Number of arguments. Should be 1!
+* @param argc Number of arguments.
 * @param argv Name of .pgm file to open. Should be complete_map_project.pgm!
 */
 int main(int argc, char** argv) {
-	(void)argc;
+	//(void)argc;
+	if(argc!=2) {
+		cerr << argc-1 << " parameters passed to program." << endl;
+		return -1;
+	}
 	string filename(argv[1]);
 
 	cout << "Loading image..." << endl;
