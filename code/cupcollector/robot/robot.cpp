@@ -483,7 +483,7 @@ void robot::sweep_floor(shared_ptr<Image> img, bool makePGMs)
 	// It's job is done.
 
 	//Remove the progress bar
-	cout << "\r                                                                " << flush;
+	cout << "\r                                                                " << flush << "\r";
 
 
 
@@ -731,7 +731,7 @@ void robot::cup_scan(shared_ptr<Image> img, bool makePGMs)
 
 
 	//Remove the progress bar
-	cout << "\r                                                                " << flush;
+	cout << "\r                                                                " << flush << "\r";
 
 
 	duraT = (chrono::duration_cast<chrono::milliseconds>
