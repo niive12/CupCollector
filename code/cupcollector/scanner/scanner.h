@@ -24,7 +24,10 @@ struct scanner {
 	 * @return Number of cups within radius.
 	 */
 	size_t scan(pos_t center, const pixelshade_map &scanmap,
-				unsigned int radius=ROBOT_SCANNER_RADIUS);
+				unsigned int radius);
+	size_t scan(pos_t center, const pixelshade_map &scanmap);
+
+	unsigned int radius();
 
 	/**
 	 * @brief scanlistThroughWalls Returns positions of all cups within the circle
@@ -34,7 +37,8 @@ struct scanner {
 	 * @return List of positions of all cups within circle with radius radius.
 	 */
 	list<pos_t> scanlistThroughWalls(pos_t center, const pixelshade_map &scanmap,
-						 unsigned int radius=ROBOT_SCANNER_RADIUS);
+						 unsigned int radius);
+	list<pos_t> scanlistThroughWalls(pos_t center, const pixelshade_map &scanmap);
 
 	/**
 	 * @brief scanlistAroundWalls Returns positions of all cups that can be reached from center of circle.
@@ -44,7 +48,8 @@ struct scanner {
 	 * @return List of positions of all cups to which there are paths from center.
 	 */
 	list<pos_t> scanlistAroundWalls(pos_t center, const pixelshade_map &scanmap,
-						 unsigned int radius=ROBOT_SCANNER_RADIUS);
+						 unsigned int radius);
+	list<pos_t> scanlistAroundWalls(pos_t center, const pixelshade_map &scanmap);
 
 	/**
 	 * @brief scanlistLineOfSight Returns positions of all cups that are within line of sight of center of circle
@@ -54,13 +59,14 @@ struct scanner {
 	 * @return List of positions of all cups within circle, that are within LOS of center coordinate.
 	 */
 	list<pos_t> scanlistLineOfSight(pos_t center, const pixelshade_map &scanmap,
-						 unsigned int radius=ROBOT_SCANNER_RADIUS);
+						 unsigned int radius);
+	list<pos_t> scanlistLineOfSight(pos_t center, const pixelshade_map &scanmap);
 
 	/**
 	 * @brief scanner Constructor with initialization of data members
 	 * @param radius Radius of scanner circle
 	 */
-	scanner(unsigned int radius=ROBOT_SCANNER_RADIUS);
+	scanner(unsigned int radius);
 
 	/**
 	 * @brief scanner Constructor with no initialization.

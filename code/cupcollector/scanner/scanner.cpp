@@ -63,6 +63,9 @@ size_t scanner::scan(pos_t center, const pixelshade_map &scanmap, unsigned int r
 		}
 		return number_of_cups;
 }
+size_t scanner::scan(pos_t center, const pixelshade_map &scanmap) {
+	return move(this->scan(center,scanmap,r));
+}
 
 list<pos_t> scanner::scanlistThroughWalls(pos_t center, const pixelshade_map &scanmap, unsigned int radius)
 {
@@ -77,6 +80,9 @@ list<pos_t> scanner::scanlistThroughWalls(pos_t center, const pixelshade_map &sc
 		} catch (const std::out_of_range& oor) {(void)oor;}
 	}
 	return move(cups);
+}
+list<pos_t> scanner::scanlistThroughWalls(pos_t center, const pixelshade_map &scanmap) {
+	return move(this->scanlistThroughWalls(center,scanmap,r));
 }
 
 list<pos_t> scanner::scanlistAroundWalls(pos_t center, const pixelshade_map &scanmap, unsigned int radius)
@@ -95,6 +101,9 @@ list<pos_t> scanner::scanlistAroundWalls(pos_t center, const pixelshade_map &sca
 		} catch (const std::out_of_range& oor) {(void)oor;}
 	}
 	return move(cups);
+}
+list<pos_t> scanner::scanlistAroundWalls(pos_t center, const pixelshade_map &scanmap) {
+	return move(this->scanlistAroundWalls(center,scanmap,r));
 }
 
 void scanner::getCupsInSight(const pixelshadeMap &scanmap, set<pos_t> &cups, const pos_t &to, const pos_t &from)
@@ -149,6 +158,9 @@ list<pos_t> scanner::scanlistLineOfSight(pos_t center, const pixelshade_map &sca
 		getCupsInSight(scanmap,cups,p,center);
 	return move( list<pos_t>( cups.begin(), cups.end() ) );
 }
+list<pos_t> scanner::scanlistLineOfSight(pos_t center, const pixelshade_map &scanmap) {
+	return move(this->scanlistLineOfSight(center,scanmap,r));
+}
 
 
 forward_list<pos_t> scanner::getPerimeter(const pos_t &center, unsigned int radius)
@@ -178,4 +190,9 @@ forward_list<pos_t> scanner::getPerimeter(const pos_t &center, unsigned int radi
 			}
 	}
 	return move(resultCircle);
+}
+
+
+unsigned int scanner::radius() {
+	return r;
 }
