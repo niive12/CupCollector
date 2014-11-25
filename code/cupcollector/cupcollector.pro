@@ -13,7 +13,6 @@ SOURCES += main.cpp \
     tekmap/pixelshade.cpp \
     tekmap/wavefront.cpp \
     robot/robot.cpp \
-    robot_old/robot_old.cpp
 
 HEADERS += \
     libraries/Image.hpp \
@@ -23,9 +22,7 @@ HEADERS += \
     scanner/scanner.h \
     tekmap/tekmap.hpp \
     doordetector/doordetector.h \
-    test.hpp \
     tekmap/brushfire.h \
     tekmap/pixelshade.h \
     tekmap/wavefront.h \
     robot/robot.h \
-    robot_old/robot_old.h
