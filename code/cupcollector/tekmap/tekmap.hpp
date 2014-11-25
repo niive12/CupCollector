@@ -53,6 +53,10 @@ struct pos_t : pair<coordIndexType, coordIndexType> {
 	{ return move(pos_t(a.cx()-b.cx(),a.cy()-b.cy())); }
 	friend const pos_t operator-(pos_t&& a, pos_t&& b)
 	{ return move(pos_t(a.cx()-b.cx(),a.cy()-b.cy())); }
+	friend ostream& operator<<(ostream &os, const pos_t &pos) {
+		os << "( " << pos.cx() << " , " << pos.cy() << " )";
+		return os;
+	}
 } ;
 namespace std {
 template <>
