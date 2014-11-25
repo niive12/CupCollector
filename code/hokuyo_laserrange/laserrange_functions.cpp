@@ -22,10 +22,10 @@ using namespace std;
 
 void printCSV(vector <int> data_points, string filename)
 {
-    ofstream out_file (filename);
+    ofstream out_file (filename, std::ios::app);
     if (out_file.is_open())
     {
-        out_file.seekp(0,ios_base::end);
+        //out_file.seekp(0,ios_base::end);
         for (int j : data_points)
         {
             out_file << j << ",";
