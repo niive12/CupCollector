@@ -3,25 +3,34 @@
 #include <cmath>
 #include <fstream>
 
+
 using namespace std;
 
-#define PI 3.141592
+#define PI 3.14159265359
 
 #define DEGREE_TO_RAD(DEGREES) ((DEGREES*PI/180))
 
 #define ANGLE_START DEGREE_TO_RAD(-120) // total coverage 240*, hence 0* = in front of robot
 #define ANGLE_STEP DEGREE_TO_RAD(0.35) // assung 681 coordinates
 
-#define MAKELINE_TRESHHOLD_DISTANCE 30
+// defines fot split and merge
+#define MAKELINE_TRESHHOLD_DISTANCE 60
 
-#define MERGELINE_TRESHHOLD_DISTANCE 10
-#define MERGELINE_TRESHHOLD_ANGLE DEGREE_TO_RAD(2) // X* = (180-X)* between two walls
+#define MERGELINE_TRESHHOLD_DISTANCE 40
+#define MERGELINE_TRESHHOLD_ANGLE DEGREE_TO_RAD(20) // X* = (180-X)* between two walls
 
-#define WEIGHT_OF_LOWEST_N 1
+#define WEIGHT_OF_LOWEST_N 0.5
 #define WEIGHT_DIFFERENCE (1-WEIGHT_OF_LOWEST_N)
 
-#define MIN_N_IN_LINE_POST 5
-#define MIN_N_IN_LINE_PRE 10
+#define MIN_N_IN_LINE_POST 0
+#define MIN_N_IN_LINE_PRE 0
+
+// parameters for RanSaC
+#define RANSAC_MIN_POINTS_ON_LINE 80
+#define RANSAC_MAX_DEVIATION_FROM_LINE 30
+
+#define RANSAC_MAX_ITERATIONS_WITHOUT_LINE 60
+
 
 // runmodes
 #define NORMAL 0
@@ -44,7 +53,16 @@ using point = line;
  * @param dataFromSensor an array of distance to nearest object from the sensor
  * @param linesInData returns the data in (\rho,\theta)
  */
-void findFeatures(vector<int> * dataFromSensor, vector<line> * linesInData);
+void findFeatures_SplitMerge(vector<int> * dataFromSensor, vector<line> * linesInData);
+
+
+/**
+ * @brief findFeatures findes the lines in the data set
+ * @param dataFromSensor an array of distance to nearest object from the sensor
+ * @param linesInData returns the data in (\rho,\theta)
+ */
+void findFeatures_RanSaC(vector<int> * dataFromSensor, vector<line> * linesInData);
+
 
 /**
  * @brief findLine fits a line to the data, includes the two points
@@ -81,11 +99,11 @@ int main()
 
 	ofstream lineFile("2D_linescanner_test/lineFile.csv", ios::trunc);
 
-	findFeatures (&simulatedDataFromSensor, &testOutputLines);
+	findFeatures_RanSaC (&simulatedDataFromSensor, &testOutputLines);
 
 	for(int i = 0; i < testOutputLines.size (); i++)
 	{
-		cout << (testOutputLines[i]).rho << ", " << (testOutputLines[i]).theta *180 / PI << endl;
+		cout << (testOutputLines[i]).theta *180 / PI << ", " << (testOutputLines[i]).rho << " [theta,rho]" << endl;
 		lineFile << (testOutputLines[i]).theta << "," <<(testOutputLines[i]).rho << "\n";
 	}
 
@@ -100,46 +118,144 @@ void findLine(vector<point>::iterator start, vector<point>::iterator end, line *
 	int sizeOfVector = distance(start,end);
 	line bestFitLine;
 
-	// here some calc error occurs when start angle is approx. > 50 and < -50 (a bit lower)
-	// maybe cos, sin? or for loops calc.? or angle to great/small?
-
-	// the equation is divided into four part spliting at the sums, uniformly weigted datapoints assumed
-	// I, II, III and IV are for the angle and X for the distance
-	long double I = 0.0, II = 0.0, III = 0.0, IV = 0.0, X = 0.0;
-
-	for(int i = 0; i < sizeOfVector; i++)
+	if(sizeOfVector > 1)
 	{
-		// calc first and third part
-		I += (pow((start + i)->rho,2) * sin(2*((start + i)->theta)));
-		III += (pow((start + i)->rho,2) * cos(2*((start + i)->theta)));
-		for(int j = 0; j < sizeOfVector; j++)
+		// the equation is divided into four part spliting at the sums, uniformly weigted datapoints assumed
+		// I, II, III and IV are for the angle and X for the distance
+		long double I = 0, II = 0, III = 0, IV = 0, X = 0, rhoSin = 0, rhoCos = 0;
+
+		for(int i = 0; i < sizeOfVector; i++)
 		{
-			// calc second and fourth part
-			II += ((start + i)->rho)*((start + j)->rho)*(cos((start + i)->theta) * sin((start + j)->theta));
-			IV += ((start + i)->rho)*((start + j)->rho)*(cos(((start + i)->theta) + ((start + j)->theta)));
+			// calc rho*cos(theta), rho*sin(theta), first and third part
+			rhoCos += ((start + i)->rho) * cos((start + i)->theta);
+			rhoSin += ((start + i)->rho) * sin((start + i)->theta);
+			I += (pow((start + i)->rho,2) * sin(2*((start + i)->theta)));
+			III += (pow((start + i)->rho,2) * cos(2*((start + i)->theta)));
 		}
+
+		// calc second and fourth part
+		II = 2 * rhoCos * rhoSin / sizeOfVector;
+		IV = (pow(rhoCos, 2) - pow(rhoSin, 2)) / sizeOfVector;
+
+		// calc total angle
+		bestFitLine.theta = (0.5)*atan((I-II)/(III-IV)) - PI/2; // he removed the pi/2 because of identity but we need it to get correct angle
+
+		// calc summation of r
+		for(int i = 0; i < sizeOfVector; i++)
+		{
+			X += ((start + i)->rho)*(cos(((start + i)->theta) - bestFitLine.theta));
+		}
+
+
+		// calc total distance
+		bestFitLine.rho = (X/sizeOfVector);
+
+		// output
+		*lineInData = bestFitLine;
 	}
-	II *= (2/sizeOfVector);
-	IV *= (1/sizeOfVector);
-
-	// calc total angle
-	bestFitLine.theta = (0.5)*atan((I-II)/(III-IV));
-
-	// calc summation of r
-	for(int i = 0; i < sizeOfVector; i++)
+	else
 	{
-		X += ((start + i)->rho)*(cos(((start + i)->theta) - bestFitLine.theta));
+		cout << " ERROR: Set to make line of is " << sizeOfVector << "." << endl;
 	}
+}
 
-	// calc total distance
-	bestFitLine.rho = (X/sizeOfVector);
+void findFeatures_RanSaC(vector<int> * dataFromSensor, vector<line> * linesInData)
+{
+	linesInData->clear ();
 
-	// output
-	*lineInData = bestFitLine;
+	vector<point> dataSet;
+	vector<point> dataInliers;
+	line newLine;
+	int testTakenWithoutResult = 0;
+	int sizeOfArray;
+	int randomPointA, randomPointB;
+
+	makeToPoints (dataFromSensor,&dataSet);
+
+	// generate two random points and draw line, if number of points on line great enough, save it and remove all points on line
+
+	do
+	{
+		// count int up to see how many unsecesful trials were taken
+		testTakenWithoutResult++;
+		// clear inliers
+		dataInliers.clear ();
+
+		sizeOfArray = dataSet.size ();
+		// find first point
+		randomPointA = rand()%sizeOfArray;
+		// find a point till it is in the array
+		do
+		{
+			// generate B such that A != B
+			randomPointB = rand()%sizeOfArray;
+		}while(randomPointB == randomPointA);
+
+		// fill dataset with the two points
+		dataInliers.emplace_back(dataSet[randomPointA]);
+		dataInliers.emplace_back(dataSet[randomPointB]);
+
+		// find the line matching these two
+		findLine (dataInliers.begin (),dataInliers.end (),&newLine);
+
+		// find all inliears for these (setA)
+		for(int i = 0; i < sizeOfArray; i++)
+		{
+			double di = abs(((((dataSet[i]).rho)*cos(((dataSet[i]).theta)-(newLine.theta))) - newLine.rho));
+			if(di < RANSAC_MAX_DEVIATION_FROM_LINE && i != randomPointA && i != randomPointB)
+			{
+				// add point to list
+				dataInliers.emplace_back(dataSet[i]);
+			}
+		}
+
+		// if enough inliers, recompute line (line2), find inliers for this an remove simulaniously from dataSet, then recompute line (line final)
+		// else do nothing
+		if(dataInliers.size () > RANSAC_MIN_POINTS_ON_LINE)
+		{
+			int firstInliers = dataInliers.size ();
+			testTakenWithoutResult = 0;
+			// recompute line
+			findLine (dataInliers.begin (),dataInliers.end (),&newLine);
+			dataInliers.clear ();
+			// find inliers and remove them
+			for(int i = 0; i < sizeOfArray; i++)
+			{
+				double di = abs(((((dataSet[i]).rho)*cos(((dataSet[i]).theta)-(newLine.theta))) - newLine.rho));
+				if(di < RANSAC_MAX_DEVIATION_FROM_LINE)
+				{
+					// add point to list
+					dataInliers.emplace_back(dataSet[i]);
+					dataSet.erase (dataSet.begin () + i);
+					i--;
+					sizeOfArray--;
+				}
+			}
+			// if more inliers than before, add, else remove
+			int newInliers = dataInliers.size ();
+			if(newInliers > firstInliers)
+			{
+				// recompute final line
+				findLine (dataInliers.begin (),dataInliers.end (),&newLine);
+				// save line
+				linesInData->emplace_back(newLine);
+			}
+			else
+			{
+				// put points back
+				for (int i = 0; i < newInliers; i++)
+				{
+					dataSet.emplace_back(dataInliers[i]);
+				}
+			}
+		}
+
+	}while(testTakenWithoutResult < RANSAC_MAX_ITERATIONS_WITHOUT_LINE);
+
 }
 
 
-void findFeatures(vector<int> * dataFromSensor, vector<line> * linesInData)
+void findFeatures_SplitMerge(vector<int> * dataFromSensor, vector<line> * linesInData)
 {
 	linesInData->clear ();
 
@@ -155,7 +271,7 @@ void findFeatures(vector<int> * dataFromSensor, vector<line> * linesInData)
 	dataSetDevisions.emplace_back(vector<point>());
 	makeToPoints (dataFromSensor,&(dataSetDevisions[0]));
 	// find the first line
-	findLine ((dataSetDevisions[0]).begin (), (dataSetDevisions[0]).end ()-- , &newLine);
+	findLine ((dataSetDevisions[0]).begin (), (dataSetDevisions[0]).end () , &newLine);
 	// put line in array
 	linesInData->emplace_back(newLine);
 
@@ -206,11 +322,11 @@ void findFeatures(vector<int> * dataFromSensor, vector<line> * linesInData)
 						advance(pointFurthestAway,1);
 						(dataSetDevisions[i]).erase((pointFurthestAway), (dataSetDevisions[i]).end ());
 						// find line for vector which was split
-						findLine ((dataSetDevisions[i]).begin (), (dataSetDevisions[i]).end ()-- , &newLine);
+						findLine ((dataSetDevisions[i]).begin (), (dataSetDevisions[i]).end () , &newLine);
 						// input line to vector
 						(*linesInData)[i] = newLine;
 						// find line for vector at end of vector (new one)
-						findLine ((dataSetDevisions[(dataSetDevisions.size ()-1)]).begin (), (dataSetDevisions[(dataSetDevisions.size ()-1)]).end ()-- , &newLine);
+						findLine ((dataSetDevisions[(dataSetDevisions.size ()-1)]).begin (), (dataSetDevisions[(dataSetDevisions.size ()-1)]).end () , &newLine);
 						// input line to vector
 						(*linesInData).emplace_back(newLine);
 					}
@@ -242,7 +358,7 @@ void findFeatures(vector<int> * dataFromSensor, vector<line> * linesInData)
 						dataSetDevisions[i].emplace_back(dataSetDevisions[j][k]);
 					}
 					// find new line (update the one)
-					findLine ((dataSetDevisions[i]).begin (), (dataSetDevisions[i]).end ()-- , &newLine);
+					findLine ((dataSetDevisions[i]).begin (), (dataSetDevisions[i]).end () , &newLine);
 					(*linesInData)[i] = newLine;
 					// remove old dataset and line
 					dataSetDevisions.erase (dataSetDevisions.begin () + j);
@@ -294,6 +410,7 @@ void makeToPoints(vector<int> * dataFromSensor, vector<point> * dataPoints)
 	{
 		newPoint.rho = dataFromSensor->at (i);
 		newPoint.theta = ((i*ANGLE_STEP) + ANGLE_START);
+
 		dataPoints->emplace_back(newPoint);
 #if RUNMODE == TEST
 		// test output
