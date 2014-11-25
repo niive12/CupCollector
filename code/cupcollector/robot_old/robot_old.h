@@ -22,10 +22,10 @@
 
 // for this .h it is assumed that a position class was made which is able to represent a position in the workspace.
 
-class robot
+class robot_old
 {
 public:
-		robot(shared_ptr<Image> map);
+		robot_old(shared_ptr<Image> map);
 
 		// functionality
 		/**
@@ -181,3 +181,28 @@ private:
 	// vector to hold the cups
 	std::vector<pos_t> cupsToPickUp;
 };
+
+void nothing(){}
+
+void testRobot(shared_ptr<Image> img)
+{
+	cout << "creating robot..." << endl;
+	robot_old JanEgeland(img);
+	cout << "testing robot..." << endl;
+
+	// move to test location
+	JanEgeland.setRobotPos (pos_t(669,911));
+	// 640,465 = perfect square
+	// 889,827 = complex squares = deffect room (brush)
+	// 5043,1204 = "hexagon" = deffect room (brush)
+	// 669,911 = complex
+
+	cout << " Cleaning" << endl;
+	// test coverage of room
+	JanEgeland.cleanRoom (&nothing,&nothing,5);
+
+	cout << " Saving image" << endl;
+	// output
+	JanEgeland.saveNormalMap (img,"walked_clean_test.pgm");
+
+}

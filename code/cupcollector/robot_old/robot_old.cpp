@@ -17,7 +17,7 @@
 int walk(pos_t currentPos, shared_ptr<brushfire_map> map, int direction);
 
 
-robot::robot(shared_ptr<Image> map):cupsHolding(0), mapBrush(map, pos_t(ROBOT_START_X,ROBOT_START_Y)), mapNormal(map), mapTrack(map)
+robot_old::robot_old(shared_ptr<Image> map):cupsHolding(0), mapBrush(map, pos_t(ROBOT_START_X,ROBOT_START_Y)), mapNormal(map), mapTrack(map)
 {
 	setCupPickRadius (ROBOT_ARM_RADIUS);
 	setCupSearchRadius (ROBOT_SCANNER_RADIUS);
@@ -35,14 +35,14 @@ robot::robot(shared_ptr<Image> map):cupsHolding(0), mapBrush(map, pos_t(ROBOT_ST
 }
 
 
-void robot::saveNormalMap(shared_ptr<Image> map, std::string name)
+void robot_old::saveNormalMap(shared_ptr<Image> map, std::string name)
 {
 	mapTrack.shade (map);
 	map->saveAsPGM (name);
 }
 
 
-bool robot::move(int direction)
+bool robot_old::move(int direction)
 {
 	pos_t newPosition = getRobotPos();
 	double walked = getDistanceWalked();
@@ -102,7 +102,7 @@ bool robot::move(int direction)
 }
 
 
-bool robot::pickupCup(pos_t cupPosition)
+bool robot_old::pickupCup(pos_t cupPosition)
 {
 	double cupDistanceSquared;
 	pos_t robotPos = getRobotPos();
@@ -125,7 +125,7 @@ bool robot::pickupCup(pos_t cupPosition)
 	return result;
 }
 
-bool robot::pickupCupsInRange(std::vector<pos_t> * cups)
+bool robot_old::pickupCupsInRange(std::vector<pos_t> * cups)
 {
 	// loop through the vector to remove all the cups within range, without moving
 	// return false if cup holder runs full
@@ -151,7 +151,7 @@ bool robot::pickupCupsInRange(std::vector<pos_t> * cups)
 }
 
 
-bool robot::startCupScan()
+bool robot_old::startCupScan()
 {
 	// start cupscan through other class (pass pointer to map and cup vector?)
 	bool result = false;
@@ -160,7 +160,7 @@ bool robot::startCupScan()
 }
 
 
-bool robot::emptyCupCarrier()
+bool robot_old::emptyCupCarrier()
 {
 	bool result = false;
 
@@ -174,7 +174,7 @@ bool robot::emptyCupCarrier()
 }
 
 
-void robot::cleanRoom(void (*doOnCoverage)(), void (*doAfterCoverage)(), int coverageWidth)
+void robot_old::cleanRoom(void (*doOnCoverage)(), void (*doAfterCoverage)(), int coverageWidth)
 {
 	int dir;
 	char maxLvl = mapRoomBrush->coordVal (getRobotPos ());
@@ -313,7 +313,7 @@ int walk(pos_t currentPos, shared_ptr<brushfire_map> map, int direc)
 }
 
 
-void robot::cupClean()
+void robot_old::cupClean()
 {
 	// scan
 	startCupScan();
@@ -321,50 +321,50 @@ void robot::cupClean()
 }
 
 
-void robot::cleanMapForCups()
+void robot_old::cleanMapForCups()
 {
 	// run around map :)
 }
 
-void robot::cleanFloorOnMap()
+void robot_old::cleanFloorOnMap()
 {
 	// run, baby run!
 }
 
-int robot::getCupsHolding()
+int robot_old::getCupsHolding()
 {
 	return cupsHolding;
 }
 
 
-int robot::getRobotWidth()
+int robot_old::getRobotWidth()
 {
 	return robotWidth;
 }
 
-int robot::getCupSearchRadius()
+int robot_old::getCupSearchRadius()
 {
 	return cupSearchRadius;
 }
 
 
-int robot::getCupPickRadius()
+int robot_old::getCupPickRadius()
 {
 	return cupPickRadius;
 }
 
 
-pos_t robot::getRobotPos()
+pos_t robot_old::getRobotPos()
 {
 	return robotPosition;
 }
 
-double robot::getDistanceWalked()
+double robot_old::getDistanceWalked()
 {
 	return distanceWalked;
 }
 
-void robot::setCups(int cups)
+void robot_old::setCups(int cups)
 {
 	if(cups <= ROBOT_CUP_CAPACITY)
 	{
@@ -373,30 +373,30 @@ void robot::setCups(int cups)
 }
 
 
-void robot::setRobotWidth(int width)
+void robot_old::setRobotWidth(int width)
 {
 	robotWidth = width;
 }
 
 
-void robot::setCupSearchRadius(int searchRadius)
+void robot_old::setCupSearchRadius(int searchRadius)
 {
 	cupSearchRadius = searchRadius;
 }
 
 
-void robot::setCupPickRadius(int pickRadius)
+void robot_old::setCupPickRadius(int pickRadius)
 {
 	cupPickRadius = pickRadius;
 }
 
 
-void robot::setDistanceWalked(double distance)
+void robot_old::setDistanceWalked(double distance)
 {
 	distanceWalked = distance;
 }
 
-void robot::setRobotPos(pos_t position)
+void robot_old::setRobotPos(pos_t position)
 {
 	robotPosition = position;
 }
