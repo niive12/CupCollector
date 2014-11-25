@@ -1,6 +1,5 @@
 /**
- * @file test.hpp
- * @author Mikael Westermann
+ * @file robot.h
  */
 #pragma once
 #include "../tekmap/pixelshade.h"
@@ -12,18 +11,12 @@
 
 using namespace std;
 
-class mapWrap;
-class Robot;
-class movement;
-
 /**
- * @brief The Robot class
+ * @brief The robot class
  */
-class Robot {
+class robot {
 protected:
 	size_t r_dynamics;
-	size_t r_arm;
-	size_t r_scanner;
 	size_t cupCap;
 	scanner cupscanner;
 	scanner cuppicker;
@@ -45,15 +38,13 @@ protected:
 	public:
 		mapWrap(){}
 		mapWrap(shared_ptr<Image> img):originalMap(make_shared<pixelshadeMap>(img)) {}
-		mapWrap(shared_ptr<Image> img, const pos_t &reachableCoordinate):mapWrap(img)
-		{
+		mapWrap(shared_ptr<Image> img, const pos_t &reachableCoordinate):mapWrap(img) {
 			freespaceSet =originalMap->findFreespace(reachableCoordinate);
 			m_norm2BrushfireMap = make_shared<norm2BrushfireMap>((*originalMap));
 		}
 		mapWrap(shared_ptr<Image> img, const pos_t &reachableCoordinate,
 				size_t robot_dynamics_radius):
-			mapWrap(img,reachableCoordinate)
-		{
+			mapWrap(img,reachableCoordinate) {
 			configurationSpaceMap = make_shared<pixelshadeMap>(img);
 			pad<norm2BrushfireMap>((*configurationSpaceMap),(*m_norm2BrushfireMap),robot_dynamics_radius);
 			for(coordIndexType x=0; x<coordIndexType(configurationSpaceMap->getWidth()); ++x)
@@ -111,7 +102,6 @@ protected:
 		list<pos_t>::iterator end() { return this->list<pos_t>::end(); }
 	} myMoves;
 
-	template<typename BrushmapT>
 	/**
 	 * @brief getBrushEdges Finds the set of coordinates (edges) with certain brushfire values.
 	 * All coordinates with
@@ -123,6 +113,7 @@ protected:
 	 * @param radius Radius (robot width for floor sweeper)
 	 * @return Brushfire edges
 	 */
+	template<typename BrushmapT>
 	static unordered_set<pos_t> getBrushEdges(const unordered_set<pos_t> &freespace, const BrushmapT &brush, size_t radius);
 
 	/**
@@ -135,16 +126,15 @@ protected:
 	static pos_t getClosestCoord(const pixelshadeMap &img,
 								 const unordered_set<pos_t> &coordinatesToSearch, const pos_t &currentPos);
 
-	template<typename BrushmapT>
 	/**
 	 * @brief pad Pads the image according to the brushfire map and a padding threshold
 	 * @param imgToPad The image to pad
 	 * @param brush The brushfireMap or norm2BrushfireMap
 	 * @param padValue Padding threshold (anything equal to or below padValue will be padded)
 	 */
+	template<typename BrushmapT>
 	static void pad(pixelshadeMap &imgToPad, const BrushmapT &brush, const size_t padValue);
 
-	template<typename BrushmapT>
 	/**
 	 * @brief getLocalMaxima Using a 3-4 point mesh in the x and the y axis, finds brushfire local maxima.
 	 * @param img The image to find local maxima in.
@@ -155,6 +145,7 @@ protected:
 	 *
 	 * @todo Instead of generating freespace internally, pass the freespace by reference.
 	 */
+	template<typename BrushmapT>
 	static unordered_set<pos_t> getLocalMaxima(const pixelshadeMap &img,
 											   const BrushmapT &brush,
 											   const pos_t &validFreespaceCoord,
@@ -269,7 +260,7 @@ public:
 	 * @param speed_pix_pr_h The speed of the robot in pixels per hour.
 	 * @param starting_position The starting (and ending) position of the robot. Must be a freespace coordinate!
 	 */
-	Robot(shared_ptr<Image> img,
+	robot(shared_ptr<Image> img,
 			size_t radius_dynamics, size_t radius_arm, size_t radius_scanner,
 		  size_t cup_capacity, double speed_pix_pr_h, pos_t starting_position);
 
