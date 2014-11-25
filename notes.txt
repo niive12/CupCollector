@@ -201,3 +201,19 @@ Summary:
 		- Mikkel: Look into arduino library.
 
 		- Mikael: Document part 1 + 2.
+
+Meeting (24th of November):
+Attendants: Entire group
+Summary:
+	- Complete shit	
+
+	- Work for next time:
+		- Michael: Work with Mikkel & Mikael to make UMBmark (Friday at 9.15)
+		
+		- Nikolaj: Line detection
+
+		- Lukas: Line detection. Also meets Friday at 9.15.
+		
+		- Mikkel: Work with Michael & Mikael to make UMBmark (Friday at 9.15)
+
+		- Mikael: Work with the M's on UMBmark (Friday at 9.15)
