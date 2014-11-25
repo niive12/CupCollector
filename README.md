@@ -5,17 +5,11 @@ Code is written in Qt Creator.
 
 Floor Sweeping
 --------------
-[See robot 0 animation](https://raw.githubusercontent.com/niive12/CupCollector/master/robot_0.gif)
-
-[See robot 1 animation](https://raw.githubusercontent.com/niive12/CupCollector/master/robot_1.gif)
-
-[See robot 2 animation](https://raw.githubusercontent.com/niive12/CupCollector/master/robot_2.gif)
-
-[See robot 3 animation (door detection)](https://raw.githubusercontent.com/niive12/CupCollector/master/robot_3.gif)
+Watch the robot sweep the floor [here](https://raw.githubusercontent.com/niive12/CupCollector/master/floorsweeper.gif).
 
 Cup Collection
 --------------
-[See robot 4 animation](https://raw.githubusercontent.com/niive12/CupCollector/master/robot_4.gif)
+Watch the robot collect cups [here](https://raw.githubusercontent.com/niive12/CupCollector/master/cupcollector.gif).
 
 Contributors
 ------------
