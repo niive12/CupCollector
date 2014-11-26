@@ -46,12 +46,15 @@ void loop() {
   if(!GO){
     if(!digitalRead(KEY_S7)){
       GO = true;
+      Serial.print("UMB_START\n");
     }
   }
   
   
   if(millis() % ENCODER_SAMPLE_TIME == 0 && serial_info && GO){
     testvar = wheel1.getCurrPulse();
+    Serial.print(millis());
+    Serial.print(",");
     Serial.print(CIRCUMFERENCE_MM * testvar/(CPR*REDUCTION_RATIO));  //circumference * ticks/(Counts_per_resolution * redtuction_ratio)
     Serial.print(",");
   
@@ -88,6 +91,7 @@ void loop() {
         if(millis() > timestamp + robot.getRotationTime(SPEEDMMPS, RADIAN_ROTATE)){
            count++;
            if(count == NUMBER_OF_SQUARES*4){
+             Serial.print("UMB_DONE\n"); 
              state = 'Ø';
            }else{
              state = 'A';
@@ -98,6 +102,7 @@ void loop() {
     
       case 'Ø' :
         robot.setCarStop();
+        serial_info = 0;
         break;
       
       
