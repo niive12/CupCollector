@@ -3,10 +3,14 @@
 #include <fstream>
 #include <vector>
 #include <chrono>
+#include <thread>
+#include <atomic>
+
 
 #include <cstring>
 #include <cstdlib>
 #include <cstdio>
+
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -96,12 +100,12 @@ int decodeTimestamp(string timestamp)
     return sum;
 }
 
-void startScanning(int number_of_scans, string filename, int COM_port)
+void startScanning(int number_of_scans, string filename, int COM_port,  atomic<bool> &clear_to_run)
 {
+    if (!clear_to_run) { return; }
     int timestamp = 0;
 
     int n,
-            cport_nr=2,         // Note: This is linux format - cport2 is COM3 on windows.
             bdrate=115200;      // Should be 115200 - standard for the urg laser range.
 
     char mode[]={'8','N','1',0},
@@ -196,12 +200,14 @@ void startScanning(int number_of_scans, string filename, int COM_port)
             dataBuffer.str(std::string()); // Empty dataBuffer
             dataBuffer.seekg(0, dataBuffer.beg); // Return iterator to beginning
             dataBuffer.clear(); // Clear stateflags
-
+            // Stuff to break the loop
             if (scans == number_of_scans)
             {
                 RS232_cputs(COM_port, "QThaps\n");
                 break;
             }
+
+            if (!clear_to_run) { break; }
         }
     }
     auto end = std::chrono::system_clock::now();
