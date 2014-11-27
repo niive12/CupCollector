@@ -25,13 +25,13 @@
 using namespace std;
 
 
-void printEncCSV(vector <int> data_points, string filename)
+void printEncCSV(vector <double> data_points, string filename)
 {
     ofstream out_file (filename, std::ios::app);
     if (out_file.is_open())
     {
         //out_file.seekp(0,ios_base::end);
-        for (int j : data_points)
+        for (double j : data_points)
         {
             out_file << j << ",";
         }
@@ -42,7 +42,7 @@ void printEncCSV(vector <int> data_points, string filename)
         cout << "Errrooor saving file" << endl;
 }
 
-void startEnc(string filename, int COM_port,  atomic<bool> &clear_to_run)
+void startEnc(string filename, int COM_port,  atomic<bool> &clear_to_run,  atomic<bool> &laserrange_ctrl)
 {
     if (!clear_to_run) { return; }
     int timestamp = 0, scans = 0;
@@ -53,88 +53,82 @@ void startEnc(string filename, int COM_port,  atomic<bool> &clear_to_run)
     char mode[]={'8','N','1',0},
             str[2][512];
     unsigned char buf[4096];
-
+    std::string curr;
+    std::stringstream dataBuffer;
+    std::vector<double> data_points;
     auto start = std::chrono::system_clock::now();
+
 
     if(RS232_OpenComport(COM_port, bdrate, mode))
     {
         cout << "Can not open COMport" << endl;
     }
 
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
-    std::string curr;
-    std::stringstream dataBuffer;
-
-    int enc_left, enc_right;
     while(1)
     {
-#ifdef _WIN32
-        Sleep(50);
-#else
-        usleep(50000);  /* sleep for 1 Second */
-#endif
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
         n = RS232_PollComport(COM_port, buf, 4095);
         buf[n] = 0;   /* always put a "null" at the end of a string! */
 
+        dataBuffer.write( reinterpret_cast<char *>(buf), n);
 
-        if (n > 7)//  discarded_scans > 2)
+        int prev = dataBuffer.tellg();
+        if (getline(dataBuffer,curr) && !dataBuffer.eof())
         {
-            //cout << "Received " << n << " bytes of data." << endl;
-            dataBuffer << buf;
-
-
-            while (!dataBuffer.eof())
+            if ( curr == "UMB_START" )
             {
-                if (getline(dataBuffer,curr))
-                {
-                    if ( curr == "UMB_START" )
-                    {
-                        cout << "UMB mark started!" << endl;
-                        //Start laser range!
-                    }
-                    else if ( curr == "UMB_STOP")
-                    {
-                        cout << "UMB mark stopped!"  << endl;
-                    }
-                    else
-                    {
-                        cout << endl;
-                        cout << curr << endl;
-                        int comma_pos = curr.find(","); // Find next comma
-                        timestamp = atoi( curr.substr(0,comma_pos).c_str() );
-                        curr.erase(0,comma_pos+1);
-                        cout << curr << endl;
-                        comma_pos = curr.find(","); // Find next comma
-                        enc_left = atoi( curr.substr(0,comma_pos).c_str() );
-                        curr.erase(0,comma_pos+1);
-                        cout << curr << endl;
-                        enc_right = atoi( curr.c_str() );
+                cout << "UMB mark started!" << endl;
+                laserrange_ctrl = true;
+                start = std::chrono::system_clock::now();
 
-                    }
-                }
-                else
-                {
-                    break;
-                }
             }
-
-
-            ++scans;
-
-
-            //dataBuffer.str(std::string()); // Empty dataBuffer
-            //dataBuffer.seekg(0, dataBuffer.beg); // Return iterator to beginning
-            dataBuffer.clear(); // Clear stateflags */
-
-            // Stuff to break the loop
-            if (!clear_to_run)
+            else if ( curr == "UMB_STOP")
             {
-                break;
+                cout << "UMB mark stopped!"  << endl;
+                laserrange_ctrl = false;
+                clear_to_run = false;
+            }
+            else
+            {
+
+                int comma_pos = curr.find(","); // Find next comma
+                data_points.push_back(atoi( curr.substr(0,comma_pos).c_str() )); // Extract timestamp
+                curr.erase(0,comma_pos+1);                                       // Delete
+
+                comma_pos = curr.find(",");                                      // Find next comma
+                data_points.push_back(atof( curr.substr(0,comma_pos).c_str() )); // Extract motor enc1
+                curr.erase(0,comma_pos+1);
+
+                data_points.push_back( atof( curr.c_str() ));                    // Extract motor enc2
+
+                printEncCSV(data_points, filename);                              // Add new measurements to csv file
+                data_points.clear();
+                ++scans;
             }
         }
+        else
+        {
+            dataBuffer.seekg(prev);
+        }
+
+
+        //dataBuffer.str(std::string()); // Empty dataBuffer
+        //dataBuffer.seekg(0, dataBuffer.beg); // Return iterator to beginning
+        dataBuffer.clear(); // Clear stateflags */
+
+
+        // Stuff to break the loop
+        if (!clear_to_run)
+        {
+            break;
+        }
     }
+
     auto end = std::chrono::system_clock::now();
     auto diff = end - start;
-    cout << "Got " << scans << " scans in " << chrono::duration<double, std::milli>(diff).count() << " ms" << endl;
+    cout << "Got " << scans << " encoder readings in " << chrono::duration<double, std::milli>(diff).count() << " ms" << endl;
 }
 

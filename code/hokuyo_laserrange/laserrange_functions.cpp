@@ -24,7 +24,7 @@ using namespace std;
 
 
 
-void printCSV(vector <int> data_points, string filename)
+void printCSV(vector <double> data_points, string filename)
 {
     ofstream out_file (filename, std::ios::app);
     if (out_file.is_open())
@@ -47,7 +47,7 @@ void extractPoints(string data, int timestamp, string filename)
     //string test = dataBuffer1.str();
     stringstream dataBuffer;
     static int pointset_number = 0;
-    vector<int> current_points;
+    vector<double> current_points;
     dataBuffer.str(data);
     char current_char;
 
@@ -102,7 +102,7 @@ int decodeTimestamp(string timestamp)
 
 void startScanning(int number_of_scans, string filename, int COM_port,  atomic<bool> &clear_to_run)
 {
-    if (!clear_to_run) { return; }
+
     int timestamp = 0;
 
     int n,
@@ -111,7 +111,7 @@ void startScanning(int number_of_scans, string filename, int COM_port,  atomic<b
     char mode[]={'8','N','1',0},
             str[2][512];
     unsigned char buf[4096];
-/*
+    /*
     data_points.reserve(800); //Allocating memory for vector beforehand
     for (vector<int> j : data_points)
     {
@@ -124,94 +124,101 @@ void startScanning(int number_of_scans, string filename, int COM_port,  atomic<b
 
 */
 
-    auto start = std::chrono::system_clock::now();
+
 
     if(RS232_OpenComport(COM_port, bdrate, mode))
     {
         cout << "Can not open COMport" << endl;
     }
-
+    cout << "Laserrange standby.. " << endl;
+    while(!clear_to_run)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+    cout << "Laserrange started!" << endl;
     RS232_cputs(COM_port, "MS0044072500000\nhaps\n");
 
+    auto start = std::chrono::system_clock::now();
     std::string curr;
     std::stringstream dataBuffer, inBuffer;
     bool lastDataLine = false;
 
 
-    //Sleep(50);
     int scans = 0;
     while(1)
     {
-#ifdef _WIN32
-        Sleep(50);
-#else
-        usleep(50000);  /* sleep for 1 Second */
-#endif
-        n = RS232_PollComport(COM_port, buf, 4095);
-        buf[n] = 0;   /* always put a "null" at the end of a string! */
+        if (clear_to_run) {
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            n = RS232_PollComport(COM_port, buf, 4095);
+            buf[n] = 0;   /* always put a "null" at the end of a string! */
 
 
-        if (n == 1435)//  discarded_scans > 2)
-        {
-            //cout << "Received " << n << " bytes of data." << endl;
-            inBuffer << buf;
-
-
-            while (!inBuffer.eof())
+            if (n == 1435)//  discarded_scans > 2)
             {
-                if(getline(inBuffer,curr))
+                //cout << "Received " << n << " bytes of data." << endl;
+                inBuffer << buf;
+
+
+                while (!inBuffer.eof())
                 {
-                    if (curr.size() == 65)
+                    if(getline(inBuffer,curr))
                     {
-                        dataBuffer << curr.substr(0,64);
-                        lastDataLine = true;
+                        if (curr.size() == 65)
+                        {
+                            dataBuffer << curr.substr(0,64);
+                            lastDataLine = true;
+                        }
+                        else
+                        {
+                            if (lastDataLine && 1)
+                            {
+                                dataBuffer << curr.substr(0,curr.size()-3);
+                                lastDataLine = false;
+                            }
+                            else
+                                //Add check for timestamp here
+                                if (curr.length() == 5)
+                                {
+                                    timestamp = decodeTimestamp(curr);
+                                    //cout << "Timestamp: " << timestamp << endl;
+                                }
+                        }
                     }
                     else
                     {
-                        if (lastDataLine && 1)
-                        {
-                            dataBuffer << curr.substr(0,curr.size()-3);
-                            lastDataLine = false;
-                        }
-                        else
-                            //Add check for timestamp here
-                            if (curr.length() == 5)
-                            {
-                                timestamp = decodeTimestamp(curr);
-                                //cout << "Timestamp: " << timestamp << endl;
-                            }
+                        //cout << "Buffer cleared!" << endl;
+                        break;
                     }
                 }
-                else
-                {
-                    //cout << "Buffer cleared!" << endl;
-                    break;
-                }
+
+                extractPoints(dataBuffer.str(), timestamp, filename);
+                ++scans;
+
+                //Clear buffers
+                inBuffer.str(std::string()); // Empty inBuffer
+                inBuffer.seekg(0, inBuffer.beg); // Return iterator to beginning
+                inBuffer.clear(); // Clear stateflags
+
+                dataBuffer.str(std::string()); // Empty dataBuffer
+                dataBuffer.seekg(0, dataBuffer.beg); // Return iterator to beginning
+                dataBuffer.clear(); // Clear stateflags
+                // Stuff to break the loop
+
+
+
             }
-
-            extractPoints(dataBuffer.str(), timestamp, filename);
-            cout << "Number of scans: " << ++scans << endl;
-
-            //Clear buffers
-            inBuffer.str(std::string()); // Empty inBuffer
-            inBuffer.seekg(0, inBuffer.beg); // Return iterator to beginning
-            inBuffer.clear(); // Clear stateflags
-
-            dataBuffer.str(std::string()); // Empty dataBuffer
-            dataBuffer.seekg(0, dataBuffer.beg); // Return iterator to beginning
-            dataBuffer.clear(); // Clear stateflags
-            // Stuff to break the loop
-            if (scans == number_of_scans)
-            {
-                RS232_cputs(COM_port, "QThaps\n");
-                break;
-            }
-
-            if (!clear_to_run) { break; }
+        }
+        if (scans == number_of_scans || !clear_to_run)
+        {
+            RS232_cputs(COM_port, "QThaps\n");
+            break;
         }
     }
+
     auto end = std::chrono::system_clock::now();
     auto diff = end - start;
-    cout << "Got " << scans << " scans in " << chrono::duration<double, std::milli>(diff).count() << " ms" << endl;
+    cout << "Laserrange stopped!" << endl << "Got " << scans << " scans from laserrange in "
+         << chrono::duration<double, std::milli>(diff).count() << " ms" << endl;
 }
 
