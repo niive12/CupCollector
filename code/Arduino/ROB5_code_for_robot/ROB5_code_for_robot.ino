@@ -10,7 +10,7 @@
 #define ENCODER_SAMPLE_TIME 100
 #define STRAIGHT_DISTANCE 1000
 #define RADIAN_ROTATE PI/2
-#define NUMBER_OF_SQUARES 2
+#define NUMBER_OF_SQUARES 10
 #define SPEEDMMPS 250
 #define KEY_S7 3
 
@@ -28,6 +28,7 @@ char state = 'A';
 int count = 0;
 boolean serial_info = true;
 boolean GO = false;
+boolean wait = true;
 int incomingByte = 0;
 
 void setup() {
@@ -42,11 +43,17 @@ void setup() {
 
 
 void loop() {
+//Sorry, i needed some test code :) 
+  /*Serial.print("THIS IS A LOOOOONG TEST STRING\n");
+while(wait);
+*/
 
+  
   if(!GO){
     if(!digitalRead(KEY_S7)){
       GO = true;
       Serial.print("UMB_START\n");
+      delay(300); // To allow laserrange to get cracker-lacking
     }
   }
   
@@ -91,7 +98,7 @@ void loop() {
         if(millis() > timestamp + robot.getRotationTime(SPEEDMMPS, RADIAN_ROTATE)){
            count++;
            if(count == NUMBER_OF_SQUARES*4){
-             Serial.print("UMB_DONE\n"); 
+             Serial.print("UMB_STOP\n"); 
              state = 'Ø';
            }else{
              state = 'A';
