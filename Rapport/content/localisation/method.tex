@@ -1,2 +1,16 @@
 \section{Localisation}
 \subsection{Method}
+For the localisation part of the project, it was chosen to use the Kalman Filter. The mobile robot used is a "Nexus Robot - 2WD mobile robot kit 10004", fitted with a laserrange scanner of type "Hokuyo URG-04LX-LG". 
+
+The Kalman filter is an optimal technique for fusing different estimates of positions. \footnote{Reference to siegwart (p. 233)} For this section 2 different estimates will be calculated:
+
+\begin{itemize}
+	\item Position estimate based on odometry (wheel encoders).
+	\item Position estimate based on line features extracted from the laserrange scanner. 
+\end{itemize}
+
+
+The performance of the localization technique was measured using UMB-mark. The position before and after following a preprogrammed path through a 1 \times 1 [m] square 10 was compared. While testing, the robot only used sensor feedback from the encoders. 
+
+
+
