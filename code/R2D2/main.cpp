@@ -2,7 +2,8 @@
 #include <vector>
 #include <cmath>
 #include <fstream>
-
+#include <time.h>
+#include <string>
 
 using namespace std;
 
@@ -14,29 +15,20 @@ using namespace std;
 #define ANGLE_STEP DEGREE_TO_RAD(0.35) // assung 681 coordinates
 
 // defines fot split and merge
-#define MAKELINE_TRESHHOLD_DISTANCE 60
+#define SM_SPLITLINE_TRESHHOLD_DISTANCE 60
+#define SM_SPLITLINE_MIN_POINTS_IN_SPLITLINE 20
 
-#define MERGELINE_TRESHHOLD_DISTANCE 40
-#define MERGELINE_TRESHHOLD_ANGLE DEGREE_TO_RAD(20) // X* = (180-X)* between two walls
+#define SM_MERGELINE_TRESHHOLD_DISTANCE 40
+#define SM_MERGELINE_TRESHHOLD_ANGLE DEGREE_TO_RAD(40) // X* = (180-X)* between two walls
 
-#define WEIGHT_OF_LOWEST_N 0.5
-#define WEIGHT_DIFFERENCE (1-WEIGHT_OF_LOWEST_N)
-
-#define MIN_N_IN_LINE_POST 0
-#define MIN_N_IN_LINE_PRE 0
+#define SM_MIN_POINTS_IN_LINE 30
 
 // parameters for RanSaC
-#define RANSAC_MIN_POINTS_ON_LINE 80
+#define RANSAC_MIN_POINTS_ON_LINE 150
 #define RANSAC_MAX_DEVIATION_FROM_LINE 30
 
-#define RANSAC_MAX_ITERATIONS_WITHOUT_LINE 60
+#define RANSAC_MAX_ITERATIONS_WITHOUT_LINE 10
 
-
-// runmodes
-#define NORMAL 0
-#define TEST 1
-
-#define RUNMODE NORMAL
 
 
 struct line
@@ -90,27 +82,114 @@ double findGreatesDeviation(vector<point>::iterator first, vector<point>::iterat
 void makeToPoints(vector<int> * dataFromSensor, vector<point> * dataPoints);
 
 
-double linearWeighting(int element, int arraySize);
+void loadSensorData(string* file, vector< vector<int>> * sensorInputStorage);
 
 int main()
 {
-	vector<int> simulatedDataFromSensor = {506,574,512,513,512,513,515,451,510,510,510,510,575,525,538,1014,970,970,906,957,943,937,936,917,853,890,890,882,872,858,857,848,838,770,827,816,812,800,799,789,780,776,704,765,758,752,746,745,731,730,730,727,710,708,640,699,694,686,684,673,673,667,664,662,658,652,577,638,630,630,630,626,623,620,614,614,611,610,602,599,593,589,588,586,583,582,583,515,569,569,569,569,568,568,571,566,556,552,552,549,538,538,538,538,537,537,534,526,526,526,526,523,523,455,511,508,507,507,507,506,505,505,503,498,498,498,496,496,496,496,495,489,489,486,486,486,488,486,485,481,481,478,477,477,473,473,473,473,473,476,473,473,471,467,467,465,464,465,465,464,459,461,460,459,459,460,460,459,457,457,454,453,453,451,451,451,451,451,453,453,452,452,453,453,453,454,454,453,453,448,448,453,453,448,451,387,507,451,451,449,449,453,453,456,456,456,458,456,452,454,390,511,454,390,447,511,454,454,454,458,458,458,458,457,457,458,458,458,462,463,463,463,463,463,466,462,464,464,464,464,467,467,467,467,467,474,474,472,473,472,470,466,468,468,470,478,480,482,480,482,486,482,416,428,416,407,402,397,386,322,378,378,373,372,368,357,355,353,350,348,340,340,338,330,325,261,383,261,318,318,309,305,303,295,294,290,289,289,289,289,289,295,295,295,303,306,307,313,314,314,314,314,378,322,323,323,323,322,321,321,321,257,316,312,311,311,311,303,303,303,303,303,300,291,288,288,288,284,284,283,283,280,280,277,275,275,275,269,269,269,266,265,265,265,265,265,266,266,266,272,272,262,196,255,254,254,254,254,254,248,248,248,248,247,247,246,244,246,242,235,240,238,235,235,235,235,235,234,233,233,233,233,233,233,233,235,233,233,235,236,236,236,230,230,229,229,230,230,233,236,236,235,235,236,235,232,233,232,231,230,229,227,227,229,229,227,226,226,226,225,225,225,225,225,224,225,224,222,224,222,219,215,219,219,222,223,223,223,222,223,217,217,212,212,209,209,213,213,213,213,215,215,219,220,222,222,222,222,222,221,221,219,219,219,221,221,221,222,222,222,222,222,222,225,225,225,224,226,226,224,226,230,226,224,225,225,225,230,235,235,234,234,234,228,228,228,228,232,232,235,235,235,235,236,236,236,242,242,236,236,242,242,234,234,243,241,241,243,243,253,318,256,257,257,192,252,251,251,251,251,252,255,255,255,319,262,262,262,262,262,263,262,263,265,268,272,273,273,277,277,277,277,278,281,283,283,286,286,287,292,292,292,291,291,291,292,296,302,306,306,312,312,313,317,317,382,321,322,321,322,326,326,336,336,336,336,339,334,334,333,265,159,181,72,126,190,136,154,247,294,335,321,350,438,393,397,398,404,407,409,416,423,423,425,439,440,505,452,455,455,458,458,476,478,487,491,498,510,575,513,522,530,541,547,554,558,630,582,583,587,590,612,613,616,688,642,660,668,673,685,764,705,705,577,601,587,514,561,448,510,508,506,503,502,502,502,495,495,494,494};
-	vector<line> testOutputLines;
+	vector< vector<int> > simulatedDataFromSensor;
+	vector< vector<line> > testOutputLines;
 
+	string file = "2D_linescanner_test/data_all.csv";
+	loadSensorData (&file, &simulatedDataFromSensor);
+
+	cout << "data elements: " << simulatedDataFromSensor.size () << endl;
+
+	srand (time(NULL));
 	ofstream lineFile("2D_linescanner_test/lineFile.csv", ios::trunc);
-
-	findFeatures_RanSaC (&simulatedDataFromSensor, &testOutputLines);
-
-	for(int i = 0; i < testOutputLines.size (); i++)
+	for (int i = 0; i < simulatedDataFromSensor.size (); i++)
 	{
-		cout << (testOutputLines[i]).theta *180 / PI << ", " << (testOutputLines[i]).rho << " [theta,rho]" << endl;
-		lineFile << (testOutputLines[i]).theta << "," <<(testOutputLines[i]).rho << "\n";
+		testOutputLines.emplace_back(vector<line>());
+		findFeatures_RanSaC (&(simulatedDataFromSensor[i]), &(testOutputLines[i]));
+		int linesFound = (testOutputLines[i]).size ();
+		for(int j = 0; j < linesFound; j++)
+		{
+//			cout << (testOutputLines[i][j]).theta *180 / PI << ", " << (testOutputLines[i][j]).rho << " [theta,rho]" << endl;
+			lineFile << (testOutputLines[i][j]).theta << "," <<(testOutputLines[i][j]).rho;
+			if(j < (linesFound - 1))
+			{
+				lineFile << ",";
+			}
+		}
+		lineFile << ",\n";
 	}
 
 	lineFile.close ();
 
 	return false;
 }
+
+void loadSensorData(string* file, vector< vector<int>> * sensorInputStorage)
+{
+	char input_char;
+	int row = 0;
+	int element;
+	int skipFirstElements = 2;
+	ifstream input_stream(file->c_str());
+
+	sensorInputStorage->clear ();
+	sensorInputStorage->emplace_back(vector<int>());
+
+	// load the file into memory
+	while (!input_stream.eof())
+	{
+		input_char = input_stream.get();
+		if (input_char == '\n')
+		{
+			skipFirstElements = 2;
+			// insert element
+			(sensorInputStorage->at (row)).emplace_back(element);
+			// reset element
+			element = 0;
+			// jump to next row
+			sensorInputStorage->emplace_back(vector<int>());
+			row++;
+		}
+		else if (input_char == ',' || input_stream.eof())
+		{
+			if(skipFirstElements == 0)
+			{
+				// insert element
+				if(element != 0)
+				{
+					(sensorInputStorage->at (row)).emplace_back(element);
+				}
+				else if((sensorInputStorage->at (row)).size() < 1)
+				{
+					sensorInputStorage->erase (sensorInputStorage->end ()-1);
+				}
+				// reset element
+				element = 0;
+			}
+			else
+			{
+				skipFirstElements--;
+			}
+		}
+		else if (input_char == ' ')
+		{
+			// do nothing with it!!!
+		}
+		else
+		{
+			// apend char to element if no seperator is reached
+			element *= 10;
+			element += (input_char - '0');
+		}
+
+	}
+	if (element != 0)
+	{
+		(sensorInputStorage->at (row)).emplace_back(element);
+	}
+	if((sensorInputStorage->at (row)).size() < 1)
+	{
+		sensorInputStorage->erase (sensorInputStorage->end ()-1);
+	}
+
+	// close stream
+	input_stream.close();
+}
+
 
 
 void findLine(vector<point>::iterator start, vector<point>::iterator end, line * lineInData)
@@ -121,8 +200,8 @@ void findLine(vector<point>::iterator start, vector<point>::iterator end, line *
 	if(sizeOfVector > 1)
 	{
 		// the equation is divided into four part spliting at the sums, uniformly weigted datapoints assumed
-		// I, II, III and IV are for the angle and X for the distance
-		long double I = 0, II = 0, III = 0, IV = 0, X = 0, rhoSin = 0, rhoCos = 0;
+		// I, II, III and IV are for the angle and rhoSin and rhoCos both angle and distance
+		long double I = 0, II = 0, III = 0, IV = 0, rhoSin = 0, rhoCos = 0;
 
 		for(int i = 0; i < sizeOfVector; i++)
 		{
@@ -138,17 +217,18 @@ void findLine(vector<point>::iterator start, vector<point>::iterator end, line *
 		IV = (pow(rhoCos, 2) - pow(rhoSin, 2)) / sizeOfVector;
 
 		// calc total angle
-		bestFitLine.theta = (0.5)*atan((I-II)/(III-IV)) - PI/2; // he removed the pi/2 because of identity but we need it to get correct angle
-
-		// calc summation of r
-		for(int i = 0; i < sizeOfVector; i++)
+		bestFitLine.theta = (0.5)*atan((I-II)/(III-IV));
+		// use pi/2 depending on the orientation of the line
+		// pi man
+		double diffX = abs(cos((end-1)->theta) * (end-1)->rho - cos(start->theta) * start->rho);
+		double diffY = abs(sin((end-1)->theta) * (end-1)->rho - sin(start->theta) * start->rho);
+		if (diffX > diffY)
 		{
-			X += ((start + i)->rho)*(cos(((start + i)->theta) - bestFitLine.theta));
+			bestFitLine.theta -= PI/2;
 		}
 
-
-		// calc total distance
-		bestFitLine.rho = (X/sizeOfVector);
+		// calc r
+		bestFitLine.rho = (rhoCos * cos(bestFitLine.theta) + rhoSin * sin(bestFitLine.theta)) / sizeOfVector;
 
 		// output
 		*lineInData = bestFitLine;
@@ -221,7 +301,7 @@ void findFeatures_RanSaC(vector<int> * dataFromSensor, vector<line> * linesInDat
 			// find inliers and remove them
 			for(int i = 0; i < sizeOfArray; i++)
 			{
-				double di = abs(((((dataSet[i]).rho)*cos(((dataSet[i]).theta)-(newLine.theta))) - newLine.rho));
+				double di = abs((((dataSet[i]).rho)*cos(((dataSet[i]).theta)-(newLine.theta))) - newLine.rho);
 				if(di < RANSAC_MAX_DEVIATION_FROM_LINE)
 				{
 					// add point to list
@@ -233,7 +313,7 @@ void findFeatures_RanSaC(vector<int> * dataFromSensor, vector<line> * linesInDat
 			}
 			// if more inliers than before, add, else remove
 			int newInliers = dataInliers.size ();
-			if(newInliers > firstInliers)
+			if(newInliers >= firstInliers)
 			{
 				// recompute final line
 				findLine (dataInliers.begin (),dataInliers.end (),&newLine);
@@ -249,8 +329,7 @@ void findFeatures_RanSaC(vector<int> * dataFromSensor, vector<line> * linesInDat
 				}
 			}
 		}
-
-	}while(testTakenWithoutResult < RANSAC_MAX_ITERATIONS_WITHOUT_LINE);
+	}while(testTakenWithoutResult < RANSAC_MAX_ITERATIONS_WITHOUT_LINE && sizeOfArray >= RANSAC_MIN_POINTS_ON_LINE);
 
 }
 
@@ -275,10 +354,8 @@ void findFeatures_SplitMerge(vector<int> * dataFromSensor, vector<line> * linesI
 	// put line in array
 	linesInData->emplace_back(newLine);
 
-#if RUNMODE == TEST
-	cout << " Test first line found in data: (" << newLine.rho << ", " << (newLine.theta * 180 / PI) << ") [theta = degrees]" << endl;
-#endif
 	// devide dataset
+	cout << " dividing dataset" << endl;
 	do
 	{
 		changeHappened = false;
@@ -286,55 +363,50 @@ void findFeatures_SplitMerge(vector<int> * dataFromSensor, vector<line> * linesI
 
 		for(int i = 0; i < sizeOfVector; i++)
 		{
-			// test deviation if line is big enough to be divided (pre condition)
-			if((dataSetDevisions[i]).size() > 2*MIN_N_IN_LINE_PRE)
+			if((dataSetDevisions[i]).size() > 2*SM_SPLITLINE_MIN_POINTS_IN_SPLITLINE)
 			{
-				deviationOfPoint = findGreatesDeviation ((dataSetDevisions[i]).begin () + MIN_N_IN_LINE_PRE, ((dataSetDevisions[i]).end ()) - MIN_N_IN_LINE_PRE , &(linesInData->at (i)), &pointFurthestAway);
-
+				deviationOfPoint = findGreatesDeviation ((dataSetDevisions[i]).begin (), (dataSetDevisions[i]).end () , &(linesInData->at (i)), &pointFurthestAway);
 				// if deviation too great, split
-				if(deviationOfPoint >= MAKELINE_TRESHHOLD_DISTANCE)
+				if(deviationOfPoint >= SM_SPLITLINE_TRESHHOLD_DISTANCE)
 				{
-					// own expansion, if max distance point is at the edge of the dataset, remove it.
-					if(((dataSetDevisions[i]).begin ()) == pointFurthestAway || (((dataSetDevisions[i]).end())-1) == pointFurthestAway)
-					{
-						// repeat loop once more when done
-						changeHappened = true;
-						(dataSetDevisions[i]).erase(pointFurthestAway);
-					}
-					else if( (distance((dataSetDevisions[i]).begin (),pointFurthestAway) < MIN_N_IN_LINE_POST) || (distance(pointFurthestAway,(dataSetDevisions[i]).end()) < MIN_N_IN_LINE_POST))
-					{
-						// don't repeat loop if point devides arrays into too small sizes = ignore (post condition)
-					}
-					else
-					{
-						// repeat loop once more when done
-						changeHappened = true;
-						// add space for vector
-						dataSetDevisions.emplace_back(vector<point>());
+					// repeat loop once more when done
+					changeHappened = true;
+					// add space for vector
+					dataSetDevisions.emplace_back(vector<point>());
 
-						// fill from division point (including)
-						for(int j = 0; j < distance(pointFurthestAway, (dataSetDevisions[i]).end ()--); j++)
-						{
-							// fill last vector (prev made) in vector
-							(dataSetDevisions[(dataSetDevisions.size ()-1)]).emplace_back(*(pointFurthestAway + j));
-						}
-						// remove the end of the list (excluding division point)
-						advance(pointFurthestAway,1);
-						(dataSetDevisions[i]).erase((pointFurthestAway), (dataSetDevisions[i]).end ());
-						// find line for vector which was split
-						findLine ((dataSetDevisions[i]).begin (), (dataSetDevisions[i]).end () , &newLine);
-						// input line to vector
-						(*linesInData)[i] = newLine;
-						// find line for vector at end of vector (new one)
-						findLine ((dataSetDevisions[(dataSetDevisions.size ()-1)]).begin (), (dataSetDevisions[(dataSetDevisions.size ()-1)]).end () , &newLine);
-						// input line to vector
-						(*linesInData).emplace_back(newLine);
+					// move split point into dataset
+					if(distance((dataSetDevisions[i]).begin (),pointFurthestAway) < SM_SPLITLINE_MIN_POINTS_IN_SPLITLINE)
+					{
+						pointFurthestAway = (dataSetDevisions[i]).begin () + SM_SPLITLINE_MIN_POINTS_IN_SPLITLINE;
 					}
+					else if(distance(pointFurthestAway, ((dataSetDevisions[i]).end())-1) < SM_SPLITLINE_MIN_POINTS_IN_SPLITLINE)
+					{
+						pointFurthestAway = ((dataSetDevisions[i]).end() - 1) - SM_SPLITLINE_MIN_POINTS_IN_SPLITLINE;
+					}
+
+					// fill from division point (including)
+					for(int j = 0; j < distance(pointFurthestAway, (dataSetDevisions[i]).end ()); j++)
+					{
+						// fill last vector (prev made) in vector
+						(dataSetDevisions[(dataSetDevisions.size ()-1)]).emplace_back(*(pointFurthestAway + j));
+					}
+					// remove the end of the list (excluding division point)
+					advance(pointFurthestAway,1);
+					(dataSetDevisions[i]).erase((pointFurthestAway), (dataSetDevisions[i]).end ());
+					// find line for vector which was split
+					findLine ((dataSetDevisions[i]).begin (), (dataSetDevisions[i]).end () , &newLine);
+					// input line to vector
+					(*linesInData)[i] = newLine;
+					// find line for vector at end of vector (new one)
+					findLine ((dataSetDevisions[(dataSetDevisions.size ()-1)]).begin (), (dataSetDevisions[(dataSetDevisions.size ()-1)]).end () , &newLine);
+					// input line to vector
+					(*linesInData).emplace_back(newLine);
 				}
 			}
 		}
 	}while (changeHappened);
 
+	cout << " merging dataset" << endl;
 	// merge lines
 	do
 	{
@@ -349,7 +421,7 @@ void findFeatures_SplitMerge(vector<int> * dataFromSensor, vector<line> * linesI
 				double deviationOfDistance = abs((*linesInData)[i].rho - (*linesInData)[j].rho);
 				double deviationOfAngle = abs((*linesInData)[i].theta - (*linesInData)[j].theta);
 				// if appropiate to merge, do so
-				if(deviationOfAngle < MERGELINE_TRESHHOLD_ANGLE && deviationOfDistance < MERGELINE_TRESHHOLD_DISTANCE)
+				if(deviationOfAngle < SM_MERGELINE_TRESHHOLD_ANGLE && deviationOfDistance < SM_MERGELINE_TRESHHOLD_DISTANCE)
 				{
 					changeHappened = true;
 					// merge datasets
@@ -369,17 +441,16 @@ void findFeatures_SplitMerge(vector<int> * dataFromSensor, vector<line> * linesI
 		}
 	}while(changeHappened);
 
-}
-
-double linearWeighting(int element, int arraySize)
-{
-	double result;
-
-	int distance = abs(arraySize - element*2);
-
-	result = 1 - (distance * WEIGHT_DIFFERENCE /arraySize);
-
-	return result;
+	cout << " removing datasets" << endl;
+	// remove lines with too small datapoints
+	for(int i = dataSetDevisions.size ()-1; i >= 0; i-- )
+	{
+		if ((dataSetDevisions[i]).size() < SM_MIN_POINTS_IN_LINE)
+		{
+			dataSetDevisions.erase (dataSetDevisions.begin () + i);
+			(*linesInData).erase (linesInData->begin () + i);
+		}
+	}
 }
 
 
@@ -391,7 +462,7 @@ double findGreatesDeviation(vector<point>::iterator first, vector<point>::iterat
 
 	for(int i = 0; i < sizeOfDataset; i++)
 	{
-		di = abs(linearWeighting(i,sizeOfDataset)*((((first + i)->rho)*cos(((first + i)->theta)-(lineFit->theta))) - lineFit->rho));
+		di = abs((((first + i)->rho)*cos(((first + i)->theta)-(lineFit->theta))) - lineFit->rho);
 		if(di >= deviation)
 		{
 			deviation = di;
@@ -409,13 +480,11 @@ void makeToPoints(vector<int> * dataFromSensor, vector<point> * dataPoints)
 	for(int i = 0; i < sizeOfDataset; i++)
 	{
 		newPoint.rho = dataFromSensor->at (i);
-		newPoint.theta = ((i*ANGLE_STEP) + ANGLE_START);
-
-		dataPoints->emplace_back(newPoint);
-#if RUNMODE == TEST
-		// test output
-		cout << " Point added to start list: (" << newPoint.rho << ", " << (newPoint.theta * (180 / PI)) << ") [theta = degrees]" << endl;
-#endif
+		if(newPoint.rho != 0) // only enter point if it is not 0 = unreachable
+		{
+			newPoint.theta = ((i*ANGLE_STEP) + ANGLE_START);
+			dataPoints->emplace_back(newPoint);
+		}
 	}
 
 }
