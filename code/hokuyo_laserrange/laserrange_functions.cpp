@@ -42,7 +42,7 @@ void printCSV(vector <double> data_points, string filename)
 }
 
 
-void extractPoints(string data, int timestamp, string filename)
+void extractPoints(string data, int timestamp, std::chrono::system_clock::time_point system_start, string filename)
 {
     //string test = dataBuffer1.str();
     stringstream dataBuffer;
@@ -57,6 +57,8 @@ void extractPoints(string data, int timestamp, string filename)
     {
         //dataBuffer.get(current_char);
         current_points.clear();
+        auto system_timestamp = std::chrono::system_clock::now();
+        current_points.push_back(chrono::duration<double, std::milli>(system_timestamp - system_start).count());
         current_points.push_back(timestamp);
         while (!dataBuffer.eof())
         {
@@ -100,7 +102,7 @@ int decodeTimestamp(string timestamp)
     return sum;
 }
 
-void startScanning(int number_of_scans, string filename, int COM_port,  atomic<bool> &clear_to_run)
+void startScanning(int number_of_scans, string filename, int COM_port,  atomic<bool> &clear_to_run, std::chrono::system_clock::time_point system_start)
 {
 
     int timestamp = 0;
@@ -128,7 +130,7 @@ void startScanning(int number_of_scans, string filename, int COM_port,  atomic<b
 
     if(RS232_OpenComport(COM_port, bdrate, mode))
     {
-        cout << "Can not open COMport" << endl;
+        cout << "Can not open COMport for laserrange" << endl;
     }
     cout << "Laserrange standby.. " << endl;
     while(!clear_to_run)
@@ -192,7 +194,7 @@ void startScanning(int number_of_scans, string filename, int COM_port,  atomic<b
                     }
                 }
 
-                extractPoints(dataBuffer.str(), timestamp, filename);
+                extractPoints(dataBuffer.str(), timestamp, system_start, filename);
                 ++scans;
 
                 //Clear buffers

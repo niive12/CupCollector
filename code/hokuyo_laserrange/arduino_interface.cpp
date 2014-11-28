@@ -42,7 +42,7 @@ void printEncCSV(vector <double> data_points, string filename)
         cout << "Errrooor saving file" << endl;
 }
 
-void startEnc(string filename, int COM_port,  atomic<bool> &clear_to_run,  atomic<bool> &laserrange_ctrl)
+void startEnc(string filename, int COM_port,  atomic<bool> &clear_to_run,  atomic<bool> &laserrange_ctrl, std::chrono::system_clock::time_point system_start)
 {
     if (!clear_to_run) { return; }
     int timestamp = 0, scans = 0;
@@ -61,7 +61,7 @@ void startEnc(string filename, int COM_port,  atomic<bool> &clear_to_run,  atomi
 
     if(RS232_OpenComport(COM_port, bdrate, mode))
     {
-        cout << "Can not open COMport" << endl;
+        cout << "Can not open COMport for arduino" << endl;
     }
 
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
@@ -93,6 +93,11 @@ void startEnc(string filename, int COM_port,  atomic<bool> &clear_to_run,  atomi
             }
             else
             {
+                auto system_timestamp = std::chrono::system_clock::now();
+                int system_timestamp_int = chrono::duration<double, std::milli>(system_timestamp - system_start).count();
+
+                data_points.push_back(system_timestamp_int);
+
 
                 int comma_pos = curr.find(","); // Find next comma
                 data_points.push_back(atoi( curr.substr(0,comma_pos).c_str() )); // Extract timestamp
@@ -129,6 +134,7 @@ void startEnc(string filename, int COM_port,  atomic<bool> &clear_to_run,  atomi
 
     auto end = std::chrono::system_clock::now();
     auto diff = end - start;
+
     cout << "Got " << scans << " encoder readings in " << chrono::duration<double, std::milli>(diff).count() << " ms" << endl;
 }
 
