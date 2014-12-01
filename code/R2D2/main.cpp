@@ -24,11 +24,16 @@ using namespace std;
 #define SM_MIN_POINTS_IN_LINE 30
 
 // parameters for RanSaC
-#define RANSAC_MIN_POINTS_ON_LINE 150
-#define RANSAC_MAX_DEVIATION_FROM_LINE 30
+#define RANSAC_MIN_POINTS_ON_LINE 100
+#define RANSAC_MAX_DEVIATION_FROM_LINE 15
 
-#define RANSAC_MAX_ITERATIONS_WITHOUT_LINE 10
+#define RANSAC_MAX_ITERATIONS_WITHOUT_LINE 30
 
+// parameters for RanSaC
+#define RANSAC_TRAD_MIN_POINTS_ON_LINE 150
+#define RANSAC_TRAD_MAX_DEVIATION_FROM_LINE 15
+
+#define RANSAC_TRAD_MAX_ITERATIONS_WITHOUT_LINE 50
 
 
 struct line
@@ -36,6 +41,7 @@ struct line
 	long double rho; // distance
 	long double theta; // angle
 };
+
 
 using point = line;
 
@@ -54,6 +60,14 @@ void findFeatures_SplitMerge(vector<int> * dataFromSensor, vector<line> * linesI
  * @param linesInData returns the data in (\rho,\theta)
  */
 void findFeatures_RanSaC(vector<int> * dataFromSensor, vector<line> * linesInData);
+
+
+/**
+ * @brief findFeatures_RanSaC_Trad findes the lines in the data set on the traditional RanSaC way
+ * @param dataFromSensor an array of distance to nearest object from the sensor
+ * @param linesInData returns the data in (\rho,\theta)
+ */
+void findFeatures_RanSaC_Trad(vector<int> * dataFromSensor, vector<line> * linesInData);
 
 
 /**
@@ -82,7 +96,7 @@ double findGreatesDeviation(vector<point>::iterator first, vector<point>::iterat
 void makeToPoints(vector<int> * dataFromSensor, vector<point> * dataPoints);
 
 
-void loadSensorData(string* file, vector< vector<int>> * sensorInputStorage);
+void loadSensorData(string* file, vector< vector<int> > * sensorInputStorage);
 
 int main()
 {
@@ -94,12 +108,12 @@ int main()
 
 	cout << "data elements: " << simulatedDataFromSensor.size () << endl;
 
-	srand (time(NULL));
+    srand ( time(NULL) );
 	ofstream lineFile("2D_linescanner_test/lineFile.csv", ios::trunc);
 	for (int i = 0; i < simulatedDataFromSensor.size (); i++)
 	{
-		testOutputLines.emplace_back(vector<line>());
-		findFeatures_RanSaC (&(simulatedDataFromSensor[i]), &(testOutputLines[i]));
+        testOutputLines.emplace_back( vector< line >() );
+        findFeatures_RanSaC (&(simulatedDataFromSensor[i]), &(testOutputLines[i]));
 		int linesFound = (testOutputLines[i]).size ();
 		for(int j = 0; j < linesFound; j++)
 		{
@@ -118,7 +132,7 @@ int main()
 	return false;
 }
 
-void loadSensorData(string* file, vector< vector<int>> * sensorInputStorage)
+void loadSensorData(string* file, vector< vector<int> > * sensorInputStorage)
 {
 	char input_char;
 	int row = 0;
@@ -127,7 +141,7 @@ void loadSensorData(string* file, vector< vector<int>> * sensorInputStorage)
 	ifstream input_stream(file->c_str());
 
 	sensorInputStorage->clear ();
-	sensorInputStorage->emplace_back(vector<int>());
+    sensorInputStorage->emplace_back( vector< int >() );
 
 	// load the file into memory
 	while (!input_stream.eof())
@@ -141,7 +155,7 @@ void loadSensorData(string* file, vector< vector<int>> * sensorInputStorage)
 			// reset element
 			element = 0;
 			// jump to next row
-			sensorInputStorage->emplace_back(vector<int>());
+            sensorInputStorage->emplace_back( vector< int >() );
 			row++;
 		}
 		else if (input_char == ',' || input_stream.eof())
@@ -263,7 +277,7 @@ void findFeatures_RanSaC(vector<int> * dataFromSensor, vector<line> * linesInDat
 
 		sizeOfArray = dataSet.size ();
 		// find first point
-		randomPointA = rand()%sizeOfArray;
+        randomPointA = rand() % sizeOfArray;
 		// find a point till it is in the array
 		do
 		{
@@ -334,6 +348,83 @@ void findFeatures_RanSaC(vector<int> * dataFromSensor, vector<line> * linesInDat
 }
 
 
+void findFeatures_RanSaC_Trad(vector<int> * dataFromSensor, vector<line> * linesInData)
+{
+    linesInData->clear ();
+
+    vector<point> dataSet;
+    vector<point> dataInliers;
+    line newLine;
+    int testTakenWithoutResult = 0;
+    int sizeOfArray;
+    int randomPointA, randomPointB;
+
+    makeToPoints (dataFromSensor,&dataSet);
+
+    // generate two random points and draw line, if number of points on line great enough, save it and remove all points on line
+
+    do
+    {
+        // count int up to see how many unsecesful trials were taken
+        testTakenWithoutResult++;
+        // clear inliers
+        dataInliers.clear ();
+
+        sizeOfArray = dataSet.size ();
+        // find first point
+        randomPointA = rand() % sizeOfArray;
+        // find a point till it is in the array
+        do
+        {
+            // generate B such that A != B
+            randomPointB = rand()%sizeOfArray;
+        }while(randomPointB == randomPointA);
+
+        // fill dataset with the two points
+        dataInliers.emplace_back(dataSet[randomPointA]);
+        dataInliers.emplace_back(dataSet[randomPointB]);
+
+        // find the line matching these two
+        findLine (dataInliers.begin (),dataInliers.end (),&newLine);
+
+        // find all inliears for these (setA)
+        for(int i = 0; i < sizeOfArray; i++)
+        {
+            double di = abs(((((dataSet[i]).rho)*cos(((dataSet[i]).theta)-(newLine.theta))) - newLine.rho));
+            if(di < RANSAC_TRAD_MAX_DEVIATION_FROM_LINE && i != randomPointA && i != randomPointB)
+            {
+                // add point to list
+                dataInliers.emplace_back(dataSet[i]);
+            }
+        }
+
+        // if enough inliers, remove all inliers from dataSet, then recompute line (line final)
+        // else do nothing
+        if(dataInliers.size () > RANSAC_TRAD_MIN_POINTS_ON_LINE)
+        {
+            testTakenWithoutResult = 0;
+            // find inliers and remove them
+            for(int i = 0; i < sizeOfArray; i++)
+            {
+                double di = abs((((dataSet[i]).rho)*cos(((dataSet[i]).theta)-(newLine.theta))) - newLine.rho);
+                if(di < RANSAC_TRAD_MAX_DEVIATION_FROM_LINE)
+                {
+                    // add point to list
+                    dataSet.erase (dataSet.begin () + i);
+                    i--;
+                    sizeOfArray--;
+                }
+            }
+            // recompute line
+            findLine (dataInliers.begin (),dataInliers.end (),&newLine);
+            dataInliers.clear ();
+            // save line
+            linesInData->emplace_back(newLine);
+        }
+    }while(testTakenWithoutResult < RANSAC_TRAD_MAX_ITERATIONS_WITHOUT_LINE && sizeOfArray >= RANSAC_TRAD_MIN_POINTS_ON_LINE);
+}
+
+
 void findFeatures_SplitMerge(vector<int> * dataFromSensor, vector<line> * linesInData)
 {
 	linesInData->clear ();
@@ -347,7 +438,7 @@ void findFeatures_SplitMerge(vector<int> * dataFromSensor, vector<line> * linesI
 	bool changeHappened;
 
 	// set all points in array
-	dataSetDevisions.emplace_back(vector<point>());
+    dataSetDevisions.emplace_back( vector< point >() );
 	makeToPoints (dataFromSensor,&(dataSetDevisions[0]));
 	// find the first line
 	findLine ((dataSetDevisions[0]).begin (), (dataSetDevisions[0]).end () , &newLine);
@@ -372,7 +463,7 @@ void findFeatures_SplitMerge(vector<int> * dataFromSensor, vector<line> * linesI
 					// repeat loop once more when done
 					changeHappened = true;
 					// add space for vector
-					dataSetDevisions.emplace_back(vector<point>());
+                    dataSetDevisions.emplace_back( vector< point >() );
 
 					// move split point into dataset
 					if(distance((dataSetDevisions[i]).begin (),pointFurthestAway) < SM_SPLITLINE_MIN_POINTS_IN_SPLITLINE)

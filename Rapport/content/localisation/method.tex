@@ -1,14 +1,30 @@
 \section{Localisation}
 \subsection{Method}
-For the localisation part of the project, it was chosen to use the Kalman Filter. The mobile robot used is a "Nexus Robot - 2WD mobile robot kit 10004", fitted with a laserrange scanner of type "Hokuyo URG-04LX-LG". 
-
-The Kalman filter is an optimal technique for fusing different estimates of positions. \footnote{Reference to siegwart (p. 233)} 
-For this section 2 different estimates will be calculated:
+For the localisation part of the project it was chosen to compare two different approaches:
 
 \begin{itemize}
 	\item Position estimate based on odometry (wheel encoders).
 	\item Position estimate based on line features extracted from the laserrange scanner. 
 \end{itemize}
+
+Both of these approaches rely on a known starting location. The second also needs knowledge of the environment - it must  compare the extracted features with probable features from the map (based on last know location of the robot). 
+
+
+The mobile robot used is a "Nexus Robot - 2WD mobile robot kit 10004", fitted with a laserrange scanner of type "Hokuyo URG-04LX-LG". 
+
+\begin{figure}[ht]
+\centering
+  \begin{subfigure}[t]{0.3\textwidth}
+    \includegraphics[width = \textwidth]{graphics/hokuyo_laserrange}
+    \caption{Hokuyo URG-04LX-LG laserrange scanner.}
+    \label{laserrange}
+  \end{subfigure}
+  \begin{subfigure}[t]{0.4\textwidth}
+    \includegraphics[width = \textwidth]{graphics/nexus_robot}
+    \caption{Nexus Robot - 2WD mobile robot kit 10004}
+    \label{laserrange}
+  \end{subfigure}
+\end{figure}
 
 
 The performance of the localization technique was measured using UMB-mark. 
@@ -16,21 +32,43 @@ The position before and after following a preprogrammed path through a 1 x 1 [m]
 While testing, the robot only used sensor feedback from the encoders. 
 Sensor readings from both the encoders and the laserrange scanner was gathered, and saved for further offline processing. 
 
-Using this data, the final position is calculated using both the encoders and the laserrange scanner. This is done using the Kalman filter. 
-%If this offline calculation using both estimates is more accurate than the online estimate using only odometry, then localisation is proved to be effective than odometry. 
+\subsubsection{Position based on odometry}
+\todo[inline, author=Michael]{Based on (or ripped off :P ) sec. 5.2.4 from our lovely friend, siegwart.}
+The position/state of the robot is represented by the vector: 
+\begin{equation}
+  p = 
+  \begin{bmatrix}
+    x \\
+    y \\
+    \theta 
+  \end{bmatrix}
+\end{equation}
+The robots position is estimated from the previous position + the movement in the last time period $\Delta t$. The change in position $\Delta p$ from each timestep is added to the position. This can be written as 
+\begin{equation}
+  p\textrm' = p + \Delta p
+\end{equation}
+The feedback from the robot is given as the movement of each wheel in millimetres. $\Delta p$ can be from the following equations: 
+\begin{eqnarray}
+	\Delta x &=& \Delta s \cos \left(\theta + \frac{\Delta \theta}{2}\right) \\
+	\Delta y &=& \Delta s \sin \left(\theta + \frac{\Delta \theta}{2}\right) \\
+	\Delta \theta &=& \frac{\Delta s_r + \Delta s_l}{b} \\
+	\Delta s &=& \frac{\Delta s_r + \Delta s_l}{2} \\
+\end{eqnarray}
+Where $\Delta s_r; \Delta s_l$ = distance traveled by right and left wheel and $b$ is the distance between the robots two wheels. Adding this together, the equation for the updated position is: 
+\begin{equation}
+  p\textrm' = 
+  \begin{bmatrix}
+    x \\
+    y \\
+    \theta 
+  \end{bmatrix}
+  +
+  \begin{bmatrix}
+    \Delta s \cos \left(\theta + \frac{\Delta \theta}{2}\right) \\
+    \Delta s \sin \left(\theta + \frac{\Delta \theta}{2}\right) \\
+    \frac{\Delta s_r + \Delta s_l}{b}
+  \end{bmatrix}
+\end{equation}
 
-\subsubsection{Kalman Filter}
-\label{sec:Kalman_filter}
-Using the general Kalman filter follows these 5 steps: 
-\todo[inline, author=Michael]{This stuff is described pretty well in Siegwart. Read chapter 5.2.4 and 5.6.3.2 and you're good to go.}
-\begin{enumerate}
-	\item Predict robot position based on old location (using model of robot and control input).
-	\item Observe sensor measurements. 
-	\item Predict sensor measurements. 
-	\item Matching predicted and observed sensor measurements. 
-	\item Estimate position by applying Kalman filter.
-\end{enumerate}
 
-To simplify the task, it was decided to skip step one and instead rely completely on data from the sensors. 
-\todo[inline, author=Michael]{This is also necessary to use the tests done so far (28/11 2014), because we have no knowledge about the internal control inputs during our tests.}
 
