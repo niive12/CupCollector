@@ -1,0 +1,5 @@
+Generated with following parameters:
+// parameters for RanSaC
+#define RANSAC_MIN_POINTS_ON_LINE 100
+#define RANSAC_MAX_DEVIATION_FROM_LINE 15
+#define RANSAC_MAX_ITERATIONS_WITHOUT_LINE 30
