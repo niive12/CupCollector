@@ -8,7 +8,9 @@ SOURCES += main.cpp \
     laserrange_functions.cpp \
     arduino_interface.cpp
 
-QMAKE_CXXFLAGS += -std=c++11
+QMAKE_CXXFLAGS += -std=c++0x -pthread
+
+LIBS += -pthread
 
 HEADERS += \
     rs232.h
