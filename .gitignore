@@ -65,3 +65,10 @@ code/Arduino/MotorWheel/Omni4WDAction.h.bak
 *.user
 >>>>>>> 1168697ef4c6adba7457a25d4586c1617196b556
 code/Localisation/deployment.pri
+code/build-Localisation-Desktop_Qt_5_3_clang_64bit-Debug/.qmake.stash
+code/build-Localisation-Desktop_Qt_5_3_clang_64bit-Debug/Localisation
+code/build-Localisation-Desktop_Qt_5_3_clang_64bit-Debug/main.o
+code/build-Localisation-Desktop_Qt_5_3_clang_64bit-Debug/Makefile
+code/R2D2/R2D2.pro.user
+code/R2D2/R2D2.pro.user.1a515a7
+code/R2D2/R2D2.pro.user

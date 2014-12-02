@@ -83,11 +83,20 @@ while(wait);
       
       case 'B' :    //Wait a bit
         if(millis() > timestamp + robot.getStraightTime(SPEEDMMPS, STRAIGHT_DISTANCE)){
-         state = 'C'; 
+          robot.setCarStop();
+          timestamp = millis();
+          state = 'W'; 
         }
         break;
-    
-      case 'C' :    //Stop the motors, take timestamp and start turning
+
+      case 'W' : // Wait a bit more
+       if (millis() > timestamp + 10000){
+         state = 'C';
+         timestamp = millis();
+       }
+       break;
+       
+       case 'C' :    //Stop the motors, take timestamp and start turning
         robot.setCarStop();
         timestamp = millis();
         robot.setCarRotateLeft(SPEEDMMPS);
@@ -102,10 +111,11 @@ while(wait);
              state = 'Ø';
            }else{
              state = 'A';
+             timestamp = millis();
+             robot.setCarStop();
            }
         }
         break;
-      
     
       case 'Ø' :
         robot.setCarStop();

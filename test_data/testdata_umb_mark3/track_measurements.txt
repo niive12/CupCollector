@@ -1,0 +1,10 @@
+Start position: V(350,-500) H(550,-500) 
+Beregnet state: (450mm, -500mm, 0rad)
+
+Hældning = (H.y - V.y) / (H.x - V.x) = 0
+
+
+Slut position: V(-447,125) H(-757, 36)
+Beregnet state: (-602mm, 80.5mm, 2.862rad)
+
+Hældning = (H.y - V.y) / (H.x - V.x) = -89 / -310
