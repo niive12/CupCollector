@@ -16,25 +16,35 @@ using namespace std;
 
 // defines fot split and merge
 #define SM_SPLITLINE_TRESHHOLD_DISTANCE 60
-#define SM_SPLITLINE_MIN_POINTS_IN_SPLITLINE 20
+#define SM_SPLITLINE_MIN_POINTS_IN_SPLITLINE 10
 
-#define SM_MERGELINE_TRESHHOLD_DISTANCE 40
+#define SM_MERGELINE_TRESHHOLD_DISTANCE 30
 #define SM_MERGELINE_TRESHHOLD_ANGLE DEGREE_TO_RAD(40) // X* = (180-X)* between two walls
 
 #define SM_MIN_POINTS_IN_LINE 30
 
 // parameters for RanSaC
 #define RANSAC_MIN_POINTS_ON_LINE 100
-#define RANSAC_MAX_DEVIATION_FROM_LINE 15
+#define RANSAC_MAX_DEVIATION_FROM_LINE 10
 
-#define RANSAC_MAX_ITERATIONS_WITHOUT_LINE 30
+#define RANSAC_MAX_ITERATIONS_WITHOUT_LINE 20
 
-// parameters for RanSaC
-#define RANSAC_TRAD_MIN_POINTS_ON_LINE 150
-#define RANSAC_TRAD_MAX_DEVIATION_FROM_LINE 15
+// parameters for RanSaC_Traditional
+#define RANSAC_TRAD_MIN_POINTS_ON_LINE 100
+#define RANSAC_TRAD_MAX_DEVIATION_FROM_LINE 10
 
-#define RANSAC_TRAD_MAX_ITERATIONS_WITHOUT_LINE 50
+#define RANSAC_TRAD_MAX_ITERATIONS_WITHOUT_LINE 20
 
+// parameters for RanSaC_Merge
+#define RANSAC_MERGE_MIN_POINTS_ON_LINE 100
+#define RANSAC_MERGE_MAX_DEVIATION_FROM_LINE 20
+
+#define RANSAC_MERGE_MAX_ITERATIONS_WITHOUT_LINE 30
+
+#define RANSAC_MERGE_MERGELINE_TRESHHOLD_ANGLE DEGREE_TO_RAD(15)
+#define RANSAC_MERGE_MERGELINE_TRESHHOLD_DISTANCE 50
+
+int merged = 0;
 
 struct line
 {
@@ -60,6 +70,14 @@ void findFeatures_SplitMerge(vector<int> * dataFromSensor, vector<line> * linesI
  * @param linesInData returns the data in (\rho,\theta)
  */
 void findFeatures_RanSaC(vector<int> * dataFromSensor, vector<line> * linesInData);
+
+
+/**
+ * @brief findFeatures findes the lines in the data set
+ * @param dataFromSensor an array of distance to nearest object from the sensor
+ * @param linesInData returns the data in (\rho,\theta)
+ */
+void findFeatures_RanSaC_Merge(vector<int> * dataFromSensor, vector<line> * linesInData);
 
 
 /**
@@ -95,6 +113,11 @@ double findGreatesDeviation(vector<point>::iterator first, vector<point>::iterat
  */
 void makeToPoints(vector<int> * dataFromSensor, vector<point> * dataPoints);
 
+/**
+ * @brief standardizeLines standardizes the lines to wester-format ( 0 <= theta < 2*PI, rho >= 0 )
+ * @param lineFeatures the set of lines
+ */
+void standardizeLines(vector< line > * lineFeatures);
 
 void loadSensorData(string* file, vector< vector<int> > * sensorInputStorage);
 
@@ -108,12 +131,12 @@ int main()
 
 	cout << "data elements: " << simulatedDataFromSensor.size () << endl;
 
-    srand ( time(NULL) );
+//    srand ( time(NULL) );
 	ofstream lineFile("2D_linescanner_test/lineFile.csv", ios::trunc);
 	for (int i = 0; i < simulatedDataFromSensor.size (); i++)
-	{
+    {
         testOutputLines.emplace_back( vector< line >() );
-        findFeatures_RanSaC (&(simulatedDataFromSensor[i]), &(testOutputLines[i]));
+        findFeatures_RanSaC_Merge(&(simulatedDataFromSensor[i]), &(testOutputLines[i]));
 		int linesFound = (testOutputLines[i]).size ();
 		for(int j = 0; j < linesFound; j++)
 		{
@@ -126,6 +149,8 @@ int main()
 		}
 		lineFile << ",\n";
 	}
+
+    cout << "N merged: " << merged << endl;
 
 	lineFile.close ();
 
@@ -231,15 +256,7 @@ void findLine(vector<point>::iterator start, vector<point>::iterator end, line *
 		IV = (pow(rhoCos, 2) - pow(rhoSin, 2)) / sizeOfVector;
 
 		// calc total angle
-		bestFitLine.theta = (0.5)*atan((I-II)/(III-IV));
-		// use pi/2 depending on the orientation of the line
-		// pi man
-		double diffX = abs(cos((end-1)->theta) * (end-1)->rho - cos(start->theta) * start->rho);
-		double diffY = abs(sin((end-1)->theta) * (end-1)->rho - sin(start->theta) * start->rho);
-		if (diffX > diffY)
-		{
-			bestFitLine.theta -= PI/2;
-		}
+        bestFitLine.theta = (0.5)*atan2((I-II),(III-IV)) + PI/2;
 
 		// calc r
 		bestFitLine.rho = (rhoCos * cos(bestFitLine.theta) + rhoSin * sin(bestFitLine.theta)) / sizeOfVector;
@@ -425,6 +442,116 @@ void findFeatures_RanSaC_Trad(vector<int> * dataFromSensor, vector<line> * lines
 }
 
 
+void findFeatures_RanSaC_Merge(vector<int> * dataFromSensor, vector<line> * linesInData)
+{
+    linesInData->clear ();
+
+    vector<point> dataSet;
+    vector<point> dataInliers;
+    line newLine;
+    int testTakenWithoutResult = 0;
+    int sizeOfArray;
+    int randomPointA, randomPointB;
+
+    makeToPoints (dataFromSensor,&dataSet);
+
+    // generate two random points and draw line, if number of points on line great enough, save it and remove all points on line
+
+    do
+    {
+        // count int up to see how many unsecesful trials were taken
+        testTakenWithoutResult++;
+        // clear inliers
+        dataInliers.clear ();
+
+        sizeOfArray = dataSet.size ();
+        // find first point
+        randomPointA = rand() % sizeOfArray;
+        // find a point till it is in the array
+        do
+        {
+            // generate B such that A != B
+            randomPointB = rand()%sizeOfArray;
+        }while(randomPointB == randomPointA);
+
+        // fill dataset with the two points
+        dataInliers.emplace_back(dataSet[randomPointA]);
+        dataInliers.emplace_back(dataSet[randomPointB]);
+
+        // find the line matching these two
+        findLine (dataInliers.begin (),dataInliers.end (),&newLine);
+
+        // find all inliears for these (setA)
+        for(int i = 0; i < sizeOfArray; i++)
+        {
+            double di = abs(((((dataSet[i]).rho)*cos(((dataSet[i]).theta)-(newLine.theta))) - newLine.rho));
+            if(di < RANSAC_MERGE_MAX_DEVIATION_FROM_LINE && i != randomPointA && i != randomPointB)
+            {
+                // add point to list
+                dataInliers.emplace_back(dataSet[i]);
+            }
+        }
+
+        // if enough inliers, remove all inliers from dataSet, then recompute line (line final)
+        // else do nothing
+        if(dataInliers.size () > RANSAC_MERGE_MIN_POINTS_ON_LINE)
+        {
+            testTakenWithoutResult = 0;
+            // find inliers and remove them
+            for(int i = 0; i < sizeOfArray; i++)
+            {
+                double di = abs((((dataSet[i]).rho)*cos(((dataSet[i]).theta)-(newLine.theta))) - newLine.rho);
+                if(di < RANSAC_MERGE_MAX_DEVIATION_FROM_LINE)
+                {
+                    // add point to list
+                    dataSet.erase (dataSet.begin () + i);
+                    i--;
+                    sizeOfArray--;
+                }
+            }
+            // recompute line
+            findLine (dataInliers.begin (),dataInliers.end (),&newLine);
+            dataInliers.clear ();
+            // save line
+            linesInData->emplace_back(newLine);
+        }
+    }while(testTakenWithoutResult < RANSAC_MERGE_MAX_ITERATIONS_WITHOUT_LINE && sizeOfArray >= RANSAC_MERGE_MIN_POINTS_ON_LINE);
+
+    // standardize lines
+    standardizeLines(linesInData);
+
+    // merge similar lines
+    bool changeHappened;
+    do
+    {
+        changeHappened = false;
+        int numberOfLines = linesInData->size ();
+        // iterate through the whole vector and compare all (start over if two were combined)
+        for(int i = 0; i < numberOfLines; i++)
+        {
+            for(int j = (i + 1); j < numberOfLines; j++)
+            {
+                // get deviation of the two lines
+                double deviationOfDistance = abs(abs((*linesInData)[i].rho) - abs((*linesInData)[j].rho));
+                double deviationOfAngle = abs(abs((*linesInData)[i].theta) - abs((*linesInData)[j].theta));
+                // if appropiate to merge, do so
+                if(deviationOfAngle < RANSAC_MERGE_MERGELINE_TRESHHOLD_ANGLE && deviationOfDistance < RANSAC_MERGE_MERGELINE_TRESHHOLD_DISTANCE)
+                {
+                    changeHappened = true;
+                    // merge datasets
+                    (*linesInData)[i].rho = ((*linesInData)[i].rho + (*linesInData)[j].rho)/2;
+                    (*linesInData)[i].theta = ((*linesInData)[i].theta + (*linesInData)[j].theta)/2;
+                    // remove old dataset and line
+                    (*linesInData).erase ((*linesInData).begin () + j);
+                    numberOfLines--;
+                    merged++;
+                }
+            }
+        }
+    }while(changeHappened);
+}
+
+
 void findFeatures_SplitMerge(vector<int> * dataFromSensor, vector<line> * linesInData)
 {
 	linesInData->clear ();
@@ -446,7 +573,6 @@ void findFeatures_SplitMerge(vector<int> * dataFromSensor, vector<line> * linesI
 	linesInData->emplace_back(newLine);
 
 	// devide dataset
-	cout << " dividing dataset" << endl;
 	do
 	{
 		changeHappened = false;
@@ -497,7 +623,6 @@ void findFeatures_SplitMerge(vector<int> * dataFromSensor, vector<line> * linesI
 		}
 	}while (changeHappened);
 
-	cout << " merging dataset" << endl;
 	// merge lines
 	do
 	{
@@ -508,9 +633,12 @@ void findFeatures_SplitMerge(vector<int> * dataFromSensor, vector<line> * linesI
 		{
 			for(int j = (i + 1); j < numberOfLines; j++)
 			{
-				// get deviation of the two lines
-				double deviationOfDistance = abs((*linesInData)[i].rho - (*linesInData)[j].rho);
-				double deviationOfAngle = abs((*linesInData)[i].theta - (*linesInData)[j].theta);
+                // get deviation of the two lines // only works if they do not have negative rho and theta pi moved = equal lines
+                double deviationOfDistance = abs((*linesInData)[i].rho - (*linesInData)[j].rho);
+                double deviationOfAngle = abs((*linesInData)[i].theta - (*linesInData)[j].theta);
+
+                // to be continued...
+
 				// if appropiate to merge, do so
 				if(deviationOfAngle < SM_MERGELINE_TRESHHOLD_ANGLE && deviationOfDistance < SM_MERGELINE_TRESHHOLD_DISTANCE)
 				{
@@ -532,7 +660,6 @@ void findFeatures_SplitMerge(vector<int> * dataFromSensor, vector<line> * linesI
 		}
 	}while(changeHappened);
 
-	cout << " removing datasets" << endl;
 	// remove lines with too small datapoints
 	for(int i = dataSetDevisions.size ()-1; i >= 0; i-- )
 	{
@@ -574,8 +701,39 @@ void makeToPoints(vector<int> * dataFromSensor, vector<point> * dataPoints)
 		if(newPoint.rho != 0) // only enter point if it is not 0 = unreachable
 		{
 			newPoint.theta = ((i*ANGLE_STEP) + ANGLE_START);
+            if (newPoint.theta < 0) // make angle positive
+            {
+                newPoint.theta = newPoint.theta + 2 * PI;
+            }
 			dataPoints->emplace_back(newPoint);
 		}
 	}
 
+}
+
+
+void standardizeLines(vector< line > * lineFeatures)
+{
+    int size = lineFeatures->size();
+    for (int i = 0; i < size; i++)
+    {
+        // fix rho
+        if ((*lineFeatures)[i].rho < 0)
+        {
+            (*lineFeatures)[i].rho = -((*lineFeatures)[i].rho);
+            (*lineFeatures)[i].theta += PI;
+        }
+        // bring above 0
+        while ((*lineFeatures)[i].theta < 0 || (*lineFeatures)[i].theta > (2 * PI))
+        {
+            if ((*lineFeatures)[i].theta < 0)
+            {
+                (*lineFeatures)[i].theta += (2 * PI);
+            }
+            else
+            {
+                (*lineFeatures)[i].theta -= (2 * PI);
+            }
+        }
+    }
 }
