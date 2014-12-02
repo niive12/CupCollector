@@ -27,12 +27,32 @@ struct robot_state_polar {
 	robot_state_polar():r(0),theta(0),alpha(0){}
 };
 
-struct line_polar {
+struct polar;
+struct cartesian {
+	double x;
+	double y;
+	cartesian(double x, double y):x(x),y(y) {}
+	polar to_polar();
+};
+struct polar {
 	double r;
 	double theta;
-	line_polar(double r, double theta):r(r),theta(theta){}
+	polar(double r, double theta):r(r),theta(adjust_rads(theta)){}
+
+	cartesian to_cartesian() {
+		double x = r*std::cos(theta);
+		double y = r*std::sin(theta);
+		return move(cartesian(x,y));
+	}
 };
 
+polar cartesian::to_polar() {
+	double r = std::sqrt(x*x+y*y);
+	double theta = std::atan2(y,x);
+	return move(polar(r,theta));
+}
+
+/*
 struct line_lidar {
 	double millimeters;
 	unsigned int index;
@@ -42,35 +62,84 @@ struct line_lidar {
 		return adjust_rads(val);
 	}
 };
+*/
 
 
 class lidarbot {
 public:
 
-	vector<line_polar> feature_map;
+	vector<polar> line_map;
+	vector<cartesian> corner_map;
 	robot_state_polar last_state;
 
 
 	lidarbot()
-		:feature_map(
+		:line_map(
 	{{LINE1_DISTANCE,LINE1_ANGLE},
 	{LINE2_DISTANCE,LINE2_ANGLE},
 	{LINE3_DISTANCE,LINE3_ANGLE},
 	{LINE4_DISTANCE,LINE4_ANGLE}}),
+		  corner_map( {
+	{LINE1_DISTANCE,-LINE2_DISTANCE},
+	{-LINE3_DISTANCE,-LINE2_DISTANCE},
+	{-LINE3_DISTANCE,LINE4_DISTANCE},
+	{LINE1_DISTANCE,LINE4_DISTANCE}
+			  }),
 		  last_state(
 	{ROBOT_START_DISTANCE,
 			  ROBOT_START_ANGLE,
 			  ROBOT_START_ORIENTATION})
 	{}
 
-	vector<line_polar> feature_mapping(const vector<line_lidar> &data_features) {
-		vector<line_polar> mapped_features;
+	unsigned int getCornerIndex(unsigned int line1, unsigned int line2) {
+		unsigned int ci=INDEX_NOMATCH;
+		unsigned int small = std::min(line1,line2);
+		unsigned int large = std::max(line1,line2);
+		switch(small) {
+		case 0:
+			switch (large) {
+			case 1:
+				ci=0;
+				break;
+			case 3:
+				ci=3;
+				break;
+			default:
+				break;
+			}
+			break;
+		case 1:
+			switch(large) {
+			case 2:
+				ci=1;
+				break;
+			default:
+				break;
+			}
+			break;
+		case 2:
+			switch(large) {
+			case 3:
+				ci=2;
+				break;
+			default:
+				break;
+			}
+			break;
+		default:
+			break;
+		}
+		return ci;
+	}
+
+	vector<polar> feature_mapping(const vector<polar> &data_features) {
+		vector<polar> mapped_features;
 		for(auto relative_feature : data_features) {
-			double theta2 = adjust_rads( relative_feature.to_rads()+last_state.alpha );
+			double theta2 = adjust_rads( relative_feature.theta+last_state.alpha );
 			double x = (last_state.r*std::cos(last_state.theta))
-					+ (relative_feature.millimeters * std::cos(theta2));
+					+ (relative_feature.r * std::cos(theta2));
 			double y = (last_state.r*std::sin(last_state.theta))
-					+(relative_feature.millimeters * std::sin(theta2));
+					+(relative_feature.r * std::sin(theta2));
 			double r = std::sqrt(x*x+y*y);
 			double theta = adjust_rads( std::atan2(y,x) );
 			mapped_features.emplace_back(std::abs(r*std::cos(theta2-theta)),theta2);
@@ -79,11 +148,11 @@ public:
 		return move(mapped_features);
 	}
 
-	std::pair<unsigned int,double> match_to_feature_map(const line_polar &mapped_feature)
+	pair<unsigned int,double> match_to_feature_map(const polar &mapped_feature)
 	{
-		vector<std::pair<double, double>> deviations;
+		vector<pair<double, double>> deviations;
 
-		for(auto global_feature:feature_map)
+		for(auto global_feature:line_map)
 		{
 			double angledeviation = std::max(global_feature.theta,mapped_feature.theta)-std::min(global_feature.theta,mapped_feature.theta);
 			double distancedeviation = std::max(global_feature.r,mapped_feature.r)-std::min(global_feature.r,mapped_feature.r);
@@ -92,7 +161,7 @@ public:
 
 
 		double best = ANGLE_DEVIATION_MAX;
-		unsigned int index = ANGLE_INDEX_NOMATCH;
+		unsigned int index = INDEX_NOMATCH;
 
 		for(size_t i=0; i<deviations.size(); i++)
 		{
@@ -110,47 +179,68 @@ public:
 
 
 	void test() {
-		for(auto i:feature_map)
+		cout << "Features in global map:" << endl;
+		for(auto i:line_map)
 			cout << "R: " << i.r << ", theta: " << i.theta << endl;
 
-		vector<line_lidar> data_features = {{2920.13,356},
-											{562.286,596},
-											{1896.9,58}};
+		vector<polar> data_features = {{2920.13,6.18463},
+											//{562.286,4.70623},
+											{1896.9,1.73712}};
 
-		vector<line_polar> mapped_features = feature_mapping(data_features);
-		unordered_map<unsigned int, double> matched_features;
-		for(auto m:mapped_features) {
-			pair<unsigned int, double> match = match_to_feature_map(m);
-			if(match.first != ANGLE_INDEX_NOMATCH ) {
+		vector<polar> mapped_features = feature_mapping(data_features);
+		unordered_map<unsigned int, pair<unsigned int, double> > matched_features;
+		//for(auto m:mapped_features) {
+		for(size_t m=0; m<mapped_features.size(); ++m) {
+			pair<unsigned int, double> match = match_to_feature_map(mapped_features[m]);
+			if(match.first != INDEX_NOMATCH ) {
+				pair<unsigned int, pair<unsigned int, double> > funnymatch;
+				funnymatch.first=match.first;
+				funnymatch.second.second=match.second;
+				funnymatch.second.first=m;
 				//If we have several data features matched to the same global feature (unlikely):
-				if( !(matched_features.insert(match).second) ) {
+				if( !(matched_features.insert(funnymatch).second) ) {
 					//Pick the best one:
-					if(match.second < matched_features[match.first]) {
+					if(match.second < matched_features[match.first].second) {
 						matched_features.erase(match.first);
-						matched_features.insert(match);
+						matched_features.insert(funnymatch);
 					}
 				}
 			}
 		}
 
 		for(unsigned int i = 0; i<data_features.size(); ++i) {
-			cout << "R: " << data_features[i].millimeters << ", theta: " << data_features[i].to_rads() <<",\t"
+			cout << "R: " << data_features[i].r << ", theta: " << data_features[i].theta <<",\t"
 				 << "MappedR: " << mapped_features[i].r << ", MappedTheta: " << mapped_features[i].theta
 				 << " (" << i << ")" << endl;
 		}
 		double avg = 0;
-		for(auto i:matched_features)
-			avg+=i.second;
+		for(auto i:matched_features) {
+			avg+=i.second.second;
+			cout << i.first << i.second.first << " " << flush;
+		}
 		avg/=matched_features.size();
 		cout << endl << matched_features.size() << "\t" << avg << endl;
 
 		/** If you don't have line features: */
 		//1) Update robot state with odometry
 
+		cout << "Old alpha: " << last_state.alpha << ", new alpha: " << flush;
 		/** If you have line features: */
 		//1) For each line, calculate the orientation (theta2 from feature map, minus theta wall (the one from LIDAR)).
 		//2) The average of all the orientations of step 1 is the robot's new state orientation.
 		//3) Be happy that you were able to use the LIDAR to calculate orientation.
+		if(!matched_features.empty()) {
+			double alpha_new=0;
+			for(auto i:matched_features) {
+				double increment = line_map[i.first].theta - data_features[i.second.first].theta;
+				if(increment<0)
+					increment+=2.0*PI;
+				alpha_new+=increment;
+			}
+			alpha_new/=matched_features.size();
+			last_state.alpha = alpha_new;
+		}
+		cout << last_state.alpha << endl;
 
 		/** CORNER CASE	(2 lines with different angle (they intersect in a real corner) ) */
 		//1) All global feature corners are known (compiler pre-calculated).
@@ -160,6 +250,36 @@ public:
 		//		vec2 is (the shortest distance from robot to line 2 (measured from LIDAR); line 2's angle (in feature map) ).
 		//4) The result is the robot's new state position.
 		//5) Be happy that you were able to use the LIDAR to calculate position.
+		cout << "Old R: " << last_state.r << ", old theta: " << last_state.theta << ", " << flush;
+		if(matched_features.size()==2) {
+			unordered_map<unsigned int,pair<unsigned int,double> >::iterator shiterator=matched_features.begin();
+			++shiterator;
+			unsigned int index_line1 = (*(matched_features.begin())).first;
+			unsigned int index_line2 = (*(shiterator)).first;
+			unsigned int corner = getCornerIndex(index_line1, index_line2);
+			if(corner!=INDEX_NOMATCH) {
+				polar vec1 = line_map[index_line1];
+				polar vec2 = line_map[index_line2];
+				vec1.r -= data_features[(*(matched_features.begin())).second.first].r;
+				vec2.r -= data_features[(*(shiterator)).second.first].r;
+				if(vec1.r<0) {
+					vec1.theta=adjust_rads(vec1.theta+PI);
+					vec1.r=-vec1.r;
+				}
+				if(vec2.r<0) {
+					vec2.theta=adjust_rads(vec2.theta+PI);
+					vec2.r=-vec2.r;
+				}
+				cartesian vec1c = vec1.to_cartesian();
+				cartesian vec2c = vec2.to_cartesian();
+				cartesian robotcart(vec1c.x+vec2c.x,vec1c.y+vec2c.y);
+				//cout << "Robot position: ( " << robotcart.x << " , " << robotcart.y << " ), " << flush;
+				polar robotpolar = robotcart.to_polar();
+				last_state.r=robotpolar.r;
+				last_state.theta=robotpolar.theta;
+			}
+		}
+		cout << "new R: " << last_state.r << ", new theta: " << last_state.theta << endl;
 
 		/** PARALLEL LINES CASE */
 		//1) Update robot position with odometry (not orientation).
