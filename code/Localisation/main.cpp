@@ -184,7 +184,7 @@ public:
             cout << "R: " << i.r << ", theta: " << i.theta << endl;
 
         vector<polar> data_features = {{2920.13,6.18463},
-                                       {562.286,4.70623},
+                                       //{562.286,4.70623},
                                        {1896.9,1.73712}};
 
         vector<polar> mapped_features = feature_mapping(data_features);
@@ -271,6 +271,7 @@ public:
                     vec2.theta=adjust_rads(vec2.theta+PI);
                     vec2.r=-vec2.r;
                 }
+
                 cartesian vec1c = vec1.to_cartesian();
                 cartesian vec2c = vec2.to_cartesian();
                 cartesian robotcart(vec1c.x+vec2c.x,vec1c.y+vec2c.y);
@@ -289,9 +290,11 @@ public:
         //1) Update robot position with odometry (not orientation).
 
         /** CORNER CASE (2 or 4 corners in total, 3 lines) */
-        //if(matched_features.size()>3)
         //1) Do the same as in CORNER CASE 1, but average all the calculated
         //   robot state position results to obtain the new robot state position.
+
+        // THE ALGORITHM UNDERNEATH DOES NOT WORK - Mikkel
+
         cout << "Old R: " << last_state.r << ", old theta: " << last_state.theta << ", " << flush;
         if(matched_features.size()==3) {
             unordered_map<unsigned int,pair<unsigned int,double> >::iterator shiterator=matched_features.begin();
@@ -321,18 +324,18 @@ public:
                 polar vec2 = line_map[intersecting_lines[i].second];
 
                 if(intersecting_lines[i].first == index_line1)
-                    vec1.r -= data_features[(*(matched_features.begin())).second.first].r;
+                    vec1.r -= data_features[matched_features[index_line1].first].r;
                 if(intersecting_lines[i].first == index_line2)
-                    vec1.r -= data_features[(*(shiterator)).second.first].r;
+                    vec1.r -= data_features[matched_features[index_line2].first].r;
                 if(intersecting_lines[i].first == index_line3)
-                    vec1.r -= data_features[(*(shiterator1)).second.first].r;
+                    vec1.r -= data_features[matched_features[index_line3].first].r;
 
                 if(intersecting_lines[i].second == index_line1)
-                    vec2.r -= data_features[(*(matched_features.begin())).second.first].r;
+                    vec2.r -= data_features[matched_features[index_line1].first].r;
                 if(intersecting_lines[i].second == index_line2)
-                    vec2.r -= data_features[(*(shiterator)).second.first].r;
+                    vec2.r -= data_features[matched_features[index_line2].first].r;
                 if(intersecting_lines[i].second == index_line3)
-                    vec2.r -= data_features[(*(shiterator1)).second.first].r;
+                    vec2.r -= data_features[matched_features[index_line3].first].r;
 
                 if(vec1.r<0) {
                     vec1.theta=adjust_rads(vec1.theta+PI);
@@ -346,6 +349,9 @@ public:
                 cartesian vec2c = vec2.to_cartesian();
                 robotcart.x += vec1c.x+vec2c.x;
                 robotcart.y +=vec2c.y+vec2c.y;
+
+                polar robotpolar1 = robotcart.to_polar();
+                cout << "Temp: new R: " << robotpolar1.r << ",Temp: new theta: " << robotpolar1.theta << endl;
             }
             robotcart.x /= intersecting_lines.size()-1;
             robotcart.y /= intersecting_lines.size()-1;
