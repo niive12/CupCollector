@@ -20,7 +20,11 @@ using namespace std;
 int main()
 {
     cout << "Progriaaaamm start" << endl;
+    //string filename = "encoders_test_14492.csv";
+    //string filename = "encoders_30.csv";
     string filename = "encoders.csv";
+
+    string output_file = "encoder_position_out.csv";
 
 
     // Load file
@@ -78,12 +82,12 @@ int main()
         double x, y, theta;
     };
 
-    position start;
     vector<data_point> data_points;
     string current_line;
-    double wheel1, wheel2;
     data_point current_data_point;
-    position p2;
+    position p2(0, 450, -500, 0.5*3.1415);
+
+    ofstream out_file (output_file, std::ios::app);
     while(!buffer.eof())
     {
         getline(buffer, current_line);
@@ -100,9 +104,17 @@ int main()
         //cout << current_data_point.timestamp << " " << current_data_point.wheel1 << " " << current_data_point.wheel2 << endl;
         position p1(current_data_point, p2);
         p2 = p1;
+
+        if (out_file.is_open())
+        {
+            out_file << p1.timestamp << ", " << p1.x << ", " << p1.y << ", " << p1.theta << endl;
+        }
+        else
+            cout << "Errrooor saving file" << endl;
         cout << p1.timestamp << " " << p1.x << " " << p1.y << " " << p1.theta << endl;
 
     }
+    out_file.close();
 
 
 
