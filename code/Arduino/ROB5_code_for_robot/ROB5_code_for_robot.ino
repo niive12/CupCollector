@@ -101,11 +101,17 @@ while(wait);
              Serial.print("UMB_STOP\n"); 
              state = 'Ø';
            }else{
-             state = 'A';
+             state = 'W';
+             timestamp = millis();
+             robot.setCarStop();
            }
         }
         break;
-      
+        
+     case 'W' : // Wait a bit more
+       if (millis() > timestamp + 10000)
+         state = 'A';
+       break;
     
       case 'Ø' :
         robot.setCarStop();
