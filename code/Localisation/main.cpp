@@ -4,6 +4,7 @@
 #include <cmath>
 #include "localisation_defines.h"
 #include <forward_list>
+#include <list>
 #include <fstream>
 
 using namespace std;
@@ -280,6 +281,34 @@ public:
 
 
 
+/**
+ * @brief splitLine Splits one line into words (they are separated by ",").
+ * @param str The line to split.
+ * @param elems list<string> for the results.
+ */
+void splitLine(const string &str, list<string> &elems) {
+	const string &delim = ",";
+	using valType = typename list<string>::value_type;
+	using sizeType = typename list<string>::size_type;
+	string::size_type pos, lastPos = 0;
+	while(true) {
+		pos = str.find(delim,lastPos);
+		if(pos == string::npos) {
+			pos = str.size();
+			if(pos != lastPos)
+				elems.push_back(valType(str.data()+lastPos, (sizeType)pos-lastPos));
+			break;
+		}
+		else  {
+			if(pos != lastPos) {
+				elems.push_back(valType(str.data()+lastPos, (sizeType)pos-lastPos));
+			}
+		}
+		lastPos = pos+1;
+	}
+}
+
+
 
 
 
@@ -291,12 +320,38 @@ int main()
 		return -1;
 	}
 
-	lidarbot hej;
-
-	hej.update_state({{2920.13,6.18463},{562.286,4.70623},{1896.9,1.73712} });
+	ifstream input("01_lineFile.csv");
+	if(!input.is_open()) {
+		cerr << "Error while opening input file!" << endl;
+		return -1;
+	}
 
 	output << "R,theta,alpha" << endl;
-	output << hej << endl;
+	lidarbot hej;
+
+	string firstline;
+	while( getline(input, firstline) ) {
+		list<string> tokens;
+		splitLine(firstline,tokens);
+
+		vector<double> distances;
+		vector<double> thetas;
+		for(auto i=tokens.begin(); i!=tokens.end(); ++i) {
+			thetas.push_back(std::stod(*(i)));
+			distances.push_back(std::stod(*(++i)));
+		}
+
+
+
+		vector<polar> one_data;
+		for(size_t i=0; i<distances.size(); ++i) {
+			one_data.emplace_back(distances[i],thetas[i]);
+		}
+
+		hej.update_state(one_data);
+		output << hej << endl;
+
+	}
 
 	output.close();
 
