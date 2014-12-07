@@ -5,3 +5,4 @@ build-cupcollector-Desktop_Qt_5_3_MSVC2013_64bit-Debug
 build-R2D2-Desktop_Qt_5_3_MSVC2013_64bit-Debug
 build-hokuyo_laserrange-Desktop_Qt_5_3_MinGW_32bit-Debug
 build-encoder_based_position-Desktop_Qt_5_3_MinGW_32bit-Debug
+build-coord_converter-Desktop_Qt_5_3_MinGW_32bit-Debug
