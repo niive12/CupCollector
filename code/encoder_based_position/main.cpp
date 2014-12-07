@@ -10,8 +10,6 @@
 #include <cmath>
 #define  PI_X2             6.283185307179586476925286766559005768394338798750211641949889
 
-#define swag yolo
-
 #define WHEELSPAN 290 // Taken from R2WD arduino lib.
 
 
@@ -22,7 +20,7 @@ int main()
     cout << "Progriaaaamm start" << endl;
     //string filename = "encoders_test_14492.csv";
     //string filename = "encoders_30.csv";
-    string filename = "encoders.csv";
+    string filename = "encoders_test5.csv";
 
     string output_file = "encoder_position_out.csv";
 

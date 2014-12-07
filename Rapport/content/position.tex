@@ -26,7 +26,7 @@
 \FPeval{\thetaTwo}{clip(\robotAngle + \wallAngle)}        
 
 %wall
-\node[scale=0.3,fill=black, minimum width=15cm, rotate={90 + \robotAngle + \wallAngle}, maximum height=0.1cm, name=wall] at ([shift=(\thetaTwo:2cm)] robot.center) {};
+\node[scale=0.3,fill=black, minimum width=15cm, rotate={90 + \robotAngle + \wallAngle}, name=wall] at ([shift=(\thetaTwo:2cm)] robot.center) {};
 \node[name=midwall] at ($(wall.180)!(robot.center)!(wall.0)$) {};
 \node[above] at (wall.0) {wall};
 
