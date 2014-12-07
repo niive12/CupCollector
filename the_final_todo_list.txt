@@ -1,0 +1,19 @@
+ROB5 - the final todolist: 
+
+Part 1: 
+Add introduction.
+Simplify explanation of offline planning. (maybe using a flow diagram?)
+Could we do a small showing how the robot moves, 
+  kinda like the one under door detection?
+Write a conclusion. (maybe merge with results) 
+  
+Part 2: 
+Needs an introduction and conclusion
+
+Part 3: 
+Needs explanation of the internal matching between 
+  detected features and features in the map.
+Also needs some results, intro and conclusion.
+
+
+All code should be done at this point. 
