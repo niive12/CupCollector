@@ -1,5 +1,7 @@
 ROB5 - the final todolist: 
 
+Report: 
+**********************************************
 Part 1: 
 Add introduction.
 Simplify explanation of offline planning. (maybe using a flow diagram?)
@@ -15,5 +17,13 @@ Needs explanation of the internal matching between
   detected features and features in the map.
 Also needs some results, intro and conclusion.
 
+General:
+**********************************************
+We need to make some overview of the code for use 
+on GitHub and in report appendix. 
 
+
+Code: 
+**********************************************
 All code should be done at this point. 
+
