@@ -79,3 +79,6 @@ code/build-Localisation-SuperKit-Release/Localisation
 code/build-Localisation-SuperKit-Release/main.o
 code/build-Localisation-SuperKit-Release/Makefile
 *.c32d605
+Rapport/master_doc.texnicle.backup
+Rapport/content/localisation/method.bbl
+Rapport/content/localisation/method.blg

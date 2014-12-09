@@ -55,7 +55,7 @@
 
 \usepackage{graphicx} % bruges til MATLAB figurer samt formatet .eps
 \usepackage{epstopdf} % bruges til automatisk konvertering af .eps-filer til pdf; Ellers kan man ikke kompilere med pdfLaTeX.
-
+\usepackage{standalone} 
 
 %%%%%%% captions settings %%%%%%%
 \usepackage[round]{natbib}
@@ -128,5 +128,16 @@ stringstyle=\color{red}
 \usepackage[nomessages]{fp}
 \usetikzlibrary{positioning,calc,patterns}
 
+
 \newdimen\XCoord
 \newdimen\YCoord
+
+
+%%%%%% MIKKEL TIKZ %%%%%
+\usetikzlibrary{shapes.geometric, arrows}
+\tikzstyle{node} = [rectangle, rounded corners, minimum width=3cm, minimum height=1cm,text width = 4 cm,text centered, draw=black, fill=red!30]
+    \tikzstyle{io} = [trapezium, trapezium left angle=70, trapezium right angle=110, text width = 4cm,minimum width=1cm,minimum height=1cm, text centered, draw=black, fill=blue!30]
+    \tikzstyle{io1} = [trapezium, trapezium left angle=70, trapezium right angle=110, minimum width=1cm,minimum height=1cm, text centered, draw=black, fill=blue!30]
+    \tikzstyle{process} = [rectangle, minimum width=3cm, minimum height=1cm,text width = 4cm,text centered, draw=black, fill=orange!30]
+    \tikzstyle{decision} = [diamond, minimum width=3cm, minimum height=1cm,text width = 2cm,text centered, draw=black, fill=green!30]
+    \tikzstyle{arrow} = [thick,->,>=stealth]
