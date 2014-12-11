@@ -65,19 +65,14 @@ int main()
         if (x2-x1 != 0) // If possible, update slope
         {
             slope = (y2-y1)/(x2-x1);
+            angle = atan(slope) + 0.5*MIC_PI;
+
             if (x1 > x2)
-            {
-                if (slope > 0)
-                    angle = atan(slope) + MIC_PI;
-                else
-                    angle = atan(slope) - MIC_PI;
-            }
-            else
-                angle = atan(slope);
+                angle += MIC_PI;
+
         }
 
-        if (angle < 0)
-            angle += 2 * MIC_PI;
+
 
 
 
