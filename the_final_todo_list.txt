@@ -21,6 +21,10 @@ Needs:
 	conclusion 
 
 
+We also need a final conclusion - is it feasible to buy this robot? 
+Crunch some numbers and stuff.
+
+
 General:
 **********************************************
 We need to make some overview of the code for use 
