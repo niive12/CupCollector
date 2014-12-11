@@ -32,11 +32,17 @@ The mobile robot used is a "Nexus Robot - 2WD mobile robot kit 10004", fitted wi
   \end{subfigure}
 \end{figure}
 
-
+\subsubsection{Gathering data using UMB-mark}
 The performance of the localization technique was measured using UMB-mark. 
-The position before and after following a preprogrammed path through a 1 x 1 [m] square 10 times was compared. 
-While testing, the robot only used sensor feedback from the encoders. 
+The position before and after following a preprogrammed path through a 1 x 1 [m] square 5 times was compared. The planned path is shown in figure \todo[inline, author=Michael]{I need picture of it here..}
+While testing, the robot was not given any feedback from the sensors. After each $90 \deg$ turn, the robot stopped and its position on the test track was measured for reference.  
 Sensor readings from both the encoders and the laserrange scanner was gathered, and saved for further offline processing. 
+This means that 3 different measurements of the position was gathered: 
+\begin{itemize}
+	\item Reference position (measured with tape)
+	\item Position based on encoder feedback. 
+	\item Position based on feature extraction using the laser range scanner. 
+\end{itemize}
 
 \subsubsection{Position based on odometry}
 \todo[inline, author=Michael]{Based on (or ripped off :P ) sec. 5.2.4 from our lovely friend, siegwart.}
@@ -76,6 +82,14 @@ Where $\Delta s_r; \Delta s_l$ = distance traveled by right and left wheel and $
   \end{bmatrix}
 \end{equation}
 \todo[inline, author=Michael]{Maybe add an interfacing of scanner subsubsection here?}
+\todo[inline, author=Michael]{And so he wrote a section :P}
+\subsubsection{Getting data from the laser range scanner}
+The Hokuyo laser scanner measures distance to the nearest obstacles in a $240 \degree$ range. The angular resolution is $0.352 \degree$ which gives 681 data points for each scan. The scanning rate is 10 Hz.
+
+The laser range scanner communicates with the computer using Serial over USB. The serial communication uses the SCIP 2.0 serial protocol. 
+A basic application for gathering data from the laser range was written in C++.\footnote{The program is called "hokuyo\_laserrange" in the included "Code" directory} 
+The program gathers and decodes the data received, and saves it as a CSV file. The program stops the laser range scanner whenever the UMBmark test is terminated.
+
 \input{./content/localisation/ransac}
 
 \subsubsection{Position based on features from laserrange scanner}
