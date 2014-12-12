@@ -218,7 +218,7 @@ public:
 		/** CORNER CASE (2 or 4 corners in total, 3 lines) */
 		//1) Do the same as in CORNER CASE 1, but average all the calculated
 		//   robot state position results to obtain the new robot state position.
-		if(matched_features.size()>=2) {
+		if( ( matched_features.size()>=2 ) && ( matched_features.size()<5 ) ) {
 			//cout << "Old R: " << last_state.r << ", old theta: " << last_state.theta << ", " << flush;
 			forward_list<unsigned int> found_global_lines;
 			for(auto it = matched_features.begin(); it!= matched_features.end(); ++it) {
@@ -237,37 +237,41 @@ public:
 				}
 			}
 
-			//All pairs of intersecting lines have been found!
-			cartesian robotcart(0.0,0.0);
-			for(auto linepair : intersecting_lines) {
-				polar vec1 = line_map[linepair.first];
-				polar vec2 = line_map[linepair.second];
+			if(!intersecting_lines.empty()) {
+				//All pairs of intersecting lines have been found!
+				cartesian robotcart(0.0,0.0);
+				for(auto linepair : intersecting_lines) {
+					polar vec1 = line_map[linepair.first];
+					polar vec2 = line_map[linepair.second];
 
-				//subtract rwall
-				vec1.r -= (data_features[ (matched_features[linepair.first]).first ].r);
-				vec2.r -= (data_features[ (matched_features[linepair.second]).first ].r);
+					//subtract rwall
+					vec1.r -= (data_features[ (matched_features[linepair.first]).first ].r);
+					vec2.r -= (data_features[ (matched_features[linepair.second]).first ].r);
 
-				if(vec1.r<0) {
-					vec1.theta=adjust_rads(vec1.theta+PI);
-					vec1.r=-vec1.r;
+					if(vec1.r<0) {
+						vec1.theta=adjust_rads(vec1.theta+PI);
+						vec1.r=-vec1.r;
+					}
+					if(vec2.r<0) {
+						vec2.theta=adjust_rads(vec2.theta+PI);
+						vec2.r=-vec2.r;
+					}
+
+					cartesian vec1c = vec1.to_cartesian();
+					cartesian vec2c = vec2.to_cartesian();
+					robotcart.x += (vec1c.x+vec2c.x);
+					robotcart.y += (vec1c.y+vec2c.y);
 				}
-				if(vec2.r<0) {
-					vec2.theta=adjust_rads(vec2.theta+PI);
-					vec2.r=-vec2.r;
-				}
+				robotcart.x /= double(intersecting_lines.size());
+				robotcart.y /= double(intersecting_lines.size());
+				if(intersecting_lines.size()==0)
+					cout << "it happened"<< endl;
 
-				cartesian vec1c = vec1.to_cartesian();
-				cartesian vec2c = vec2.to_cartesian();
-				robotcart.x += (vec1c.x+vec2c.x);
-				robotcart.y += (vec1c.y+vec2c.y);
+				polar robotpolar = robotcart.to_polar();
+				last_state.r=robotpolar.r;
+				last_state.theta=robotpolar.theta;
+				//cout << "\nnew R: " << last_state.r << ", new theta: " << last_state.theta << endl;
 			}
-			robotcart.x /= double(intersecting_lines.size());
-			robotcart.y /= double(intersecting_lines.size());
-
-			polar robotpolar = robotcart.to_polar();
-			last_state.r=robotpolar.r;
-			last_state.theta=robotpolar.theta;
-			cout << "\nnew R: " << last_state.r << ", new theta: " << last_state.theta << endl;
 		}
 	}
 
@@ -320,7 +324,7 @@ int main()
 		return -1;
 	}
 
-	ifstream input("01_lineFile.csv");
+	ifstream input("lineFile_mark5.csv");
 	if(!input.is_open()) {
 		cerr << "Error while opening input file!" << endl;
 		return -1;
