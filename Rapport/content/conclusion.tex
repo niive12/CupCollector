@@ -1,2 +1,11 @@
 \section{Conclusion}
 \label{sec:conclusion}
+A method for finding and picking up cups all over SDU-TEK was implemented. The method used off-line planning to determine a route for scanning the whole building. 
+This was done using a door detection algorithm to add doors to the map and brushfire to generate a set of coordinates to be visited by the robot.
+%This set was not sufficient to ensure that all of SDU-TEK is scanned, so extra coordinates is added. 
+The collection of cups takes 7 hours and 28 minutes.
+
+A coverage for sweeping the floors was also developed. It was based on the same strategy as the first part, but without the ability to scan for cups. The robot is able to sweep the floors in 19 hours and 30 minutes. The off-line planning runs in 30 seconds. 
+
+
+
