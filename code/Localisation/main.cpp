@@ -267,6 +267,10 @@ public:
 				if(intersecting_lines.size()==0)
 					cout << "it happened"<< endl;
 
+				cartesian offset = polar(ROBOT_LIDAR_FROM_CENTER_DIST,last_state.alpha).to_cartesian();
+				robotcart.x += offset.x;
+				robotcart.y += offset.y;
+
 				polar robotpolar = robotcart.to_polar();
 				last_state.r=robotpolar.r;
 				last_state.theta=robotpolar.theta;
@@ -330,7 +334,7 @@ int main()
 		return -1;
 	}
 
-	output << "R,theta,alpha" << endl;
+	//output << "R,theta,alpha" << endl;
 	lidarbot hej;
 
 	string firstline;
