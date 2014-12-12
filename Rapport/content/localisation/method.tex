@@ -91,6 +91,40 @@ The program gathers and decodes the data received, and saves it as a CSV file. T
 \input{./content/localisation/ransac}
 
 \subsubsection{Position based on features from laserrange scanner}
+The state of the robot is in polar coordinates represented  as 
+$$Q_r = \begin{pmatrix}
+R_r\\
+\theta_r\\
+\alpha_r
+\end{pmatrix}$$ 
+and in cartesian coordinates as 
+$$Q_r = \begin{pmatrix}
+x_r\\
+y_r\\
+\alpha_r
+\end{pmatrix}$$
+
+The robot has a map of the room it is in, when it is booted. The map 
+is four walls each represented as 
+$$wall_n = \begin{pmatrix}
+r_n\\
+\theta_n
+\end{pmatrix}
+$$
+
+The robot also knows it's initial position in the room.
+
+The localisation method is illustrated in figure \ref{fig:localisation}.
+
+\paragraph*{Mapping}
+The found lines are all represented in the robot's coordinate system. These
+lines are mapped into the global map, by using the last known robot state. Using 
+the last known state of the robot to map the lines will give some mapping-error.
+The found lines are then compared to the map. If a found line match a line 
+in the map, within a certain threshold, it is concluded, that they are in 
+reality the same line and that the difference is due to the mapping.
+
+
 
 \begin{figure}
   \includestandalone{./content/localisation/flowchart}
