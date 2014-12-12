@@ -17,9 +17,9 @@
 
 %% NODES
 \node (start) [node] {Robot is booted.  State is known};
-\node (input) [io, below of=start] { Input from odometri and laserrange scanner };
-\node (input1) [io1, left of=input, xshift=-2.5cm] {10Hz };
-\node (pro1) [process, below of=input] {Line extraction algorihthm on laserrange data};
+\node (input) [io, below of=start] { Input from laser range scanner };
+\node (input1) [io1, left of=input, xshift=-2.5cm] {10 Hz };
+\node (pro1) [process, below of=input] {Line extraction algorihthm on laser range data};
 \node (pro2) [process, below of=pro1] {Map the found lines into global map using last robot state};
 \node (dec1) [decision, below of =pro2, yshift=-1.2cm] {Number of found lines};
 \node (pro4) [node, left of=dec1, xshift = -3cm ] {Do not update robot state};

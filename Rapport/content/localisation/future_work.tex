@@ -1,1 +1,12 @@
 \subsection{Future work}
+Future work should focus on online implementations of the algorithms.
+This would allow the robot to actually use its position and orientation in planning its movements.
+
+The localisation algorithm has much room for improvement. The first step would be to
+include odometry readings in the calculation of the next step. One simple way of expanding
+the algorithm is to use odometry only if the laser range data are not present or sufficient to update the robot state.
+
+As both odometry and laser range scanner readings were collected,
+the optimal localisation method should combine them using a Kalman filter.
+Here, it would be beneficial to include the robots linear and angular velocities/accelerations
+to predict the robots movement.
