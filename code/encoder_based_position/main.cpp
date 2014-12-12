@@ -20,9 +20,9 @@ int main()
     cout << "Progriaaaamm start" << endl;
     //string filename = "encoders_test_14492.csv";
     //string filename = "encoders_30.csv";
-    string filename = "encoders_test5.csv";
+    string filename = "encoders_umbmark4.csv";
 
-    string output_file = "encoder_position_out.csv";
+    string output_file = "encoder_position_umbmark4.csv";
 
 
     // Load file
@@ -83,7 +83,7 @@ int main()
     vector<data_point> data_points;
     string current_line;
     data_point current_data_point;
-    position p2(0, 450, -500, 0.5*3.1415);
+    position p2(0, 501.5, -500, 1.57075);
 
     ofstream out_file (output_file, std::ios::app);
     while(!buffer.eof())
