@@ -324,7 +324,7 @@ int main()
 		return -1;
 	}
 
-	ifstream input("lineFile_mark5.csv");
+	ifstream input("lineFile_mark4.csv");
 	if(!input.is_open()) {
 		cerr << "Error while opening input file!" << endl;
 		return -1;
