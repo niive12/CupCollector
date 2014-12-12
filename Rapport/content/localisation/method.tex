@@ -46,36 +46,36 @@ This means that 3 different measurements of the position was gathered:
 \todo[inline, author=Michael]{Based on (or ripped off :P ) sec. 5.2.4 from our lovely friend, siegwart.}
 The position/state of the robot is represented by the vector: 
 \begin{equation}
-  p = 
+  Q = 
   \begin{bmatrix}
     x \\
     y \\
-    \theta 
+    \alpha
   \end{bmatrix}
 \end{equation}
-The robots position is estimated from the previous position + the movement in the last time period $\Delta t$. The change in position $\Delta p$ from each timestep is added to the position. This can be written as 
+The robots position is estimated from the previous position + the movement in the last time period $\Delta t$. The change in position $\Delta Q$ from each timestep is added to the position. This can be written as 
 \begin{equation}
-  p\textrm' = p + \Delta p
+  Q\textrm' = Q + \Delta Q
 \end{equation}
-The feedback from the robot is given as the movement of each wheel in millimetres. $\Delta p$ can be found from the following equations: 
+The feedback from the robot is given as the movement of each wheel in millimetres. $\Delta Q$ can be found from the following equations: 
 \begin{eqnarray}
-	\Delta x &=& \Delta s \cos \left(\theta + \frac{\Delta \theta}{2}\right) \\
-	\Delta y &=& \Delta s \sin \left(\theta + \frac{\Delta \theta}{2}\right) \\
-	\Delta \theta &=& \frac{\Delta s_r + \Delta s_l}{b} \\
+	\Delta x &=& \Delta s \cos \left(\alpha + \frac{\Delta \alpha}{2}\right) \\
+	\Delta y &=& \Delta s \sin \left(\alpha + \frac{\Delta \alpha}{2}\right) \\
+	\Delta \alpha &=& \frac{\Delta s_r + \Delta s_l}{b} \\
 	\Delta s &=& \frac{\Delta s_r + \Delta s_l}{2} \\
 \end{eqnarray}
 Where $\Delta s_r; \Delta s_l$ = distance traveled by right and left wheel and $b$ is the distance between the robots two wheels. Adding this together, the equation for the updated position is: 
 \begin{equation}
-  p\textrm' = 
+  Q\textrm' = 
   \begin{bmatrix}
     x \\
     y \\
-    \theta 
+    \alpha
   \end{bmatrix}
   +
   \begin{bmatrix}
-    \Delta s \cos \left(\theta + \frac{\Delta \theta}{2}\right) \\
-    \Delta s \sin \left(\theta + \frac{\Delta \theta}{2}\right) \\
+    \Delta s \cos \left(\alpha + \frac{\Delta \alpha}{2}\right) \\
+    \Delta s \sin \left(\alpha + \frac{\Delta \alpha}{2}\right) \\
     \frac{\Delta s_r + \Delta s_l}{b}
   \end{bmatrix}
 \end{equation}

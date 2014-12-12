@@ -1,23 +1,38 @@
 \subsubsection{Feature Detection}
-To detect the features of the robots whereabouts it was decided to implement RanSaC. During tests of this implementation it was found that the lines generated in with RanSaC had tendencies to detect two similar lines next to each other for the same features, when his feature was represented by many points in the sample. It was hence decided to implement the RanSaC with a merge function. The angle and distance to the two lines representing the same feature where then averaged to give one line.
+To detect the features of the robots whereabouts it was decided to implement RanSaC.
+During tests of this implementation it was found that the lines generated in with RanSaC
+had tendencies to detect two similar lines next to each other for the same features,
+when his feature was represented by many points in the sample.
+It was hence decided to implement the RanSaC with a merge function.
+The angle and distance to the two lines representing the same feature where then averaged to give one line.
 
 %Furthermore a variation of RanSaC was made. This implementation was then compared to the traditional RanSaC method, using the same parameters, on a dataset collected from the 2D laser scanner while performing the UMB mark test (driving in a $ 1 x 1 m$ square). This gave 1761 unique data set samples from the 2D scanner in the dataset used to test.
 %The  the lines are plotted in matlab against the data points from the 2D scanner. The number of lines plotted where no features should be found was then counted for the whole data set and compared.
 
 
-It was decided to represent all lines as polar lines, with $ (theta, rho) $. All lines are, for simplicity, standardized to conform with $ 0 <= theta < 2*PI $ and $ rho >= 0 $. The modified version of RanSaC was implemented as follows:
+It was decided to represent all lines as polar lines, with $ (theta, rho) $.
+All lines are, for simplicity, standardized to conform with $ 0 <= \theta < 2\cdot{\pi} $ and $ R >= 0 $.
+The modified version of RanSaC was implemented as follows:
 
 \begin{enumerate}
-\item Copy the data from the 2D laser scanner into a list, $ \Lambda_{points} $ , of polar points $ (theta, rho) $, excluding all points with $ rho = 0 $ which correspond to not-visible points to the scanner.
+\item Copy the data from the 2D laser scanner into a list, $ \Lambda_{points} $ ,
+of polar points $ (R,\theta) $, excluding all points with $ R = 0 $ which correspond to not-visible points to the scanner.
 \item Copy two unique random points into $ \Lambda_{sample} $ and find the line, $ \lambda_{init} $, passing through them. \label{item:genRandomPoints_LamdaInit}
-\item Copy all points within $ \Delta_{max deviation} $ distance to $ \lambda_{init} $ into $ \Lambda_{sample} $. If the size of $ \Lambda_{sample} $ passes a minimum threshold, go to item \ref{item:tresholdPassed_RemovePoints} else go to \ref{item:genRandomPoints_LamdaInit}.
-\item Delete all points from $ \Lambda_{points} $) within $ \Delta_{max deviation} $ from $ \lambda_{init} $.\label{item:tresholdPassed_RemovePoints}
-\item Find the best fit line, $ \lambda_{final} $ , passing through the dataset $ \Lambda_{sample} $. $ \lambda_{final} $ in the final line set.
-\item Until a specific number of RanSaC-loops done without finding a line or dataset too small to contain a valid line go to item \ref{item:genRandomPoints_LamdaInit} else continue.
+\item Copy all points within $ \Delta_{max deviation} $ distance to $ \lambda_{init} $ into $ \Lambda_{sample} $.
+If the size of $ \Lambda_{sample} $ passes a minimum threshold,
+go to item \ref{item:tresholdPassed_RemovePoints}
+else go to \ref{item:genRandomPoints_LamdaInit}.
+\item Delete all points from $ \Lambda_{points} $) within $ \Delta_{max deviation} $ from $ \lambda_{init} $.
+\label{item:tresholdPassed_RemovePoints}
+\item Find the best fit line, $ \lambda_{final} $,
+passing through the dataset $ \Lambda_{sample} $. $ \lambda_{final} $ in the final line set.
+\item Until a specific number of RanSaC-loops done without finding a line
+or dataset too small to contain a valid line go to item \ref{item:genRandomPoints_LamdaInit} else continue.
 \item Standardize the lines found to fit the specified format and merge lines considered to represent the same feature.
 %\item Recompute the line for $ \Lambda_{final} $ and store the line. Go then to item \ref{item:genRandomPoints_LamdaInit}.
 %\item Move all data points back to $ \Lambda_{points} $ and go back to \ref{item:genRandomPoints_LamdaInit}. \label{item:lineNotImproved_refillLamdaPoints}
 \end{enumerate}
 
-The data-points form the laser range scanner which where found to be 0 ($ rho = 0 $) are removed because those are, defined by the scanner, points for which the object is out of reach. The parameters for the RanSaC where experimentally found to fit the robots data points collected as best as possible.
-
+The data-points form the laser range scanner which where found to be 0 ($ R = 0 $)
+are removed because those are, defined by the scanner, points for which the object is out of reach.
+The parameters for the RanSaC where experimentally found to fit the robots data points collected as best as possible.
