@@ -30,8 +30,8 @@ int main()
      * Please supply input and output csv's.
      */
 
-    string input_filename = "raw_data.csv";
-    string output_filename = "output_data.csv";
+    string input_filename = "raw_data2.csv";
+    string output_filename = "output_data2.csv";
     ifstream input_file(input_filename.c_str());
     ofstream output_file(output_filename.c_str());
     stringstream buffer;
