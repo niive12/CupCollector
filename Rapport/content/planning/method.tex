@@ -93,13 +93,13 @@ For each coordinate visited in \(S_{M}\), the nearest neighbour strategy is used
 This movement is simple to code, as illustrated by below pseudo-code:
 
 \begin{verbatim}
-while( \(S_{M}\) is not empty ){
-   c = Nearest coordinate in \(S_{M}\);
+while( S_M is not empty ){
+   c = Nearest coordinate in S_M;
    s = Shortest path to c;
    for( each coordinate i in s ){
       Move robot to i;
       Scan with robot scanner centered at i.
-      Remove i from \(S_{M}\);
+      Remove i from S_M;
    }
 }
 \end{verbatim}
@@ -110,8 +110,8 @@ but what about the cups that are found by the scanner, yet are unreachable?
 To keep the code simple, these cups are handled indirectly: They (or configuration space coordinates close to them) are added to \(S_{M}\):
 
 \begin{verbatim}
-while( \(S_{M}\) is not empty ){
-   c = Nearest coordinate in \(S_{M}\);
+while( S_M is not empty ){
+   c = Nearest coordinate inS_M;
    s = Shortest path to c;
    for( each coordinate i in s ){
       Move robot to i;
@@ -121,10 +121,10 @@ while( \(S_{M}\) is not empty ){
             Pick up the cup at k;
          }
          else{
-            Add k's nearest configuration space coordinate to \(S_{M}\);
+            Add k's nearest configuration space coordinate to S_M;
          }
       }
-      Remove i from \(S_{M}\);
+      Remove i from S_M;
    }
 }
 \end{verbatim}
@@ -137,8 +137,8 @@ the robot returns to the nearest-neighbour strategy (it does not return the way 
 The modification, concluding the robot movement logic, is indicated in the pseudo-code below.
 
 \begin{verbatim}
-while( \(S_{M}\) is not empty ){
-   c = Nearest coordinate in \(S_{M}\);
+while( S_M is not empty ){
+   c = Nearest coordinate in S_M;
    s = Shortest path to c;
    for( each coordinate i in s ){
       Move robot to i;
@@ -147,22 +147,22 @@ while( \(S_{M}\) is not empty ){
          if( k is reachable ){
             Pick up the cup at k;
             if( cup capacity reached ){
-               z = Shortest path to offloading station (using \(M_{OL}\));
+               z = Shortest path to offloading station (using M_OL);
                for( each coordinate j in z ){
                   Move robot to j;
-                  Remove j from \(S_{M}\);
+                  Remove j from S_M;
                   Scan with robot scanner centered at j;
                   for( each cup coordinate g in the circle ){
-                     Add g's nearest configuration space coordinate to \(S_{M}\);
+                     Add g's nearest configuration space coordinate to S_M;
                   }
                }
             }
          }
          else{
-            Add k's nearest configuration space coordinate to \(S_{M}\);
+            Add k's nearest configuration space coordinate to S_M;
          }
       }
-      Remove i from \(S_{M}\);
+      Remove i from S_M;
    }
 }
 \end{verbatim}

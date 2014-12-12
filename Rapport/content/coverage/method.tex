@@ -14,12 +14,12 @@ and the chosen solution is similiar to what is discussed for the cup collection.
 The pseudo-code below shows the floor sweeping algorithm.
 
 \begin{verbatim}
-while( \(S_{F}\) is not empty ){
-   c = Nearest coordinate in \(S_{F}\);
+while(S_F is not empty ){
+   c = Nearest coordinate in S_F;
    s = Shortest path to c;
    for( each coordinate i in s ){
       Move robot to i;
-      Remove i from \(S_{F}\);
+      Remove i from S_F;
    }
 }
 \end{verbatim}
