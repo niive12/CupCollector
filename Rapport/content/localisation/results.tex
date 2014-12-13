@@ -42,7 +42,7 @@ It is easily seen that the line-based localisation algorithm is better than odom
 The line-based localisation seems to move in distored lines, and this indicates the actual movement
 better than the reference lines; The reference lines are just straight lines drawn between the reference points.
 
-\todo[inline,author=Mikael]{Vi mangler resultater for orientering :-)}
+%\todo[inline,author=Mikael]{Vi mangler resultater for orientering :-)}
 
 The results were expected, as the odometry method accumulates error over time, and the line-based method does not.
 
@@ -52,7 +52,7 @@ The figure shows the deviation of the robot at the reference points, where the r
 \begin{figure}[H]
 \centering
 \includegraphics[width = 13cm]{graphics/deviation_encoderVSscanner}
-\caption[Deviation of the two localization methods.]{Deviation of the two localization methods. The red line represents the laser range scanner localisation, and the black line represents the odometry readings.}
+\caption[Deviation in position of the two localization methods.]{Deviation in position of the two localization methods. The red line represents the laser range scanner localisation, and the black line represents the odometry readings.}
 \label{fig:deviationOfEncoderVSScanner}
 \end{figure}
 
@@ -61,5 +61,20 @@ when using only odometry to measure the position.
 The data from the laser range scanner, however, are used to calculate the position considerably better,
 with a much more steady deviation, than the odometry readings.
 
-It should be noted that the odometry can still be used to accurately decide the robots position
-when travelling short distances.
+When plotting the absolute deviation of the robots angle at the previous used points figure \ref{fig:deviationOfEncoderVSScannerAngle} is obtained.
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[width = 13cm]{graphics/deviation_angle_encoderVSscanner}
+\caption[Deviation in orientation of the two localization methods.]{Deviation in orientation of the two localization methods. The red line represents the laser range scanner localisation, and the black line represents the odometry readings.}
+\label{fig:deviationOfEncoderVSScannerAngle}
+\end{figure}
+
+It can from figure \ref{fig:deviationOfEncoderVSScannerAngle} be seen that the deviation in orientation is, like for the position, accumulating over time. 
+The odometry is for short distances and few turns better or equal that of the average laser scanner readings. This advantage does, however, cease when the robot reaches its fourth turn and onwards it is considerably higher.
+
+It can hence be concluded that the laser scanner is considerably better when driving for longer time and only one method of localisation has to be used.
+The combination of using both the laser scanner and odometry together is, however, recommendable.
+Odometry alone is not suitable to stand alone, but they can be used efficiently in combination to achieve accurate localization of a robot on a map.
+It should still be noted that odometry can be used to accurately decide the robots position and angle when travelling short distances.
