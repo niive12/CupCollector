@@ -128,9 +128,9 @@ int main(int argc, char** argv) {
 				  ROBOT_SPEED_PIX_PER_H,
 				  robot_start);
 	cout << "\nRobot created.\n\nSweeping floor.\n" << endl;
-//	myRobot.sweep_floor(img,true);
+	myRobot.sweep_floor(img,false);
 	cout << "\nFloor sweeped.\n\nCollecting cups.\n" << endl;
-	myRobot.cup_scan(img,false);
+//	myRobot.cup_scan(img,false);
 	cout << "\nCups have been collected.\n" << endl;
 	cout << "Robot test done!" << endl;
 
