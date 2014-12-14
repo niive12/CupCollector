@@ -97,7 +97,23 @@ and $b$ is the distance between the robots two wheels. Adding this together, the
 %\todo[inline, author=Michael]{Maybe add an interfacing of scanner subsubsection here?}
 %\todo[inline, author=Michael]{And so he wrote a section :P}
 \subsubsection{Getting data from the laser range scanner}
-The Hokuyo laser scanner measures distance to the nearest obstacles in a $240 \degree$ range. The angular resolution is $0.352 \degree$ which gives 681 data points for each scan. The scanning rate is 10 Hz.
+The Hokuyo laser scanner measures distance to the nearest obstacles in a $240 \degree$ range as shown in figure \ref{fig:laserrange_angle}. The angular resolution is $0.352 \degree$ which gives 681 data points for each scan. The scanning rate is 10 Hz.
+
+\begin{figure}
+ \centering
+ \begin{tikzpicture}[scale=0.5]
+ 
+ \draw[dashed] (-5,0) node[left] {\(\frac{\pi}{2}\)} -- (5,0) node[right] {\(\frac{3\pi}{2}\)};
+ \draw[dashed] (0,-5) -- (0,5) node[above] {\(0\)};
+ 
+ \node[name=robot] at (0,0) {\includegraphics[width=2.5cm]{graphics/robot2}};
+ \fill[pattern color=gray!50, pattern=crosshatch]  (robot.center) -- (210:5cm) arc(210:330:5cm);
+ \fill[pattern color=red!50,  pattern=crosshatch]  (robot.center) -- (330:5cm) arc(-30:210:5cm);
+ 
+ \end{tikzpicture}
+ \label{fig:laserrange_angle}
+ \caption{The area covered by the laser range scanner.}
+ \end{figure}
 
 The laser range scanner communicates with the computer using Serial over USB. The serial communication uses the SCIP 2.0 serial protocol. 
 A basic application for gathering data from the laser range was written
