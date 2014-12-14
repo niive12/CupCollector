@@ -20,8 +20,8 @@ The second also needs knowledge of the environment
 (based on last know location of the robot). 
 
 
-The mobile robot used is a Nexus Robot - 2WD mobile robot kit 10004,
-fitted with a laser range scanner of type Hokuyo URG-04LX-LG. 
+The mobile robot used is a Nexus Robot - 2WD mobile robot kit 10004 (figure \ref{nexus_robot}),
+fitted with a laser range scanner of type Hokuyo URG-04LX-LG (figure \ref{laserrange}). 
 
 \begin{figure}[ht]
 \centering
@@ -33,8 +33,9 @@ fitted with a laser range scanner of type Hokuyo URG-04LX-LG.
   \begin{subfigure}[t]{0.4\textwidth}
     \includegraphics[width = \textwidth]{graphics/nexus_robot}
     \caption{Nexus Robot - 2WD mobile robot kit 10004.}
-    \label{laserrange}
+    \label{nexus_robot}
   \end{subfigure}
+    \caption{Hardware used}
 \end{figure}
 
 \subsubsection{Gathering data using UMBmark}
@@ -111,8 +112,8 @@ The Hokuyo laser scanner measures distance to the nearest obstacles in a $240 \d
  \fill[pattern color=red!50,  pattern=crosshatch]  (robot.center) -- (330:5cm) arc(-30:210:5cm);
  
  \end{tikzpicture}
- \label{fig:laserrange_angle}
  \caption{The area covered by the laser range scanner.}
+ \label{fig:laserrange_angle}
  \end{figure}
 
 The laser range scanner communicates with the computer using Serial over USB. The serial communication uses the SCIP 2.0 serial protocol. 
@@ -122,7 +123,7 @@ The program gathers and decodes the data received, and saves it as a CSV file.
 The program stops the laser range scanner when the UMBmark test is terminated.
 
 %%%%%%%%%%%
-% \input{./content/localisation/ransac}
+\input{./content/localisation/RanSaC}
 %%%%%%%%%%%%
 
 \subsubsection{Position based on features from laser range scanner}
