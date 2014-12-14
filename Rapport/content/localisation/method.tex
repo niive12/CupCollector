@@ -44,11 +44,11 @@ was compared for the different localisation techniques.
 %The planned path is shown in figure 
 %\todo[inline, author=Michael]{I need picture of it here..}
 While testing, the robot was not given any feedback from the sensors.
-After each $90 \deg$ turn, the robot stopped and its position on the test track was measured for reference.  
+After each $90 \degree$ turn, the robot stopped and its position on the test track was measured for reference.  
 Sensor readings from both the encoders and the laser range scanner were gathered and saved for further offline processing. 
 This means that 3 different measurements of the position were gathered: 
 \begin{itemize}
-	\item Reference position (measured with tape)
+	\item Reference position (measured with tape).
 	\item Position based on encoder feedback. 
 	\item Position based on feature extraction using the laser range scanner. 
 \end{itemize}
@@ -111,8 +111,8 @@ The Hokuyo laser scanner measures distance to the nearest obstacles in a $240 \d
  \fill[pattern color=red!50,  pattern=crosshatch]  (robot.center) -- (330:5cm) arc(-30:210:5cm);
  
  \end{tikzpicture}
- \label{fig:laserrange_angle}
  \caption{The area covered by the laser range scanner.}
+ \label{fig:laserrange_angle}
  \end{figure}
 
 The laser range scanner communicates with the computer using Serial over USB. The serial communication uses the SCIP 2.0 serial protocol. 
@@ -173,13 +173,6 @@ If only one line has been matched, the robot orientation \(\alpha_r\) will be up
 so that the found line aligns with the known line in the global map.
 The same strategy is used if there are several matched lines, and the new \(\alpha_r\) is
 found by averaging the individual orientations.
-
-The robots position will also be updated using as much line information as possible.
-If one line has been found, the robots new position is constrained to this line,
-and is simply calculated as the nearest point on the line, from the last position.
-If two parallel lines have been found, the same strategy is used, and the new position is the average of the two results.
-Finding the constraining lines is a matter of moving the global lines towards the origin
-by the distances from the robot to the walls.
 
 If two intersecting lines have been matched (and a corner found), the robots position is constrained to
 an intersection between two lines. Again, finding the intersection is a matter of moving the global
