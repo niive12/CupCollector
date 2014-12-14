@@ -150,10 +150,12 @@ $$
 The initial position of the robot is also known on startup.
 
 The localisation algorithm is illustrated as a flowchart in figure \ref{fig:localisation}.
+An illustration of the global coordinate system and the robot's coordinate system can be seen 
+in figure \ref{fig:coord}.
 
 \paragraph*{Mapping}
 The found lines are all represented in the robot's coordinate system, relative to the robot position and orientation.
-These lines are mapped into the global map, using the last known robot state. Using 
+These lines are mapped into the global coordinate system, using the last known robot state. Using 
 the last known state of the robot to map the lines will give some mapping-error.
 The found lines are then compared to the map. If a found line matches a line 
 in the map, within a certain threshold, it is concluded, that they are in 
@@ -195,8 +197,100 @@ The further the robot actually moves from the last updated position, the harder 
 feature to the global map, and eventually the lines would be matched incorrectly.
 
 \begin{figure}
-  \includestandalone{./content/localisation/flowchart}
-  \caption{The localisation method, purely based on data from laser range scanner.}
+  \centering
+    \tikzstyle{node} = [rectangle, rounded corners, minimum width=3cm, minimum height=1cm,text width = 4 cm,text centered, draw=black, fill=red!30]
+    \tikzstyle{io} = [trapezium, trapezium left angle=70, trapezium right angle=110, text width = 4cm,minimum width=1cm,minimum height=1cm, text centered, draw=black, fill=blue!30]
+    \tikzstyle{io1} = [trapezium, trapezium left angle=70, trapezium right angle=110, minimum width=1cm,minimum height=1cm, text centered, draw=black, fill=blue!30]
+    \tikzstyle{process} = [rectangle, minimum width=3cm, minimum height=1cm,text width = 4cm,text centered, draw=black, fill=orange!30]
+    \tikzstyle{decision} = [diamond, minimum width=3cm, minimum height=1cm,text width = 2cm,text centered, draw=black, fill=green!30]    
+    \tikzstyle{arrow} = [thick,->,>=stealth]
+
+\begin{tikzpicture}[node distance=2.2cm,scale=0.8, every node/.style={scale=0.8}]
+
+%% NODES
+\node (start) [node] {Robot is booted.  State is known};
+\node (input) [io, below of=start] { Input from laser range scanner };
+\node (input1) [io1, left of=input, xshift=-2.5cm] {10 Hz };
+\node (pro1) [process, below of=input] {Line extraction algorihthm on laser range data};
+\node (pro2) [process, below of=pro1] {Map the found lines into global map using last robot state};
+\node (dec1) [decision, below of =pro2, yshift=-1.2cm] {Number of found lines};
+\node (pro4) [node, left of=dec1, xshift = -3cm ] {Do not update robot state};
+\node (pro5) [process, below of=dec1, yshift = -1cm ] {Calculate robot orientation from found line(s)};
+\node (pro6) [node, below of=pro5,yshift =-0.5cm] {Update robot state};
+\node (dec2) [decision,right of= dec1, xshift =2cm] {Number of corners};
+\node (pro3) [process, right of =dec2, xshift = 2.5cm ] {Calculate full robot state from found lines};
+
+
+
+%% ARROWS
+\draw [arrow] (start) -- (input);
+\draw [arrow] (input) -- (pro1);
+\draw [arrow] (pro1) -- (pro2);
+\draw [arrow] (pro2) -- (dec1);
+\draw [arrow] (dec1) -- node[anchor=south] {\textgreater1} (dec2);
+\draw [arrow] (dec1) -- node[anchor=south] {0} (pro4);
+\draw [arrow] (dec1) -- node[anchor=east] {1} (pro5);
+\draw [arrow] (pro5) -- (pro6);
+\draw [arrow] (pro3) |- (pro6);
+\draw [arrow] (input1) -- (input);
+\draw [arrow] (dec2) |- node[anchor=north] {0}(pro5);
+\draw [arrow] (dec2) -- node[anchor=south] {$\geq$1} (pro3);
+\end{tikzpicture}
+    \caption{The localisation method, purely based on data from laser range scanner.}
   \label{fig:localisation}
 \end{figure}
 
+
+\begin{figure}
+  \centering
+\begin{tikzpicture}[scale=2]
+%set angles here. wall angle is what laser range scanner measures  (relative to robot)
+\newcommand{\robotAngle}{30}
+\newcommand{\wallAngle}{20}
+
+                                                                                                                             %coordinate axis
+\draw[->] (0,0) -- (5,0) node[right]                                                                                         {\(x_{global}\)};
+\draw[->] (0,0) -- (0,5) node[above]                                                                                         {\(y_{global}\)};
+
+%robot
+\node[name=robot] at (\robotAngle:2cm) {};
+
+                                                                                                                             %robot relative coordinate axis
+\draw[rotate=\robotAngle,->] (robot.center) -- ++(3,0) node[right]                                                           {\(x_{robot}\)};
+\draw[rotate=\robotAngle,->] (robot.center) -- ++(0,3) node[right]                                                           {\(y_{robot}\)};
+
+%calculate theta_2
+\FPeval{\thetaTwo}{clip(\robotAngle + \wallAngle)}        
+
+%wall
+\node[scale=0.3,fill=black, minimum width=15cm, rotate={90 + \robotAngle + \wallAngle}, name=wall] at ([shift=(\thetaTwo:2cm)] robot.center) {};
+\node[name=midwall] at ($(wall.180)!(robot.center)!(wall.0)$) {};
+\node[above] at (wall.0) {wall};
+
+                                                                                                                             %laser range output
+\draw[very thick, red]  (midwall.center) -- (robot.center) node[black,midway, left]                                          {\(r\)};
+\draw[very thick, red]   ([shift=(\robotAngle:1cm)] robot.center) arc(\robotAngle:\thetaTwo:1cm) node[near end, black,right] {\(\theta_{wall}\)};
+
+                                                                                                                             %robot position
+\draw[dashed] (robot.center) -- ++(3,0) node[right]                                                                          {\tiny\( 0\degree\)};
+\draw[dashed] (robot.center) -- ++(0,3) node[above]                                                                          {\tiny\(\frac{\pi}{2}\degree\)};
+\draw[very thick, green] ([shift=(\robotAngle:1cm)] robot.center) arc(\robotAngle:0:1cm)  node[midway, black,right]          {\(\alpha\)};
+
+                                                                                                                             %summated vector of robot and wall angle
+\path (midwall); \pgfgetlastxy{\XCoord}{\YCoord};
+\draw[very thick, dashed, green] (0,0) -- (midwall) node[black, midway, left]                                                {\(r_1\)};
+\draw[very thick, green] (0.5,0) arc(0:{atan(\YCoord/\XCoord)}:0.5cm) node[midway, black, right]                             {\(\theta\)};
+                                                                                                                             
+                                                                                                                             %real angle to wall                                                                                                          
+\node[name=projected] at ($(wall.180)!(0,0)!(wall.0)$) {};                                                                   
+\draw[very thick, dashed,blue] (projected.center) -- (0,0) node[black, midway, left]                                         {\(r_2\)};
+\draw[very thick, blue] (1.5,0) arc(0:\thetaTwo:1.5cm) node[midway, black,right]                                             {\(\theta_2\)};
+
+                                                                                                                             %I am not sure what we use this angle for...
+\draw[dashed,red!50] (0,0) -- (robot.center) ;
+\draw[very thick,red!50] ([shift=(\robotAngle:1cm)] (0,0) arc(\robotAngle:0:1cm) node[midway,black,right]                    {\(\theta_1\)};
+
+\end{tikzpicture}
+ \caption{Illustration of the global coordinate system and the robot's coordinate system}
+  \label{fig:coord}
+\end{figure}
