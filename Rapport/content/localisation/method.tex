@@ -41,7 +41,8 @@ fitted with a laser range scanner of type Hokuyo URG-04LX-LG.
 The performance of the localisation technique was measured using UMBmark. 
 The position before and after following a preprogrammed path through a 1 x 1 [m] square %5 times
 was compared for the different localisation techniques.
-The planned path is shown in figure \todo[inline, author=Michael]{I need picture of it here..}
+%The planned path is shown in figure 
+%\todo[inline, author=Michael]{I need picture of it here..}
 While testing, the robot was not given any feedback from the sensors.
 After each $90 \deg$ turn, the robot stopped and its position on the test track was measured for reference.  
 Sensor readings from both the encoders and the laser range scanner were gathered and saved for further offline processing. 
@@ -53,7 +54,7 @@ This means that 3 different measurements of the position were gathered:
 \end{itemize}
 
 \subsubsection{Position based on odometry}
-\todo[inline, author=Michael]{Based on (or ripped off :P ) sec. 5.2.4 from our lovely friend, siegwart.}
+%\todo[inline, author=Michael]{Based on (or ripped off :P ) sec. 5.2.4 from our lovely friend, siegwart.}
 The position/state $Q$ of the robot is represented by the vector: 
 \begin{equation}
   Q_r = 
@@ -63,8 +64,7 @@ The position/state $Q$ of the robot is represented by the vector:
     \alpha_r
   \end{bmatrix}
 \end{equation}
-The robots position is estimated from the previous position,
-plus the movement in the last time period $\Delta t$.
+The robots position is estimated from the previous position, plus the movement in the last time period $\Delta t$.
 The change in position $\Delta Q_r$ from each timestep is added to the position.
 This can be written as 
 \begin{equation}
@@ -94,8 +94,8 @@ and $b$ is the distance between the robots two wheels. Adding this together, the
     \frac{\Delta s_r + \Delta s_l}{b}
   \end{bmatrix}
 \end{equation}
-\todo[inline, author=Michael]{Maybe add an interfacing of scanner subsubsection here?}
-\todo[inline, author=Michael]{And so he wrote a section :P}
+%\todo[inline, author=Michael]{Maybe add an interfacing of scanner subsubsection here?}
+%\todo[inline, author=Michael]{And so he wrote a section :P}
 \subsubsection{Getting data from the laser range scanner}
 The Hokuyo laser scanner measures distance to the nearest obstacles in a $240 \degree$ range. The angular resolution is $0.352 \degree$ which gives 681 data points for each scan. The scanning rate is 10 Hz.
 

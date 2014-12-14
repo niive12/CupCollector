@@ -5,7 +5,7 @@ and were used as reference points.
 The laser range scanner and odometry readings were sent to a PC,
 and were processed using the aforementioned algorithms.
 A problem occured in the test: some laser range scanner readings were lost,
-possibly due to partial incompatibility between the PC's OS and the laser range scanner library used.
+possibly due to partial incompatibility between the PC's OS and the serial communication library used.
 
 %The UMB-test was conducted as follows:
 %
@@ -39,8 +39,8 @@ The red line represents the 2D laser range scanner localisation and the black li
 \end{figure}
 
 It is easily seen that the line-based localisation algorithm is better than odometry alone.
-The line-based localisation seems to move in distored lines, and this indicates the actual movement
-better than the reference lines; The reference lines are just straight lines drawn between the reference points.
+The line-based localisation seems to move in distorted lines, and this indicates the actual movement
+better than the reference lines; the reference lines are just straight lines drawn between the reference points.
 
 %\todo[inline,author=Mikael]{Vi mangler resultater for orientering :-)}
 
