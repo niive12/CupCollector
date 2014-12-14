@@ -4,9 +4,7 @@ code/build-cupcollector-Desktop_Qt_5_3_clang_64bit-Debug/Image.o
 code/build-cupcollector-Desktop_Qt_5_3_clang_64bit-Debug/main.o
 code/build-cupcollector-Desktop_Qt_5_3_clang_64bit-Debug/Makefile
 code/build-cupcollector-Desktop_Qt_5_3_clang_64bit-Debug/PPMLoader.o
-<<<<<<< HEAD
 code/build-cupcollector-Desktop_Qt_5_3_clang_64bit-Debug/tekmap.o
-=======
 *.log
 *.gz(busy)
 *.aux
@@ -18,15 +16,10 @@ Rapport/master_doc.out
 Rapport/master_doc.tdo
 Rapport/master_doc.synctex.gz
 Rapport/master_doc.pdf
->>>>>>> a4a04a5fa8a6697c99a56349cd8019c45b721504
 code/build-cupcollector-Desktop_Qt_5_3_clang_64bit-Debug/scanner.o
 *.autosave
-<<<<<<< HEAD
->>>>>>> d39e180b7ab7bd746b105989d869852b48167c7f
 Rapport/master_doc.texnicle
-=======
 Rapport/master_doc.toc
->>>>>>> 880e2cf5722858b9d39953232659083b1a6ad90b
 code/build-cupcollector-Desktop_Qt_5_3_clang_64bit-Debug/complete_map_project.pgm
 /code/build-cupcollector-Desktop-Debug
 build-cupcollector-Desktop-Debug
@@ -58,12 +51,9 @@ code/build-cupcollector-Desktop_Qt_5_3_clang_64bit-Debug/dijkstra.pgm
 code/build-cupcollector-Desktop_Qt_5_3_clang_64bit-Debug/door_step.pgm
 code/build-cupcollector-Desktop_Qt_5_3_clang_64bit-Debug/robot.o
 /code/R2D2/*.user
-<<<<<<< HEAD
 code/Arduino/MotorWheel/Omni4WDAction.cpp.bak
 code/Arduino/MotorWheel/Omni4WDAction.h.bak
-=======
 *.user
->>>>>>> 1168697ef4c6adba7457a25d4586c1617196b556
 code/Localisation/deployment.pri
 code/build-Localisation-Desktop_Qt_5_3_clang_64bit-Debug/.qmake.stash
 code/build-Localisation-Desktop_Qt_5_3_clang_64bit-Debug/Localisation

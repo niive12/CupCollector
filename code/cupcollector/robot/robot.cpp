@@ -682,7 +682,7 @@ void robot::cup_scan(shared_ptr<Image> img, bool makePGMs)
 			}
 			coords.erase(c);
 
-			pickupCupsLocal(c);
+//			pickupCupsLocal(c);
 		}
 		//Now that all the coordinates between the robot's current position
 		// and the closest coordinate in coords have been added to the robot path,
@@ -700,7 +700,7 @@ void robot::cup_scan(shared_ptr<Image> img, bool makePGMs)
 					img->setPixel8U(c.cx(),c.cy(),20);
 				}
 				coords.erase(c);
-				pickupCupsLocal(c);
+//				pickupCupsLocal(c);
 			}
 			for(auto cup:missed_cups) {
 				pos_t closest = cup;
