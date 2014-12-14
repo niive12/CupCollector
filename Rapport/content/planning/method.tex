@@ -150,3 +150,52 @@ while( \(S_{M}\) is not empty ){
 
 The selection of the nearest neighbour is performed using the wavefront algorithm, propagating
 a wave around the robot until a coordinate in \(S_{M}\) is found.
+
+
+\begin{figure}[ht]
+\centering
+  \begin{subfigure}[t]{0.3\textwidth}
+    \includegraphics[width = \textwidth]{graphics/sq/room}
+    \caption{The map zoomed in to a room}
+    \label{sqroom}
+  \end{subfigure}
+  \begin{subfigure}[t]{0.3\textwidth}
+    \includegraphics[width = \textwidth]{graphics/sq/dist}
+    \caption{Brushfire based coverage}
+    \label{sqdist}
+  \end{subfigure}
+  \begin{subfigure}[t]{0.3\textwidth}
+    \includegraphics[width = \textwidth]{graphics/sq/top}
+    \caption{Points that were not covered by wall distance}
+    \label{sqtop}
+  \end{subfigure}
+  
+  \begin{subfigure}[t]{0.3\textwidth}
+    \includegraphics[width = \textwidth]{graphics/sq/list}
+    \caption{List formed by merging the two list}
+    \label{sqlist}
+  \end{subfigure}
+  \begin{subfigure}[t]{0.3\textwidth}
+    \includegraphics[width = \textwidth]{graphics/sq/room_scan0}
+    \caption{Cup is out of reach, Cup is added to list}
+    \label{sqroomscan0}
+  \end{subfigure}
+  \begin{subfigure}[t]{0.3\textwidth}
+    \includegraphics[width = \textwidth]{graphics/sq/room_scan1}
+    \caption{Cups inside pickup range is removed}
+    \label{sqroom_scan1}
+  \end{subfigure}
+    
+  \begin{subfigure}[t]{0.3\textwidth}
+    \includegraphics[width = \textwidth]{graphics/sq/coverage}
+    \caption{Coverage in critical areas}
+    \label{sqroom_scan1}
+  \end{subfigure}
+  \begin{subfigure}[t]{0.3\textwidth}
+    \includegraphics[width = \textwidth]{graphics/sq/path}
+    \caption{The traveled path}
+    \label{sqroom_scan1}
+  \end{subfigure}
+\caption{Planning step for step}
+\label{online_steps}
+\end{figure}
