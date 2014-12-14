@@ -228,9 +228,9 @@ feature to the global map, and eventually the lines would be matched incorrectly
 \draw [arrow] (input) -- (pro1);
 \draw [arrow] (pro1) -- (pro2);
 \draw [arrow] (pro2) -- (dec1);
-\draw [arrow] (dec1) -- node[anchor=south] {\textgreater1} (dec2);
+\draw [arrow] (dec1) -- node[anchor=south] {$\geq$1} (dec2);
 \draw [arrow] (dec1) -- node[anchor=south] {0} (pro4);
-\draw [arrow] (dec1) -- node[anchor=east] {1} (pro5);
+%\draw [arrow] (dec1) -- node[anchor=east] {1} (pro5);
 \draw [arrow] (pro5) -- (pro6);
 \draw [arrow] (pro3) |- (pro6);
 \draw [arrow] (input1) -- (input);
