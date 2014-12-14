@@ -183,8 +183,7 @@ If more than two intersecting lines are matched, the same strategy is used and t
 is calculated as the average of all the found positions.
 
 Thus, as long as at least one line is matched, the robot state is updated.
-The update correctness should improve with the number of lines matched,
-especially if the lines are not parallel.
+The update correctness should improve with the number of lines matched, if the lines are not parallel.
 
 The weakness of the algorithm lies in missed data points, or data points with no lines detected by RanSaC.
 The further the robot actually moves from the last updated position, the harder it is to match the line
